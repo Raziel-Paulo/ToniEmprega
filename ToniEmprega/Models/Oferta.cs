@@ -10,6 +10,9 @@ namespace ToniEmprega.Models
         [Key]
         public int Id { get; set; }
 
+        public string UserId { get; set; }
+        public ApplicationUser User { get; set; }
+
         [Required, StringLength(100)]
         public string Titulo { get; set; }
 
@@ -38,5 +41,6 @@ namespace ToniEmprega.Models
         public DateTime DataCriacao { get; set; }
 
         public DateTime? DataExpiracao { get; set; }
+        public ICollection<Candidatura> Candidaturas { get; set; } = new List<Candidatura>();
     }
 }

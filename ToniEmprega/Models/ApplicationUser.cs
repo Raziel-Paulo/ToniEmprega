@@ -14,5 +14,7 @@ namespace ToniEmprega.Models
         public ICollection<Oferta> OfertasEmpresa { get; set; }
         public ICollection<AvaliacaoProfessor> AvaliacoesProfessor { get; set; }
         public ICollection<ValidacaoIdentidade> ValidacoesIdentidade { get; set; }
+        public ICollection<Candidatura> Candidaturas { get; set; }
+        public ICollection<Oferta> Ofertas { get; set; }
     }
 }

@@ -14,6 +14,9 @@ namespace ToniEmprega.Models
         public int OfertaId { get; set; }
         public Oferta Oferta { get; set; }
 
+        public string UserId { get; set; }
+        public ApplicationUser User { get; set; }
+
         [Required]
         public string AlunoId { get; set; }
         public ApplicationUser Aluno { get; set; }
@@ -24,5 +27,9 @@ namespace ToniEmprega.Models
 
         [Required]
         public DateTime DataSubmissao { get; set; }
+
+        public ICollection<CandidaturaFicheiro> Ficheiros { get; set; } = new List<CandidaturaFicheiro>();
+
+        public ICollection<AvaliacaoProfessor> Avaliacoes { get; set; } = new List<AvaliacaoProfessor>();
     }
 }

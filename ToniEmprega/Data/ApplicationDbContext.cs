@@ -33,6 +33,10 @@ namespace ToniEmprega.Data
         {
             base.OnModelCreating(builder);
 
+            // ===============================
+            // SEED DATA
+            // ===============================
+
             builder.Entity<TipoUtilizador>().HasData(
                 new TipoUtilizador { Id = 1, Nome = "Aluno" },
                 new TipoUtilizador { Id = 2, Nome = "Empresa" },
@@ -45,7 +49,6 @@ namespace ToniEmprega.Data
                 new EstadoCandidatura { Id = 2, Nome = "Aceite" },
                 new EstadoCandidatura { Id = 3, Nome = "Rejeitada" }
             );
-
 
             builder.Entity<EstadoOferta>().HasData(
                 new EstadoOferta { Id = 1, Nome = "Ativa" },
@@ -64,6 +67,46 @@ namespace ToniEmprega.Data
                 new DecisaoAvaliacao { Id = 2, Nome = "Rejeitado" },
                 new DecisaoAvaliacao { Id = 3, Nome = "Rever" }
             );
+
+            // ===============================
+            // RELACIONAMENTOS (ANTI-CASCADE)
+            // ===============================
+
+            // Candidatura -> Oferta
+            builder.Entity<Candidatura>()
+                .HasOne(c => c.Oferta)
+                .WithMany(o => o.Candidaturas)
+                .HasForeignKey(c => c.OfertaId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Candidatura -> ApplicationUser
+            builder.Entity<Candidatura>()
+                .HasOne(c => c.User)
+                .WithMany(u => u.Candidaturas)
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // CandidaturaFicheiro -> Candidatura
+            builder.Entity<CandidaturaFicheiro>()
+                .HasOne(cf => cf.Candidatura)
+                .WithMany(c => c.Ficheiros)
+                .HasForeignKey(cf => cf.CandidaturaId)
+                .OnDelete(DeleteBehavior.Cascade); // aqui PODE ter cascade
+
+            // Oferta -> ApplicationUser
+            builder.Entity<Oferta>()
+                .HasOne(o => o.User)
+                .WithMany(u => u.Ofertas)
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // AvaliacaoProfessor -> Candidatura
+            builder.Entity<AvaliacaoProfessor>()
+                .HasOne(a => a.Candidatura)
+                .WithMany(c => c.Avaliacoes)
+                .HasForeignKey(a => a.CandidaturaId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
+
     }
 }
