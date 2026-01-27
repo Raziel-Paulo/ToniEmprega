@@ -1,0 +1,53 @@
+﻿@model IEnumerable<ToniEmprega.Models.Candidatura>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Oferta)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Aluno)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.EstadoCandidatura)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DataSubmissao)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Oferta.Descricao)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Aluno.Id)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.EstadoCandidatura.Nome)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DataSubmissao)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>
