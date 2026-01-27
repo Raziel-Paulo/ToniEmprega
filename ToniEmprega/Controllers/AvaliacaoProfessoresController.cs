@@ -19,14 +19,14 @@ namespace ToniEmprega.Controllers
             _context = context;
         }
 
-        // GET: AvaliacaoProfessors
+        // GET: AvaliacaoProfessores
         public async Task<IActionResult> Index()
         {
             var applicationDbContext = _context.AvaliacoesProfessor.Include(a => a.Candidatura).Include(a => a.Decisao).Include(a => a.Professor);
             return View(await applicationDbContext.ToListAsync());
         }
 
-        // GET: AvaliacaoProfessors/Details/5
+        // GET: AvaliacaoProfessores/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -47,7 +47,7 @@ namespace ToniEmprega.Controllers
             return View(avaliacaoProfessor);
         }
 
-        // GET: AvaliacaoProfessors/Create
+        // GET: AvaliacaoProfessores/Create
         public IActionResult Create()
         {
             ViewData["CandidaturaId"] = new SelectList(_context.Candidaturas, "Id", "AlunoId");
@@ -56,7 +56,7 @@ namespace ToniEmprega.Controllers
             return View();
         }
 
-        // POST: AvaliacaoProfessors/Create
+        // POST: AvaliacaoProfessores/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
@@ -75,7 +75,7 @@ namespace ToniEmprega.Controllers
             return View(avaliacaoProfessor);
         }
 
-        // GET: AvaliacaoProfessors/Edit/5
+        // GET: AvaliacaoProfessores/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -94,7 +94,7 @@ namespace ToniEmprega.Controllers
             return View(avaliacaoProfessor);
         }
 
-        // POST: AvaliacaoProfessors/Edit/5
+        // POST: AvaliacaoProfessores/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
@@ -132,7 +132,7 @@ namespace ToniEmprega.Controllers
             return View(avaliacaoProfessor);
         }
 
-        // GET: AvaliacaoProfessors/Delete/5
+        // GET: AvaliacaoProfessores/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -153,7 +153,7 @@ namespace ToniEmprega.Controllers
             return View(avaliacaoProfessor);
         }
 
-        // POST: AvaliacaoProfessors/Delete/5
+        // POST: AvaliacaoProfessores/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
