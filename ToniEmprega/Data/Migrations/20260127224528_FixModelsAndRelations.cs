@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ToniEmprega.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class Tabela : Migration
+    public partial class FixModelsAndRelations : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -136,6 +136,7 @@ namespace ToniEmprega.Data.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Titulo = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Descricao = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Requisitos = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
@@ -155,6 +156,11 @@ namespace ToniEmprega.Data.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Ofertas_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Ofertas_EstadosOferta_EstadoOfertaId",
                         column: x => x.EstadoOfertaId,
@@ -218,6 +224,7 @@ namespace ToniEmprega.Data.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     OfertaId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     AlunoId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     EstadoCandidaturaId = table.Column<int>(type: "int", nullable: false),
                     DataSubmissao = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -232,6 +239,11 @@ namespace ToniEmprega.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
+                        name: "FK_Candidaturas_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Candidaturas_EstadosCandidatura_EstadoCandidaturaId",
                         column: x => x.EstadoCandidaturaId,
                         principalTable: "EstadosCandidatura",
@@ -241,8 +253,7 @@ namespace ToniEmprega.Data.Migrations
                         name: "FK_Candidaturas_Ofertas_OfertaId",
                         column: x => x.OfertaId,
                         principalTable: "Ofertas",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -270,8 +281,7 @@ namespace ToniEmprega.Data.Migrations
                         name: "FK_AvaliacoesProfessor_Candidaturas_CandidaturaId",
                         column: x => x.CandidaturaId,
                         principalTable: "Candidaturas",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AvaliacoesProfessor_DecisoesAvaliacao_DecisaoId",
                         column: x => x.DecisaoId,
@@ -393,6 +403,11 @@ namespace ToniEmprega.Data.Migrations
                 column: "OfertaId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Candidaturas_UserId",
+                table: "Candidaturas",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CandidaturasFicheiros_CandidaturaId",
                 table: "CandidaturasFicheiros",
                 column: "CandidaturaId");
@@ -411,6 +426,11 @@ namespace ToniEmprega.Data.Migrations
                 name: "IX_Ofertas_TipoOfertaId",
                 table: "Ofertas",
                 column: "TipoOfertaId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Ofertas_UserId",
+                table: "Ofertas",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ValidacoesIdentidade_EstadoValidacaoDocumentoId",

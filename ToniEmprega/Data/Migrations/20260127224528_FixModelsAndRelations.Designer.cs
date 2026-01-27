@@ -12,8 +12,8 @@ using ToniEmprega.Data;
 namespace ToniEmprega.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260127222215_Tabela")]
-    partial class Tabela
+    [Migration("20260127224528_FixModelsAndRelations")]
+    partial class FixModelsAndRelations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -77,7 +77,7 @@ namespace ToniEmprega.Data.Migrations
                     b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.ApplicationUserClaim<string>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -102,7 +102,7 @@ namespace ToniEmprega.Data.Migrations
                     b.ToTable("AspNetUserClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.ApplicationUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
                         .HasMaxLength(128)
@@ -126,7 +126,7 @@ namespace ToniEmprega.Data.Migrations
                     b.ToTable("AspNetUserLogins", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.ApplicationUserRole<string>", b =>
                 {
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
@@ -141,7 +141,7 @@ namespace ToniEmprega.Data.Migrations
                     b.ToTable("AspNetUserRoles", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.ApplicationUserToken<string>", b =>
                 {
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
@@ -295,6 +295,10 @@ namespace ToniEmprega.Data.Migrations
                     b.Property<int>("OfertaId")
                         .HasColumnType("int");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AlunoId");
@@ -302,6 +306,8 @@ namespace ToniEmprega.Data.Migrations
                     b.HasIndex("EstadoCandidaturaId");
 
                     b.HasIndex("OfertaId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Candidaturas");
                 });
@@ -536,6 +542,10 @@ namespace ToniEmprega.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EmpresaId");
@@ -543,6 +553,8 @@ namespace ToniEmprega.Data.Migrations
                     b.HasIndex("EstadoOfertaId");
 
                     b.HasIndex("TipoOfertaId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Ofertas");
                 });
@@ -674,7 +686,7 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.ApplicationUserClaim<string>", b =>
                 {
                     b.HasOne("ToniEmprega.Models.ApplicationUser", null)
                         .WithMany()
@@ -683,7 +695,7 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.ApplicationUserLogin<string>", b =>
                 {
                     b.HasOne("ToniEmprega.Models.ApplicationUser", null)
                         .WithMany()
@@ -736,9 +748,9 @@ namespace ToniEmprega.Data.Migrations
             modelBuilder.Entity("ToniEmprega.Models.AvaliacaoProfessor", b =>
                 {
                     b.HasOne("ToniEmprega.Models.Candidatura", "Candidatura")
-                        .WithMany()
+                        .WithMany("Avaliacoes")
                         .HasForeignKey("CandidaturaId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("ToniEmprega.Models.DecisaoAvaliacao", "Decisao")
@@ -775,9 +787,15 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("ToniEmprega.Models.Oferta", "Oferta")
-                        .WithMany()
+                        .WithMany("Candidaturas")
                         .HasForeignKey("OfertaId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ToniEmprega.Models.ApplicationUser", "User")
+                        .WithMany("Candidaturas")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Aluno");
@@ -785,12 +803,14 @@ namespace ToniEmprega.Data.Migrations
                     b.Navigation("EstadoCandidatura");
 
                     b.Navigation("Oferta");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.CandidaturaFicheiro", b =>
                 {
                     b.HasOne("ToniEmprega.Models.Candidatura", "Candidatura")
-                        .WithMany()
+                        .WithMany("Ficheiros")
                         .HasForeignKey("CandidaturaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -818,11 +838,19 @@ namespace ToniEmprega.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ToniEmprega.Models.ApplicationUser", "User")
+                        .WithMany("Ofertas")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Empresa");
 
                     b.Navigation("EstadoOferta");
 
                     b.Navigation("TipoOferta");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.ValidacaoIdentidade", b =>
@@ -864,11 +892,27 @@ namespace ToniEmprega.Data.Migrations
                 {
                     b.Navigation("AvaliacoesProfessor");
 
+                    b.Navigation("Candidaturas");
+
                     b.Navigation("CandidaturasAluno");
+
+                    b.Navigation("Ofertas");
 
                     b.Navigation("OfertasEmpresa");
 
                     b.Navigation("ValidacoesIdentidade");
+                });
+
+            modelBuilder.Entity("ToniEmprega.Models.Candidatura", b =>
+                {
+                    b.Navigation("Avaliacoes");
+
+                    b.Navigation("Ficheiros");
+                });
+
+            modelBuilder.Entity("ToniEmprega.Models.Oferta", b =>
+                {
+                    b.Navigation("Candidaturas");
                 });
 #pragma warning restore 612, 618
         }
