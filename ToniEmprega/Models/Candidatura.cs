@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 
@@ -15,11 +16,11 @@ namespace ToniEmprega.Models
         public Oferta Oferta { get; set; }
 
         public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
+        public IdentityUser User { get; set; }
 
         [Required]
         public string AlunoId { get; set; }
-        public ApplicationUser Aluno { get; set; }
+        public IdentityUser Aluno { get; set; }
 
         [Required, ForeignKey("EstadoCandidatura")]
         public int EstadoCandidaturaId { get; set; }

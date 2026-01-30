@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Models;
 
 namespace ToniEmprega.Data
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    public class ApplicationDbContext
+        : IdentityDbContext<IdentityUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -82,7 +84,7 @@ namespace ToniEmprega.Data
             // Candidatura -> ApplicationUser
             builder.Entity<Candidatura>()
                 .HasOne(c => c.User)
-                .WithMany(u => u.Candidaturas)
+                .WithMany() // SEM navegação no IdentityUser
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
 
@@ -93,10 +95,9 @@ namespace ToniEmprega.Data
                 .HasForeignKey(cf => cf.CandidaturaId)
                 .OnDelete(DeleteBehavior.Cascade); // aqui PODE ter cascade
 
-            // Oferta -> ApplicationUser
             builder.Entity<Oferta>()
                 .HasOne(o => o.User)
-                .WithMany(u => u.Ofertas)
+                .WithMany() // SEM navegação no IdentityUser
                 .HasForeignKey(o => o.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
 

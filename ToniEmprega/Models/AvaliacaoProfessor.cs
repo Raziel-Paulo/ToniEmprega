@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 
@@ -16,7 +17,7 @@ namespace ToniEmprega.Models
 
         [Required]
         public string ProfessorId { get; set; }
-        public ApplicationUser Professor { get; set; }
+        public IdentityUser Professor { get; set; }
 
         [Required, ForeignKey("Decisao")]
         public int DecisaoId { get; set; }

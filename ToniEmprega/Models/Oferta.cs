@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 
@@ -11,7 +12,7 @@ namespace ToniEmprega.Models
         public int Id { get; set; }
 
         public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
+        public IdentityUser User { get; set; }
 
         [Required, StringLength(100)]
         public string Titulo { get; set; }
@@ -35,7 +36,7 @@ namespace ToniEmprega.Models
 
         [Required]
         public string EmpresaId { get; set; }
-        public ApplicationUser Empresa { get; set; }
+        public IdentityUser Empresa { get; set; }
 
         [Required]
         public DateTime DataCriacao { get; set; }

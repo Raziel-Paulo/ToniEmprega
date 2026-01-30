@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 
@@ -12,7 +13,7 @@ namespace ToniEmprega.Models
 
         [Required]
         public string UtilizadorId { get; set; }
-        public ApplicationUser Utilizador { get; set; }
+        public IdentityUser Utilizador { get; set; }
 
         [Required, ForeignKey("TipoValidacao")]
         public int TipoValidacaoId { get; set; }
