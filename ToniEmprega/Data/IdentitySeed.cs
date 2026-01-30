@@ -2,12 +2,13 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using ToniEmprega.Models;
 
 namespace ToniEmprega.Data
 {
     public class IdentitySeed
     {
-        public static async Task SeedRolesAsync(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+        public static async Task SeedRolesAsync(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             //Seed Roles
             await roleManager.CreateAsync(new IdentityRole(Enums.Roles.SuperAdmin.ToString()));
@@ -15,11 +16,11 @@ namespace ToniEmprega.Data
             await roleManager.CreateAsync(new IdentityRole(Enums.Roles.Moderator.ToString()));
             await roleManager.CreateAsync(new IdentityRole(Enums.Roles.Basic.ToString()));
         }
-        public static async Task SeedSuperAdminAsync(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+        public static async Task SeedSuperAdminAsync(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             //Seed Admin and SuoerAdmin User
             var email = "superadmin@gmail.com";
-            var defaultUser = new IdentityUser
+            var defaultUser = new ApplicationUser
             {
                 UserName = email,              // <-- use email as username
                 Email = email,
@@ -46,7 +47,7 @@ namespace ToniEmprega.Data
                 await userManager.AddToRoleAsync(user, Enums.Roles.SuperAdmin.ToString());
 
             email = "admin@gmail.com";
-            defaultUser = new IdentityUser
+            defaultUser = new ApplicationUser
             {
                 UserName = email,              // <-- use email as username
                 Email = email,
@@ -71,10 +72,10 @@ namespace ToniEmprega.Data
                 await userManager.AddToRoleAsync(user, Enums.Roles.Admin.ToString());
 
         }
-        public static async Task SeedBasicUserAsync(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+        public static async Task SeedBasicUserAsync(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             var email = "client1@gmail.com";
-            var defaultUser = new IdentityUser
+            var defaultUser = new ApplicationUser
             {
                 UserName = email,              // <-- use email as username
                 Email = email,
@@ -94,7 +95,7 @@ namespace ToniEmprega.Data
                 await userManager.AddToRoleAsync(user, Enums.Roles.Basic.ToString());
 
             email = "client2@gmail.com";
-            defaultUser = new IdentityUser
+            defaultUser = new ApplicationUser
             {
                 UserName = email,              // <-- use email as username
                 Email = email,

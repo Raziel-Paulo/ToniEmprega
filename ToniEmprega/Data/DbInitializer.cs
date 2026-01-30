@@ -28,8 +28,8 @@ namespace ToniEmprega.Data
                     return;
                 }
 
-                var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-                var roleManager = serviceScope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                var userManager = serviceScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+                var roleManager = serviceScope.ServiceProvider.GetRequiredService<RoleManager<ApplicationUser>>();
 
                 try
                 {
@@ -47,9 +47,9 @@ namespace ToniEmprega.Data
 
 
                     // Identity ...
-                    await IdentitySeed.SeedRolesAsync(userManager, roleManager);
-                    await IdentitySeed.SeedSuperAdminAsync(userManager, roleManager);
-                    await IdentitySeed.SeedBasicUserAsync(userManager, roleManager);
+                    await ApplicationUser.SeedRolesAsync(userManager, roleManager);
+                    await ApplicationUser.SeedSuperAdminAsync(userManager, roleManager);
+                    await ApplicationUser.SeedBasicUserAsync(userManager, roleManager);
 
 
                     // await ModelsSeed.SeedVendasAsync(context, logger);

@@ -6,7 +6,7 @@ using ToniEmprega.Models;
 namespace ToniEmprega.Data
 {
     public class ApplicationDbContext
-        : IdentityDbContext<IdentityUser>
+        : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -84,7 +84,7 @@ namespace ToniEmprega.Data
             // Candidatura -> ApplicationUser
             builder.Entity<Candidatura>()
                 .HasOne(c => c.User)
-                .WithMany() // SEM navegação no IdentityUser
+                .WithMany(u => u.Candidaturas)
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
 
@@ -95,9 +95,10 @@ namespace ToniEmprega.Data
                 .HasForeignKey(cf => cf.CandidaturaId)
                 .OnDelete(DeleteBehavior.Cascade); // aqui PODE ter cascade
 
+            // Oferta -> ApplicationUser
             builder.Entity<Oferta>()
                 .HasOne(o => o.User)
-                .WithMany() // SEM navegação no IdentityUser
+                .WithMany(u => u.Ofertas)
                 .HasForeignKey(o => o.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
 
