@@ -1,119 +1,121 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using ToniEmprega.Models;
 
 namespace ToniEmprega.Data
 {
-    public class IdentitySeed
+    public static class IdentitySeed
     {
-        public static async Task SeedRolesAsync(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        // ---------------------------
+        // ROLES
+        // ---------------------------
+        public static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            //Seed Roles
-            await roleManager.CreateAsync(new IdentityRole(Enums.Roles.SuperAdmin.ToString()));
-            await roleManager.CreateAsync(new IdentityRole(Enums.Roles.Admin.ToString()));
-            await roleManager.CreateAsync(new IdentityRole(Enums.Roles.Moderator.ToString()));
-            await roleManager.CreateAsync(new IdentityRole(Enums.Roles.Basic.ToString()));
+            foreach (var role in Enum.GetNames(typeof(Enums.Roles)))
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                }
+            }
         }
-        public static async Task SeedSuperAdminAsync(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+
+        // ---------------------------
+        // SUPER ADMIN + ADMIN
+        // ---------------------------
+        public static async Task SeedAdminsAsync(
+            UserManager<ApplicationUser> userManager,
+            ApplicationDbContext context)
         {
-            //Seed Admin and SuoerAdmin User
-            var email = "superadmin@gmail.com";
-            var defaultUser = new ApplicationUser
-            {
-                UserName = email,              // <-- use email as username
-                Email = email,
-                EmailConfirmed = true,
-                PhoneNumberConfirmed = true
-            };
+            var tipoSuperAdmin = await context.TiposUtilizador
+                .FirstAsync(t => t.Nome == "SuperAdmin");
 
-            var user = await userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                var createResult = await userManager.CreateAsync(defaultUser, "123Pa$$word.");
-                if (!createResult.Succeeded) return;
-                user = await userManager.FindByEmailAsync(email);
-            }
+            var tipoAdmin = await context.TiposUtilizador
+                .FirstAsync(t => t.Nome == "Admin");
 
-            // Ensure roles assigned (idempotent)
-            if (!await userManager.IsInRoleAsync(user, Enums.Roles.Basic.ToString()))
-                await userManager.AddToRoleAsync(user, Enums.Roles.Basic.ToString());
-            if (!await userManager.IsInRoleAsync(user, Enums.Roles.Moderator.ToString()))
-                await userManager.AddToRoleAsync(user, Enums.Roles.Moderator.ToString());
-            if (!await userManager.IsInRoleAsync(user, Enums.Roles.Admin.ToString()))
-                await userManager.AddToRoleAsync(user, Enums.Roles.Admin.ToString());
-            if (!await userManager.IsInRoleAsync(user, Enums.Roles.SuperAdmin.ToString()))
-                await userManager.AddToRoleAsync(user, Enums.Roles.SuperAdmin.ToString());
+            await CreateUserIfNotExists(
+                userManager,
+                "superadmin@gmail.com",
+                tipoSuperAdmin.Id,
+                new[]
+                {
+                    Enums.Roles.Basic,
+                    Enums.Roles.Moderator,
+                    Enums.Roles.Admin,
+                    Enums.Roles.SuperAdmin
+                });
 
-            email = "admin@gmail.com";
-            defaultUser = new ApplicationUser
-            {
-                UserName = email,              // <-- use email as username
-                Email = email,
-                EmailConfirmed = true,
-                PhoneNumberConfirmed = true
-            };
-
-            user = await userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                var createResult = await userManager.CreateAsync(defaultUser, "123Pa$$word.");
-                if (!createResult.Succeeded) return;
-                user = await userManager.FindByEmailAsync(email);
-            }
-
-            // Ensure roles assigned (idempotent)
-            if (!await userManager.IsInRoleAsync(user, Enums.Roles.Basic.ToString()))
-                await userManager.AddToRoleAsync(user, Enums.Roles.Basic.ToString());
-            if (!await userManager.IsInRoleAsync(user, Enums.Roles.Moderator.ToString()))
-                await userManager.AddToRoleAsync(user, Enums.Roles.Moderator.ToString());
-            if (!await userManager.IsInRoleAsync(user, Enums.Roles.Admin.ToString()))
-                await userManager.AddToRoleAsync(user, Enums.Roles.Admin.ToString());
-
+            await CreateUserIfNotExists(
+                userManager,
+                "admin@gmail.com",
+                tipoAdmin.Id,
+                new[]
+                {
+                    Enums.Roles.Basic,
+                    Enums.Roles.Moderator,
+                    Enums.Roles.Admin
+                });
         }
-        public static async Task SeedBasicUserAsync(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+
+        // ---------------------------
+        // BASIC USERS
+        // ---------------------------
+        public static async Task SeedBasicUsersAsync(
+            UserManager<ApplicationUser> userManager,
+            ApplicationDbContext context)
         {
-            var email = "client1@gmail.com";
-            var defaultUser = new ApplicationUser
-            {
-                UserName = email,              // <-- use email as username
-                Email = email,
-                EmailConfirmed = true,
-                PhoneNumberConfirmed = true
-            };
+            var tipoBasic = await context.TiposUtilizador
+                .FirstAsync(t => t.Nome == "Basic");
 
+            await CreateUserIfNotExists(
+                userManager,
+                "client1@gmail.com",
+                tipoBasic.Id,
+                new[] { Enums.Roles.Basic });
+
+            await CreateUserIfNotExists(
+                userManager,
+                "client2@gmail.com",
+                tipoBasic.Id,
+                new[] { Enums.Roles.Basic });
+        }
+
+        // ---------------------------
+        // HELPER
+        // ---------------------------
+        private static async Task CreateUserIfNotExists(
+            UserManager<ApplicationUser> userManager,
+            string email,
+            int tipoUtilizadorId,
+            Enums.Roles[] roles)
+        {
             var user = await userManager.FindByEmailAsync(email);
+
             if (user == null)
             {
-                var createResult = await userManager.CreateAsync(defaultUser, "123Pa$$word.");
-                if (!createResult.Succeeded) return;
-                user = await userManager.FindByEmailAsync(email);
+                user = new ApplicationUser
+                {
+                    UserName = email,
+                    Email = email,
+                    EmailConfirmed = true,
+                    PhoneNumberConfirmed = true,
+                    TipoUtilizadorId = tipoUtilizadorId
+                };
+
+                var result = await userManager.CreateAsync(user, "123Pa$$word.");
+                if (!result.Succeeded)
+                    throw new Exception($"Erro ao criar utilizador {email}");
             }
 
-            if (!await userManager.IsInRoleAsync(user, Enums.Roles.Basic.ToString()))
-                await userManager.AddToRoleAsync(user, Enums.Roles.Basic.ToString());
-
-            email = "client2@gmail.com";
-            defaultUser = new ApplicationUser
+            foreach (var role in roles)
             {
-                UserName = email,              // <-- use email as username
-                Email = email,
-                EmailConfirmed = true,
-                PhoneNumberConfirmed = true
-            };
-
-            user = await userManager.FindByEmailAsync(email);
-            if (user == null)
-            {
-                var createResult = await userManager.CreateAsync(defaultUser, "123Pa$$word.");
-                if (!createResult.Succeeded) return;
-                user = await userManager.FindByEmailAsync(email);
+                if (!await userManager.IsInRoleAsync(user, role.ToString()))
+                {
+                    await userManager.AddToRoleAsync(user, role.ToString());
+                }
             }
-
-            if (!await userManager.IsInRoleAsync(user, Enums.Roles.Basic.ToString()))
-                await userManager.AddToRoleAsync(user, Enums.Roles.Basic.ToString());
-
         }
     }
 }
