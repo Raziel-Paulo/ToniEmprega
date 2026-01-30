@@ -12,32 +12,29 @@ namespace ToniEmprega.Data
     public class DBInitializer
     {
         public static async Task SeedData(
-            IApplicationBuilder applicationBuilder,
-            IServiceProvider services,
+            IApplicationBuilder app,
             ILogger logger)
         {
-            using (var serviceScope = applicationBuilder.ApplicationServices.CreateScope())
+            using (var scope = app.ApplicationServices.CreateScope())
             {
-                var context = serviceScope.ServiceProvider
-                    .GetRequiredService<ApplicationDbContext>();
+                var services = scope.ServiceProvider;
 
-                var userManager = serviceScope.ServiceProvider
-                    .GetRequiredService<UserManager<ApplicationUser>>();
-
-                var roleManager = serviceScope.ServiceProvider
-                    .GetRequiredService<RoleManager<IdentityRole>>();
+                var context = services.GetRequiredService<ApplicationDbContext>();
+                var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+                var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
                 try
                 {
-                    await context.Database.EnsureCreatedAsync();
+                    await context.Database.MigrateAsync();
 
-                    if (await context.Users.AnyAsync())
-                        return;
+                    // 1️⃣ Roles
+                    await IdentitySeed.SeedRolesAsync(roleManager);
 
-                    // ✅ CHAMAR A CLASSE CERTA
-                    await IdentitySeed.SeedRolesAsync(userManager, roleManager);
-                    await IdentitySeed.SeedSuperAdminAsync(userManager, roleManager);
-                    await IdentitySeed.SeedBasicUserAsync(userManager, roleManager);
+                    // 2️⃣ Admins
+                    await IdentitySeed.SeedAdminsAsync(userManager, context);
+
+                    // 3️⃣ Users básicos
+                    await IdentitySeed.SeedBasicUsersAsync(userManager, context);
                 }
                 catch (Exception ex)
                 {

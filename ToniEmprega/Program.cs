@@ -71,14 +71,11 @@ app.MapRazorPages();
 
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
+    var logger = scope.ServiceProvider
+        .GetRequiredService<ILogger<Program>>();
 
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
-    await IdentitySeed.SeedRolesAsync(userManager, roleManager);
-    await IdentitySeed.SeedSuperAdminAsync(userManager, roleManager);
-    await IdentitySeed.SeedBasicUserAsync(userManager, roleManager);
+    await DBInitializer.SeedData(app, logger);
 }
+
 
 app.Run();
