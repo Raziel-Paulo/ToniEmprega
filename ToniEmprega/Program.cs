@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
+using ToniEmprega.Models;
+using ToniEmprega.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,11 +16,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => {
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
     options.SignIn.RequireConfirmedAccount = false;
 })
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    // .AddRoles<IdentityRole>()
     .AddDefaultTokenProviders()
     .AddDefaultUI();
 
@@ -68,7 +69,16 @@ app.MapRazorPages();
 
 //Seed database
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
 
-await DBInitializer.SeedData(app, app.Services, app.Logger);
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+    await IdentitySeed.SeedRolesAsync(userManager, roleManager);
+    await IdentitySeed.SeedSuperAdminAsync(userManager, roleManager);
+    await IdentitySeed.SeedBasicUserAsync(userManager, roleManager);
+}
 
 app.Run();

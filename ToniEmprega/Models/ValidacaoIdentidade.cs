@@ -13,7 +13,7 @@ namespace ToniEmprega.Models
 
         [Required]
         public string UtilizadorId { get; set; }
-        public IdentityUser Utilizador { get; set; }
+        public ApplicationUser Utilizador { get; set; }
 
         [Required, ForeignKey("TipoValidacao")]
         public int TipoValidacaoId { get; set; }

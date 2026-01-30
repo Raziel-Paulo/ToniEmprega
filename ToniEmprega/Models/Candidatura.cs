@@ -16,11 +16,11 @@ namespace ToniEmprega.Models
         public Oferta Oferta { get; set; }
 
         public string UserId { get; set; }
-        public IdentityUser User { get; set; }
+        public ApplicationUser User { get; set; }
 
         [Required]
         public string AlunoId { get; set; }
-        public IdentityUser Aluno { get; set; }
+        public ApplicationUser Aluno { get; set; }
 
         [Required, ForeignKey("EstadoCandidatura")]
         public int EstadoCandidaturaId { get; set; }

@@ -17,7 +17,7 @@ namespace ToniEmprega.Models
 
         [Required]
         public string ProfessorId { get; set; }
-        public IdentityUser Professor { get; set; }
+        public ApplicationUser Professor { get; set; }
 
         [Required, ForeignKey("Decisao")]
         public int DecisaoId { get; set; }

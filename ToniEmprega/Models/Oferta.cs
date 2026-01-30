@@ -12,7 +12,7 @@ namespace ToniEmprega.Models
         public int Id { get; set; }
 
         public string UserId { get; set; }
-        public IdentityUser User { get; set; }
+        public ApplicationUser User { get; set; }
 
         [Required, StringLength(100)]
         public string Titulo { get; set; }
@@ -36,7 +36,7 @@ namespace ToniEmprega.Models
 
         [Required]
         public string EmpresaId { get; set; }
-        public IdentityUser Empresa { get; set; }
+        public ApplicationUser Empresa { get; set; }
 
         [Required]
         public DateTime DataCriacao { get; set; }
