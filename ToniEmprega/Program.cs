@@ -1,42 +1,36 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Localization;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using ToniEmprega.Data;
 using ToniEmprega.Models;
+using ToniEmprega.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// MVC
+builder.Services.AddControllersWithViews();
 
+// 🔥 DbContext do Identity
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false;
-})
+// 🔥 IDENTITY (ISTO É O QUE TE FALTA)
+builder.Services
+    .AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders()
-    .AddDefaultUI();
+    .AddDefaultTokenProviders();
 
-// Configure supported cultures and localization options
-builder.Services.Configure<RequestLocalizationOptions>(options =>
+// 🔥 SESSION
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
 {
-    options.DefaultRequestCulture = new RequestCulture(culture: "pt-PT", uiCulture: "pt-PT");
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseMigrationsEndPoint();
-}
-else
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
@@ -47,34 +41,14 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication();
-app.UseAuthorization();
 app.UseSession();
 
-app.MapControllerRoute(
-    name: "Admin",
-    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+// 🔥 Authentication TEM de vir antes do Authorization
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.MapRazorPages();
-
-// ---------- Seed database once at startup ----------
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var logger = services.GetRequiredService<ILogger<Program>>();
-
-    await IdentitySeed.SeedRolesAsync(roleManager, logger);
-    await IdentitySeed.SeedAdminsAsync(userManager, context, logger);
-    await IdentitySeed.SeedBasicUsersAsync(userManager, context, logger);
-}
-// ---------------------------------------------------
 
 app.Run();
