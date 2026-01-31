@@ -65,18 +65,16 @@ app.MapRazorPages();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     var logger = services.GetRequiredService<ILogger<Program>>();
 
-    try
-    {
-        // DBInitializer will create migrations and seed in the right order
-        await DBInitializer.SeedData(app, logger);
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Erro durante o seed inicial.");
-        throw;
-    }
+    await IdentitySeed.SeedTiposUtilizadorAsync(context, logger);   // 1º
+    await IdentitySeed.SeedRolesAsync(roleManager, logger);        // 2º
+    await IdentitySeed.SeedAdminsAsync(userManager, context, logger); // 3º
+    await IdentitySeed.SeedBasicUsersAsync(userManager, context, logger); // 4º
 }
 // ---------------------------------------------------
 

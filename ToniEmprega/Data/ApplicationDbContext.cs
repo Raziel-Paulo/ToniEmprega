@@ -43,7 +43,10 @@ namespace ToniEmprega.Data
                 new TipoUtilizador { Id = 1, Nome = "Aluno" },
                 new TipoUtilizador { Id = 2, Nome = "Empresa" },
                 new TipoUtilizador { Id = 3, Nome = "Professor" },
-                new TipoUtilizador { Id = 4, Nome = "Admin" }
+                new TipoUtilizador { Id = 4, Nome = "Basic" },
+                new TipoUtilizador { Id = 5, Nome = "Moderator" },
+                new TipoUtilizador { Id = 6, Nome = "Admin" },
+                new TipoUtilizador { Id = 7, Nome = "SuperAdmin" }
             );
 
             builder.Entity<EstadoCandidatura>().HasData(

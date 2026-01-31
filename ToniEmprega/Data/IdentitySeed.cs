@@ -67,7 +67,7 @@ namespace ToniEmprega.Data
             var tipoAdmin = await context.TiposUtilizador.FirstOrDefaultAsync(t => t.Nome == "Admin");
 
             if (tipoSuperAdmin == null || tipoAdmin == null)
-            {
+              {
                 logger?.LogError("TiposUtilizador necessários (SuperAdmin/Admin) não existem. Executa SeedTiposUtilizador primeiro.");
                 throw new Exception("TiposUtilizador 'SuperAdmin' ou 'Admin' não encontrados.");
             }
