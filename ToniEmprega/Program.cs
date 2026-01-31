@@ -1,38 +1,34 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
-using ToniEmprega.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options => {
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
     options.SignIn.RequireConfirmedAccount = false;
 })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders()
     .AddDefaultUI();
 
-
 // Configure supported cultures and localization options
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
-
-    // State what the default culture for your application is. This will be used if no specific culture
-    // can be determined for a given request.
     options.DefaultRequestCulture = new RequestCulture(culture: "pt-PT", uiCulture: "pt-PT");
-
 });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -43,10 +39,8 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
@@ -67,15 +61,23 @@ app.MapControllerRoute(
 
 app.MapRazorPages();
 
-//Seed database
-
+// ---------- Seed database once at startup ----------
 using (var scope = app.Services.CreateScope())
 {
-    var logger = scope.ServiceProvider
-        .GetRequiredService<ILogger<Program>>();
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
 
-    await DBInitializer.SeedData(app, logger);
+    try
+    {
+        // DBInitializer will create migrations and seed in the right order
+        await DBInitializer.SeedData(app, logger);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Erro durante o seed inicial.");
+        throw;
+    }
 }
-
+// ---------------------------------------------------
 
 app.Run();
