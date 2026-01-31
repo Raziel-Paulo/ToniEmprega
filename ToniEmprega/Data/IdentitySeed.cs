@@ -11,78 +11,55 @@ namespace ToniEmprega.Data
     public static class IdentitySeed
     {
         // ---------------------------
-        // TIPOSUTILIZADOR (pai das FKs)
-        // ---------------------------
-        public static async Task SeedTiposUtilizadorAsync(ApplicationDbContext context, ILogger logger = null)
-        {
-            if (await context.TiposUtilizador.AnyAsync())
-            {
-                logger?.LogInformation("TiposUtilizador já seeded.");
-                return;
-            }
-
-            // Ajusta os nomes conforme o teu domínio/enums
-            context.TiposUtilizador.AddRange(
-                new TipoUtilizador { Nome = "Basic" },
-                new TipoUtilizador { Nome = "Moderator" },
-                new TipoUtilizador { Nome = "Admin" },
-                new TipoUtilizador { Nome = "SuperAdmin" }
-            );
-
-            await context.SaveChangesAsync();
-            logger?.LogInformation("Seed de TiposUtilizador concluído.");
-        }
-
-        // ---------------------------
         // ROLES
         // ---------------------------
-        public static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager, ILogger logger = null)
+        public static async Task SeedRolesAsync(
+            RoleManager<IdentityRole> roleManager,
+            ILogger logger)
         {
-            foreach (var roleName in Enum.GetNames(typeof(Enums.Roles)))
+            foreach (var role in Enum.GetNames(typeof(Enums.Roles)))
             {
-                if (!await roleManager.RoleExistsAsync(roleName))
+                if (!await roleManager.RoleExistsAsync(role))
                 {
-                    var res = await roleManager.CreateAsync(new IdentityRole(roleName));
-                    if (!res.Succeeded)
+                    var result = await roleManager.CreateAsync(new IdentityRole(role));
+                    if (!result.Succeeded)
                     {
-                        var errors = string.Join(", ", res.Errors.Select(e => e.Description));
-                        logger?.LogError("Erro ao criar role {role}: {errors}", roleName, errors);
-                        throw new Exception($"Erro ao criar role {roleName}: {errors}");
+                        throw new Exception($"Erro a criar role {role}");
                     }
-                    logger?.LogInformation("Role criada: {role}", roleName);
+
+                    logger.LogInformation("Role criada: {role}", role);
                 }
             }
         }
 
         // ---------------------------
-        // SUPERADMIN + ADMIN
+        // ADMINS
         // ---------------------------
         public static async Task SeedAdminsAsync(
             UserManager<ApplicationUser> userManager,
             ApplicationDbContext context,
-            ILogger logger = null)
+            ILogger logger)
         {
-            // Garante que existem os tipos necessários
-            var tipoSuperAdmin = await context.TiposUtilizador.FirstOrDefaultAsync(t => t.Nome == "SuperAdmin");
-            var tipoAdmin = await context.TiposUtilizador.FirstOrDefaultAsync(t => t.Nome == "Admin");
+            var tipos = await context.TiposUtilizador
+                .Where(t => t.Nome == "SuperAdmin" || t.Nome == "Admin")
+                .ToListAsync();
 
-            if (tipoSuperAdmin == null || tipoAdmin == null)
-              {
-                logger?.LogError("TiposUtilizador necessários (SuperAdmin/Admin) não existem. Executa SeedTiposUtilizador primeiro.");
-                throw new Exception("TiposUtilizador 'SuperAdmin' ou 'Admin' não encontrados.");
-            }
+            var superAdminTipo = tipos.First(t => t.Nome == "SuperAdmin");
+            var adminTipo = tipos.First(t => t.Nome == "Admin");
 
-            await CreateUserIfNotExists(userManager,
-                email: "superadmin@gmail.com",
-                tipoUtilizadorId: tipoSuperAdmin.Id,
-                roles: new[] { Enums.Roles.Basic, Enums.Roles.Moderator, Enums.Roles.Admin, Enums.Roles.SuperAdmin },
-                logger: logger);
+            await CreateUserAsync(
+                userManager,
+                "superadmin@gmail.com",
+                superAdminTipo.Id,
+                new[] { Enums.Roles.Basic, Enums.Roles.Moderator, Enums.Roles.Admin, Enums.Roles.SuperAdmin },
+                logger);
 
-            await CreateUserIfNotExists(userManager,
-                email: "admin@gmail.com",
-                tipoUtilizadorId: tipoAdmin.Id,
-                roles: new[] { Enums.Roles.Basic, Enums.Roles.Moderator, Enums.Roles.Admin },
-                logger: logger);
+            await CreateUserAsync(
+                userManager,
+                "admin@gmail.com",
+                adminTipo.Id,
+                new[] { Enums.Roles.Basic, Enums.Roles.Moderator, Enums.Roles.Admin },
+                logger);
         }
 
         // ---------------------------
@@ -91,39 +68,38 @@ namespace ToniEmprega.Data
         public static async Task SeedBasicUsersAsync(
             UserManager<ApplicationUser> userManager,
             ApplicationDbContext context,
-            ILogger logger = null)
+            ILogger logger)
         {
-            var tipoBasic = await context.TiposUtilizador.FirstOrDefaultAsync(t => t.Nome == "Basic");
-            if (tipoBasic == null)
-            {
-                logger?.LogError("TipoUtilizador 'Basic' não existe.");
-                throw new Exception("TipoUtilizador 'Basic' não encontrado.");
-            }
+            var basicTipo = await context.TiposUtilizador
+                .SingleAsync(t => t.Nome == "Basic");
 
-            await CreateUserIfNotExists(userManager,
-                email: "client1@gmail.com",
-                tipoUtilizadorId: tipoBasic.Id,
-                roles: new[] { Enums.Roles.Basic },
-                logger: logger);
+            await CreateUserAsync(
+                userManager,
+                "client1@gmail.com",
+                basicTipo.Id,
+                new[] { Enums.Roles.Basic },
+                logger);
 
-            await CreateUserIfNotExists(userManager,
-                email: "client2@gmail.com",
-                tipoUtilizadorId: tipoBasic.Id,
-                roles: new[] { Enums.Roles.Basic },
-                logger: logger);
+            await CreateUserAsync(
+                userManager,
+                "client2@gmail.com",
+                basicTipo.Id,
+                new[] { Enums.Roles.Basic },
+                logger);
         }
 
         // ---------------------------
         // HELPER
         // ---------------------------
-        private static async Task CreateUserIfNotExists(
+        private static async Task CreateUserAsync(
             UserManager<ApplicationUser> userManager,
             string email,
             int tipoUtilizadorId,
             Enums.Roles[] roles,
-            ILogger logger = null)
+            ILogger logger)
         {
             var user = await userManager.FindByEmailAsync(email);
+
             if (user == null)
             {
                 user = new ApplicationUser
@@ -131,38 +107,24 @@ namespace ToniEmprega.Data
                     UserName = email,
                     Email = email,
                     EmailConfirmed = true,
-                    PhoneNumberConfirmed = true,
                     TipoUtilizadorId = tipoUtilizadorId
                 };
 
                 var result = await userManager.CreateAsync(user, "123Pa$$word.");
                 if (!result.Succeeded)
                 {
-                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                    logger?.LogError("Erro ao criar user {email}: {errors}", email, errors);
-                    throw new Exception($"Erro ao criar utilizador {email}: {errors}");
+                    throw new Exception($"Erro a criar user {email}");
                 }
 
-                logger?.LogInformation("User criado: {email}", email);
-            }
-            else
-            {
-                logger?.LogInformation("User já existe: {email}", email);
+                logger.LogInformation("User criado: {email}", email);
             }
 
-            // Garantir roles do user (idempotente)
             foreach (var role in roles.Select(r => r.ToString()))
             {
                 if (!await userManager.IsInRoleAsync(user, role))
                 {
-                    var addRoleResult = await userManager.AddToRoleAsync(user, role);
-                    if (!addRoleResult.Succeeded)
-                    {
-                        var errors = string.Join(", ", addRoleResult.Errors.Select(e => e.Description));
-                        logger?.LogError("Erro ao adicionar role {role} a {email}: {errors}", role, email, errors);
-                        throw new Exception($"Erro ao adicionar role {role} a {email}: {errors}");
-                    }
-                    logger?.LogInformation("Adicionada role {role} a {email}", role, email);
+                    await userManager.AddToRoleAsync(user, role);
+                    logger.LogInformation("Role {role} atribuída a {email}", role, email);
                 }
             }
         }

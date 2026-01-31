@@ -71,10 +71,9 @@ using (var scope = app.Services.CreateScope())
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     var logger = services.GetRequiredService<ILogger<Program>>();
 
-    await IdentitySeed.SeedTiposUtilizadorAsync(context, logger);   // 1º
-    await IdentitySeed.SeedRolesAsync(roleManager, logger);        // 2º
-    await IdentitySeed.SeedAdminsAsync(userManager, context, logger); // 3º
-    await IdentitySeed.SeedBasicUsersAsync(userManager, context, logger); // 4º
+    await IdentitySeed.SeedRolesAsync(roleManager, logger);
+    await IdentitySeed.SeedAdminsAsync(userManager, context, logger);
+    await IdentitySeed.SeedBasicUsersAsync(userManager, context, logger);
 }
 // ---------------------------------------------------
 

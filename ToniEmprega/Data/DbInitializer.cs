@@ -11,42 +11,33 @@ namespace ToniEmprega.Data
 {
     public static class DBInitializer
     {
-        /// <summary>
-        /// Orquestra a migração e o seed das tabelas base, roles e users.
-        /// Chamar apenas uma vez (por exemplo do Program.cs).
-        /// </summary>
-        public static async Task SeedData(IApplicationBuilder app, ILogger logger)
+        public static async Task SeedAsync(IApplicationBuilder app, ILogger logger)
         {
-            using (var scope = app.ApplicationServices.CreateScope())
+            using var scope = app.ApplicationServices.CreateScope();
+            var services = scope.ServiceProvider;
+
+            var context = services.GetRequiredService<ApplicationDbContext>();
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+            try
             {
-                var services = scope.ServiceProvider;
+                // 1️⃣ Base de dados + HasData
+                await context.Database.MigrateAsync();
 
-                var context = services.GetRequiredService<ApplicationDbContext>();
-                var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-                var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+                // 2️⃣ Roles
+                await IdentitySeed.SeedRolesAsync(roleManager, logger);
 
-                try
-                {
-                    // Aplica migrations (ou EnsureCreated se preferires).
-                    await context.Database.MigrateAsync();
+                // 3️⃣ Admins
+                await IdentitySeed.SeedAdminsAsync(userManager, context, logger);
 
-                    // 1) Seed da tabela pai (TiposUtilizador) — obrigatório antes de criar users
-                    await IdentitySeed.SeedTiposUtilizadorAsync(context, logger);
-
-                    // 2) Roles (idempotente)
-                    await IdentitySeed.SeedRolesAsync(roleManager, logger);
-
-                    // 3) Admins (SuperAdmin + Admin)
-                    await IdentitySeed.SeedAdminsAsync(userManager, context, logger);
-
-                    // 4) Basic users
-                    await IdentitySeed.SeedBasicUsersAsync(userManager, context, logger);
-                }
-                catch (Exception ex)
-                {
-                    logger?.LogError(ex, "Erro ao fazer seed da base de dados");
-                    throw;
-                }
+                // 4️⃣ Users básicos
+                await IdentitySeed.SeedBasicUsersAsync(userManager, context, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Erro fatal no DBInitializer");
+                throw;
             }
         }
     }
