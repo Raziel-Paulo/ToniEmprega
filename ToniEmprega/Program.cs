@@ -8,16 +8,20 @@ var builder = WebApplication.CreateBuilder(args);
 // MVC
 builder.Services.AddControllersWithViews();
 
+// 🔥 RAZOR PAGES (NECESSÁRIO PARA IDENTITY UI)
+builder.Services.AddRazorPages();
+
 // 🔥 DbContext do Identity
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 🔥 IDENTITY (ISTO É O QUE TE FALTA)
+// 🔥 IDENTITY
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+    .AddDefaultTokenProviders()
+    .AddDefaultUI();
 
 // 🔥 SESSION
 builder.Services.AddDistributedMemoryCache();
@@ -43,12 +47,15 @@ app.UseRouting();
 
 app.UseSession();
 
-// 🔥 Authentication TEM de vir antes do Authorization
+// 🔥 Authentication antes de Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// 🔥 MAPEAR RAZOR PAGES (CRUCIAL)
+app.MapRazorPages();
 
 app.Run();
