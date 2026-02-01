@@ -1,22 +1,177 @@
-html {
-  font-size: 14px;
+:root {
+    --bg: #0B0E13;
+    --surface: #0F1724;
+    --accent: #2B7BFF;
+    --text: #E6EEF8;
+    --muted: #A9BACD;
+    --radius: 8px;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+* {
+    box-sizing: border-box
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+body.app-root {
+    font-family: Inter,system-ui,Segoe UI,Arial;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+.app-header {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    background: linear-gradient(180deg, rgba(15,23,36,0.5), transparent);
 }
 
-body {
-  margin-bottom: 60px;
+.brand {
+    font-weight: 600
+}
+
+.search input {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 10px 12px;
+    border-radius: 6px;
+    color: var(--text)
+}
+
+.icon-btn {
+    background: transparent;
+    border: 0;
+    color: var(--text);
+    font-size: 18px
+}
+
+.app-body {
+    display: grid;
+    grid-template-columns: 240px 1fr 320px;
+    gap: 20px;
+    padding: 20px
+}
+
+.sidebar {
+    background: transparent
+}
+
+    .sidebar nav ul {
+        list-style: none;
+        padding: 0
+    }
+
+    .sidebar a {
+        display: block;
+        padding: 10px;
+        color: var(--muted);
+        text-decoration: none
+    }
+
+.main-content {
+    min-height: 60vh
+}
+
+.right-rail {
+    display: block
+}
+
+.card {
+    background: var(--surface);
+    padding: 16px;
+    border-radius: var(--radius);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5)
+}
+
+.snapshot {
+    display: flex;
+    gap: 12px
+}
+
+.offer-list {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: 12px
+}
+
+.offer-card {
+    background: var(--surface);
+    padding: 14px;
+    border-radius: var(--radius);
+}
+
+.card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px
+}
+
+.btn-primary {
+    background: var(--accent);
+    border: 0;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.06);
+    color: var(--muted);
+    padding: 8px 10px;
+    border-radius: 6px
+}
+
+.btn-ghost {
+    background: transparent;
+    border: 0;
+    color: var(--muted)
+}
+
+.fab {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    font-size: 28px
+}
+
+.badge {
+    background: #22334d;
+    padding: 6px 8px;
+    border-radius: 6px;
+    color: var(--muted)
+}
+
+.sr-only {
+    position: absolute;
+    left: -10000px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden
+}
+
+
+/* Focus styles for accessibility */
+:focus {
+    outline: 3px solid rgba(43,123,255,0.25);
+    outline-offset: 2px
+}
+
+
+@media (max-width:1023px) {
+    .app-body {
+        grid-template-columns: 200px 1fr
+    }
+
+    .offer-list {
+        grid-template-columns: 1fr
+    }
 }

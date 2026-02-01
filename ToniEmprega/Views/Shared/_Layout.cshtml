@@ -1,50 +1,59 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@using ToniEmprega.Models
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+<!doctype html>
+<html lang="pt-PT">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ToniEmprega</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/ToniEmprega.styles.css" asp-append-version="true" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewBag.Title - ToniEmprega</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <script src="~/js/site.js" defer></script>
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ToniEmprega</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <partial name="_LoginPartial" />
-                </div>
+<body class="app-root">
+    <header class="app-header" role="banner">
+        <div class="brand">ToniEmprega</div>
+        <div class="search" role="search">
+            <input aria-label="Pesquisar ofertas e empresas" placeholder="Pesquisar ofertas, empresas..." />
+        </div>
+        <div class="header-actions">
+            <button class="icon-btn" aria-label="Notificações">🔔</button>
+            <div class="avatar" aria-haspopup="true" aria-expanded="false">
+                <button class="avatar-btn" aria-label="Conta do utilizador">@HttpContextAccessor.HttpContext?.User?.Identity?.Name</button>
             </div>
-        </nav>
+        </div>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+
+    <div class="app-body">
+        <aside class="sidebar" role="navigation" aria-label="Menu principal">
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/offers">Ofertas</a></li>
+                    <li><a href="/applications">Candidaturas</a></li>
+                    <li><a href="/messages">Mensagens</a></li>
+                    <li><a href="/documents">Documentos</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+
+        <main class="main-content" role="main">
             @RenderBody()
         </main>
+
+
+        <aside class="right-rail" role="complementary">
+            <section>
+                <h3>Ajuda</h3>
+                <p>Precisa de ajuda? Contacte a equipa.</p>
+            </section>
+        </aside>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - ToniEmprega - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
+
+    <footer class="app-footer" role="contentinfo">
+        <small>© ToniEmprega — Versão 1.0</small>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

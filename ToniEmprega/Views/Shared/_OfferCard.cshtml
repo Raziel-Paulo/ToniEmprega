@@ -1,0 +1,19 @@
+﻿@model ToniEmprega.Models.Offer
+<article class="offer-card" role="listitem">
+    <header>
+        <h3>@Model.Title</h3>
+        <small>@Model.Company — @Model.Location</small>
+    </header>
+    <p>@Model.Summary</p>
+    <div class="card-actions">
+        <form method="post" asp-controller="Home" asp-action="Apply" class="apply-form" onsubmit="return applyOffer(this)">
+            <input type="hidden" name="offerId" value="@Model.Id" />
+            <button type="submit" class="btn-primary" aria-label="Candidatar-me">Candidatar-me</button>
+        </form>
+        <button class="btn-secondary" aria-pressed="@Model.IsSaved.ToString().ToLower()" onclick="toggleSave(@Model.Id, this)">
+            <span class="sr-only">Guardar oferta</span>
+            ❤
+        </button>
+        <a class="btn-ghost" href="/offers/@Model.Id" aria-label="Ver detalhes">Ver detalhes</a>
+    </div>
+</article>

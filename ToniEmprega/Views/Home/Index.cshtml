@@ -1,8 +1,37 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model ToniEmprega.Models.HomeViewModel
+@{
+    ViewBag.Title = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+
+<section class="welcome">
+    <h1>Olá, @Model.UserName</h1>
+    <span class="badge" aria-live="polite">Estado: @(Model.Snapshot.PendingDocuments > 0 ? "Pendente" : "Aprovado")</span>
+</section>
+
+
+<section class="snapshot" aria-label="Resumo rápido">
+    <div class="card"> <h4>Minhas candidaturas</h4> <p>@Model.Snapshot.MyApplications</p> </div>
+    <div class="card"> <h4>Ofertas que combinam</h4> <p>@Model.Snapshot.MatchingOffers</p> </div>
+    <div class="card"> <h4>Documentos pendentes</h4> <p>@Model.Snapshot.PendingDocuments</p> </div>
+</section>
+
+
+<section class="offers">
+    <h2>Ofertas</h2>
+    <div class="filters">
+        <label>Localização: <select aria-label="Filtro por localização"><option>Todas</option></select></label>
+        <label>Tipo: <select aria-label="Filtro por tipo"><option>Todos</option></select></label>
+    </div>
+
+
+    <div class="offer-list" role="list">
+        @foreach (var offer in Model.Offers)
+        {
+            <partial name="_OfferCard" model="offer" />
+        }
+    </div>
+</section>
+
+
+<button id="fab-apply" class="fab" aria-label="Nova candidatura rápida">+</button>
