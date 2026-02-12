@@ -1,0 +1,66 @@
+﻿@* Views/Professor/Candidaturas.cshtml *@
+@model IEnumerable<ToniEmprega.Models.Candidatura>
+@{
+    ViewData["Title"] = "Avaliar Candidaturas";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-chalkboard-teacher"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Professor/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Professor/Candidaturas" class="sidebar-link active"><i class="fas fa-clipboard-check"></i> Avaliar</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-clipboard-check"></i> Candidaturas para Avaliação
+        </h2>
+
+        <div class="card">
+            @if (Model.Any())
+            {
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Oferta</th>
+                                <th>Empresa</th>
+                                <th>Data</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cand in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@cand.Aluno?.Utilizador?.Nome</strong><br />
+                                        <small>@cand.Aluno?.Curso - @cand.Aluno?.Ano_Letivo</small>
+                                    </td>
+                                    <td>@cand.Oferta?.Titulo</td>
+                                    <td>@cand.Oferta?.Empresa?.Nome_Empresa</td>
+                                    <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <a href="/Professor/Avaliar/@cand.Id" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-gavel"></i> Avaliar
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p style="color: var(--color-gray); text-align: center; padding: 2rem;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
+                    Não há candidaturas pendentes de avaliação.
+                </p>
+            }
+        </div>
+    </div>
+</div>

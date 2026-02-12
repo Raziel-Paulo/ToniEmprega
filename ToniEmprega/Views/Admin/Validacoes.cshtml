@@ -1,0 +1,78 @@
+﻿@* Views/Admin/Validacoes.cshtml *@
+@model IEnumerable<ToniEmprega.Models.ValidacaoIdentidade>
+@{
+    ViewData["Title"] = "Validações Pendentes";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-cog"></i> Admin</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Admin/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Admin/Utilizadores" class="sidebar-link"><i class="fas fa-users"></i> Utilizadores</a></li>
+            <li><a href="/Admin/Validacoes" class="sidebar-link active"><i class="fas fa-id-card"></i> Validações</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-id-card"></i> Validações Pendentes
+        </h2>
+
+        <div class="card">
+            @if (Model.Any())
+            {
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Utilizador</th>
+                                <th>Tipo Documento</th>
+                                <th>Documento</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var val in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@val.Utilizador?.Nome</strong><br />
+                                        <small>@val.Utilizador?.Email</small>
+                                    </td>
+                                    <td>@val.TipoValidacao?.Designacao</td>
+                                    <td>
+                                        <a href="@val.Ficheiro_Prova" target="_blank" class="btn btn-outline btn-sm">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <form method="post" asp-action="AprovarValidacao" style="display: inline;">
+                                            <input type="hidden" name="id" value="@val.Id" />
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-check"></i> Aprovar
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-action="RejeitarValidacao" style="display: inline; margin-left: 0.5rem;">
+                                            <input type="hidden" name="id" value="@val.Id" />
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-times"></i> Rejeitar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p style="color: var(--color-gray); text-align: center; padding: 2rem;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
+                    Não há validações pendentes.
+                </p>
+            }
+        </div>
+    </div>
+</div>

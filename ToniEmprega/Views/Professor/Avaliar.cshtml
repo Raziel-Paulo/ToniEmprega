@@ -1,0 +1,54 @@
+﻿@* Views/Professor/Avaliar.cshtml *@
+@model ToniEmprega.Models.Candidatura
+@{
+    ViewData["Title"] = "Avaliar Candidatura";
+}
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-gavel"></i> Avaliação de Candidatura</h2>
+        </div>
+
+        <div style="background-color: var(--color-navy); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <h3 style="color: var(--color-white); margin-bottom: 0.5rem;">@Model.Oferta?.Titulo</h3>
+            <p style="color: var(--color-gray); margin: 0;">
+                <i class="fas fa-user"></i> @Model.Aluno?.Utilizador?.Nome |
+                <i class="fas fa-graduation-cap"></i> @Model.Aluno?.Curso
+            </p>
+            @if (!string.IsNullOrEmpty(Model.Mensagem))
+            {
+                <div style="margin-top: 1rem; padding: 1rem; background-color: var(--color-dark-gray); border-radius: 6px;">
+                    <strong style="color: var(--color-blue);">Mensagem do Candidato:</strong>
+                    <p style="color: var(--color-gray); margin: 0.5rem 0 0 0;">@Model.Mensagem</p>
+                </div>
+            }
+        </div>
+
+        <form method="post" asp-action="Avaliar">
+            <input type="hidden" name="candidaturaId" value="@Model.Id" />
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-balance-scale"></i> Decisão</label>
+                <select name="decisaoId" class="form-control" required>
+                    @foreach (var decisao in ViewBag.Decisoes)
+                    {
+                        <option value="@decisao.Id">@decisao.Designacao</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-comment-alt"></i> Comentários</label>
+                <textarea name="comentarios" class="form-control" rows="4" placeholder="Justificação da tua decisão..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    <i class="fas fa-save"></i> Registar Avaliação
+                </button>
+                <a href="/Professor/Candidaturas" class="btn btn-outline">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
