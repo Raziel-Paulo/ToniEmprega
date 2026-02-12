@@ -8,12 +8,12 @@
     <h1><i class="fas fa-search"></i> ToniEmprega</h1>
     <p>A plataforma de emprego da Escola Profissional Gustave Eiffel</p>
     <div style="margin-top: 2rem;">
-        <a href="/Ofertas" class="btn btn-primary" style="margin-right: 1rem;">
+        <a href="/Ofertas" class="btn btn-primary" style="margin-right: 1rem; font-size: 1.1rem; padding: 0.8rem 2rem;">
             <i class="fas fa-briefcase"></i> Ver Ofertas
         </a>
         @if (Context.Session.GetInt32("UserId") == null)
         {
-            <a href="/Account/Register" class="btn btn-outline">
+            <a href="/Account/Register" class="btn btn-outline" style="font-size: 1.1rem; padding: 0.8rem 2rem;">
                 <i class="fas fa-user-plus"></i> Criar Conta
             </a>
         }
@@ -29,11 +29,18 @@
     <div class="stat-card">
         <i class="fas fa-building stat-icon"></i>
         <span class="stat-number">@Model.Select(o => o.Id_Empresa).Distinct().Count()</span>
-        <span class="stat-label">Empresas</span>
+        <span class="stat-label">Empresas Parceiras</span>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-user-graduate stat-icon"></i>
+        <span class="stat-number">100+</span>
+        <span class="stat-label">Alunos Registados</span>
     </div>
 </div>
 
-<h2 style="color: #1E90FF; margin-bottom: 1.5rem;"><i class="fas fa-fire"></i> Destaques</h2>
+<h2 style="color: var(--color-blue); margin-bottom: 1.5rem;">
+    <i class="fas fa-fire"></i> Ofertas em Destaque
+</h2>
 
 <div class="ofertas-grid">
     @foreach (var oferta in Model)
@@ -41,14 +48,34 @@
         <div class="oferta-card">
             <div class="oferta-header">
                 <span class="oferta-tipo">@oferta.TipoOferta?.Designacao</span>
+                <span style="color: var(--color-gray); font-size: 0.85rem;">
+                    <i class="fas fa-clock"></i> @oferta.Data_Publicacao.ToString("dd/MM/yyyy")
+                </span>
             </div>
             <h3 class="oferta-titulo">@oferta.Titulo</h3>
-            <div class="oferta-empresa"><i class="fas fa-building"></i> @oferta.Empresa?.NomeEmpresa</div>
-            <p class="oferta-descricao">@(oferta.Descricao?.Length > 150 ? oferta.Descricao.Substring(0, 150) + "..." : oferta.Descricao)</p>
+            <div class="oferta-empresa">
+                <i class="fas fa-building"></i> @oferta.Empresa?.Nome_Empresa
+            </div>
+            <p class="oferta-descricao">
+                @(oferta.Descricao?.Length > 150 ? oferta.Descricao.Substring(0, 150) + "..." : oferta.Descricao)
+            </p>
             <div class="oferta-footer">
-                <span class="oferta-localizacao"><i class="fas fa-map-marker-alt"></i> @oferta.Localizacao</span>
-                <a href="/Ofertas/Details/@oferta.Id" class="btn btn-primary">Ver</a>
+                <span class="oferta-localizacao">
+                    <i class="fas fa-map-marker-alt"></i> @oferta.Localizacao
+                </span>
+                <a href="/Ofertas/Details/@oferta.Id" class="btn btn-primary">
+                    Ver Detalhes <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
         </div>
     }
 </div>
+
+@if (Model.Count() == 6)
+{
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="/Ofertas" class="btn btn-outline">
+            Ver Todas as Ofertas <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+}

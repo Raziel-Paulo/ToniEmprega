@@ -2,7 +2,6 @@
 @model ToniEmprega.Models.Utilizador
 @{
     ViewData["Title"] = "Registo";
-    var tipos = ViewBag.TiposUtilizador as List<TipoUtilizador> ?? new List<TipoUtilizador>();
 }
 
 <div style="max-width: 550px; margin: 2rem auto;">
@@ -11,36 +10,55 @@
             <h2 class="card-title"><i class="fas fa-user-plus"></i> Criar Conta</h2>
         </div>
 
-        <form method="post">
+        <div asp-validation-summary="All" class="alert alert-error" style="display: @(ViewData.ModelState.IsValid ? "none" : "flex")"></div>
+
+        <form method="post" asp-action="Register">
             <div class="form-group">
-                <label class="form-label">Nome</label>
-                <input asp-for="Nome" class="form-control" required />
+                <label class="form-label"><i class="fas fa-user"></i> Nome Completo</label>
+                <input asp-for="Nome" class="form-control" required placeholder="Seu nome completo" />
             </div>
+
             <div class="form-group">
-                <label class="form-label">Email</label>
-                <input asp-for="Email" type="email" class="form-control" required />
+                <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
+                <input asp-for="Email" type="email" class="form-control" required placeholder="seu.email@exemplo.com" />
             </div>
+
             <div class="form-group">
-                <label class="form-label">Tipo</label>
+                <label class="form-label"><i class="fas fa-calendar"></i> Data de Nascimento</label>
+                <input asp-for="Data_Nascimento" type="date" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-user-tag"></i> Tipo de Utilizador</label>
                 <select name="tipoUtilizadorId" class="form-control" required>
-                    <option value="">Selecione o tipo...</option>
-                    @foreach (var tipo in tipos)
+                    <option value="">Selecione...</option>
+                    @foreach (var tipo in ViewBag.TiposUtilizador)
                     {
                         <option value="@tipo.Id">@tipo.Designacao</option>
                     }
                 </select>
             </div>
+
             <div class="form-group">
-                <label class="form-label">Palavra-passe</label>
-                <input asp-for="PalavraPasse" type="password" class="form-control" required />
+                <label class="form-label"><i class="fas fa-lock"></i> Palavra-passe</label>
+                <input asp-for="Palavra_Passe" type="password" class="form-control" required placeholder="Mínimo 6 caracteres" />
             </div>
+
             <div class="form-group">
-                <label class="form-label">Confirmar</label>
-                <input name="confirmPassword" type="password" class="form-control" required />
+                <label class="form-label"><i class="fas fa-lock"></i> Confirmar Palavra-passe</label>
+                <input name="confirmPassword" type="password" class="form-control" required placeholder="Repita a palavra-passe" />
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
-                <i class="fas fa-user-plus"></i> Registar
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem;">
+                <i class="fas fa-user-plus"></i> Criar Conta
             </button>
         </form>
+
+        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--color-navy);">
+            <p style="color: var(--color-gray); margin-bottom: 0.5rem;">Já tem conta?</p>
+            <a href="/Account/Login" class="btn btn-outline" style="width: 100%;">
+                <i class="fas fa-sign-in-alt"></i> Iniciar Sessão
+            </a>
+        </div>
     </div>
 </div>

@@ -30,7 +30,7 @@ namespace ToniEmprega.Controllers
                 ofertas = ofertas.Where(o => o.Id_Tipo_Oferta == tipoOfertaId);
 
             ViewBag.TiposOferta = await _context.TipoOfertas.ToListAsync();
-            return View(await ofertas.OrderByDescending(o => o.DataPublicacao).ToListAsync());
+            return View(await ofertas.OrderByDescending(o => o.Data_Publicacao).ToListAsync());
         }
 
         public async Task<IActionResult> Details(int? id)

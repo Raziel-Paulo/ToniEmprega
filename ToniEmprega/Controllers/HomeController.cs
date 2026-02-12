@@ -22,7 +22,7 @@ namespace ToniEmprega.Controllers
                 .Include(o => o.Empresa)
                 .Include(o => o.TipoOferta)
                 .Where(o => o.Id_Estado_Oferta == 1)
-                .OrderByDescending(o => o.DataPublicacao)
+                .OrderByDescending(o => o.Data_Publicacao)
                 .Take(6)
                 .ToListAsync();
 

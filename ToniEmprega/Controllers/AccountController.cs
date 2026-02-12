@@ -28,7 +28,7 @@ namespace ToniEmprega.Controllers
             var hashedPassword = HashPassword(password);
             var user = await _context.Utilizadores
                 .Include(u => u.TipoUtilizador)
-                .FirstOrDefaultAsync(u => u.Email == email && u.PalavraPasse == hashedPassword);
+                .FirstOrDefaultAsync(u => u.Email == email && u.Palavra_Passe == hashedPassword);
 
             if (user == null)
             {
@@ -61,42 +61,42 @@ namespace ToniEmprega.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword, int tipoUtilizadorId)
         {
-            if (utilizador.PalavraPasse != confirmPassword)
+            if (utilizador.Palavra_Passe != confirmPassword)
             {
                 ModelState.AddModelError("", "As palavras-passe não coincidem.");
+                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
+                    .Where(t => t.Designacao != "Administrador")
+                    .ToListAsync();
                 return View(utilizador);
             }
 
             if (await _context.Utilizadores.AnyAsync(u => u.Email == utilizador.Email))
             {
                 ModelState.AddModelError("", "Email já registado.");
+                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
+                    .Where(t => t.Designacao != "Administrador")
+                    .ToListAsync();
                 return View(utilizador);
             }
 
             utilizador.Id_Tipo_Utilizador = tipoUtilizadorId;
             utilizador.Id_Estado_Validacao_Utilizador = 1;
-            utilizador.PalavraPasse = HashPassword(utilizador.PalavraPasse);
+            utilizador.Palavra_Passe = HashPassword(utilizador.Palavra_Passe);
+            utilizador.Data_Registro = DateTime.Now;
 
             _context.Utilizadores.Add(utilizador);
             await _context.SaveChangesAsync();
 
-            // No método Register, substitui a parte do switch por:
             var tipo = await _context.TipoUtilizadores.FindAsync(tipoUtilizadorId);
-            if (tipo == null)
-            {
-                ModelState.AddModelError("", "Tipo de utilizador inválido.");
-                return View(utilizador);
-            }
-
-            switch (tipo.Designacao)
+            switch (tipo?.Designacao)
             {
                 case "Aluno":
                     _context.Alunos.Add(new Aluno
                     {
                         Id_Utilizador = utilizador.Id,
                         Curso = "",
-                        AnoLetivo = "",
-                        NumeroAluno = ""
+                        Ano_Letivo = "",
+                        Numero_Aluno = ""
                     });
                     break;
                 case "Professor":
@@ -104,18 +104,25 @@ namespace ToniEmprega.Controllers
                     {
                         Id_Utilizador = utilizador.Id,
                         Departamento = "",
-                        NumeroProfessor = ""
+                        Numero_Professor = ""
                     });
                     break;
                 case "Empresa":
                     _context.Empresas.Add(new Empresa
                     {
                         Id_Utilizador = utilizador.Id,
-                        NomeEmpresa = utilizador.Nome,
-                        NIF = "",
+                        Nome_Empresa = utilizador.Nome,
+                        Nif = "",
                         Morada = "",
-                        SiteEmpresa = "",
+                        Site_Empresa = "",
                         Telefone = ""
+                    });
+                    break;
+                case "Utilizador Normal":
+                    _context.UtilizadoresNormais.Add(new UtilizadorNormal
+                    {
+                        Id_Utilizador = utilizador.Id,
+                        Documentacao_Identificacao = ""
                     });
                     break;
             }
