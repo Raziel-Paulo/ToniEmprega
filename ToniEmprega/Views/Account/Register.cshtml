@@ -1,0 +1,44 @@
+﻿@* Views/Account/Register.cshtml *@
+@model ToniEmprega.Models.Utilizador
+@{
+    ViewData["Title"] = "Registo";
+}
+
+<div style="max-width: 550px; margin: 2rem auto;">
+    <div class="card">
+        <div class="card-header" style="text-align: center;">
+            <h2 class="card-title"><i class="fas fa-user-plus"></i> Criar Conta</h2>
+        </div>
+
+        <form method="post">
+            <div class="form-group">
+                <label class="form-label">Nome</label>
+                <input asp-for="Nome" class="form-control" required />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input asp-for="Email" type="email" class="form-control" required />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tipo</label>
+                <select name="tipoUtilizadorId" class="form-control" required>
+                    @foreach (var tipo in ViewBag.TiposUtilizador)
+                    {
+                        <option value="@tipo.Id">@tipo.Designacao</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Palavra-passe</label>
+                <input asp-for="PalavraPasse" type="password" class="form-control" required />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirmar</label>
+                <input name="confirmPassword" type="password" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-user-plus"></i> Registar
+            </button>
+        </form>
+    </div>
+</div>

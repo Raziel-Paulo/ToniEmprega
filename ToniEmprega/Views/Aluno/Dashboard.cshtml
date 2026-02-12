@@ -1,0 +1,30 @@
+﻿@* Views/Aluno/Dashboard.cshtml *@
+@model IEnumerable<ToniEmprega.Models.Candidatura>
+@{
+    ViewData["Title"] = "Dashboard Aluno";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-user-graduate"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Aluno/Dashboard" class="sidebar-link active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Ofertas" class="sidebar-link"><i class="fas fa-briefcase"></i> Ofertas</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF;">Bem-vindo, @Context.Session.GetString("UserName")</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">@ViewBag.TotalCandidaturas</span>
+                <span class="stat-label">Candidaturas</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">@ViewBag.CandidaturasPendentes</span>
+                <span class="stat-label">Pendentes</span>
+            </div>
+        </div>
+    </div>
+</div>

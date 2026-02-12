@@ -1,0 +1,76 @@
+﻿@* Views/Shared/_Layout.cshtml *@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ToniEmprega</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a class="nav-brand" href="/">
+                <i class="fas fa-search"></i> ToniEmprega
+            </a>
+            <button class="nav-toggle" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-menu" id="navMenu">
+                <ul class="nav-list">
+                    <li><a href="/" class="nav-link"><i class="fas fa-home"></i> Início</a></li>
+                    <li><a href="/Ofertas" class="nav-link"><i class="fas fa-briefcase"></i> Ofertas</a></li>
+
+                    @if (Context.Session.GetString("UserType") == "Aluno")
+                    {
+                        <li><a href="/Aluno/Dashboard" class="nav-link"><i class="fas fa-user-graduate"></i> Área Aluno</a></li>
+                    }
+                    else if (Context.Session.GetString("UserType") == "Empresa")
+                    {
+                        <li><a href="/Empresa/Dashboard" class="nav-link"><i class="fas fa-building"></i> Área Empresa</a></li>
+                    }
+                    else if (Context.Session.GetString("UserType") == "Professor")
+                    {
+                        <li><a href="/Professor/Dashboard" class="nav-link"><i class="fas fa-chalkboard-teacher"></i> Área Professor</a></li>
+                    }
+                    else if (Context.Session.GetString("UserType") == "Administrador")
+                    {
+                        <li><a href="/Admin/Dashboard" class="nav-link"><i class="fas fa-cog"></i> Admin</a></li>
+                    }
+
+                    @if (Context.Session.GetInt32("UserId") != null)
+                    {
+                        <li class="nav-user">
+                            <span class="user-name"><i class="fas fa-user"></i> @Context.Session.GetString("UserName")</span>
+                            <a href="/Account/Logout" class="btn btn-outline"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li><a href="/Account/Login" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Entrar</a></li>
+                        <li><a href="/Account/Register" class="btn btn-outline"><i class="fas fa-user-plus"></i> Registar</a></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+        }
+        @RenderBody()
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 ToniEmprega - Escola Profissional Gustave Eiffel</p>
+        </div>
+    </footer>
+
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
