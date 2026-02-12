@@ -1,0 +1,87 @@
+﻿@* Views/Validacao/Index.cshtml *@
+@model IEnumerable<ToniEmprega.Models.ValidacaoIdentidade>
+@{
+    ViewData["Title"] = "Validação de Identidade";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-id-card"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Aluno/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Validacao/Index" class="sidebar-link active"><i class="fas fa-id-card"></i> Validar Identidade</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-id-card"></i> Validação de Identidade
+        </h2>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-upload"></i> Submeter Novo Documento</h3>
+            </div>
+            <form method="post" asp-action="Submeter" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label class="form-label">Tipo de Documento</label>
+                    <select name="tipoValidacaoId" class="form-control" required>
+                        @foreach (var tipo in ViewBag.TiposValidacao)
+                        {
+                            <option value="@tipo.Id">@tipo.Designacao</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Documento (PDF ou Imagem)</label>
+                    <input type="file" name="documento" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-upload"></i> Submeter
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-history"></i> Histórico de Validações</h3>
+            </div>
+
+            @if (Model.Any())
+            {
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Data Submissão</th>
+                                <th>Estado</th>
+                                <th>Data Validação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var val in Model)
+                            {
+                                <tr>
+                                    <td>@val.TipoValidacao?.Designacao</td>
+                                    <td>@val.Ficheiro_Prova</td>
+                                    <td>
+                                        <span class="badge @(val.Id_Estado_Validacao_Documento == 1 ? "badge-pending" :
+                                                                                                         val.Id_Estado_Validacao_Documento == 2 ? "badge-approved" : "badge-rejected")">
+                                    @val.EstadoValidacaoDocumento?.Designacao
+                                </span>
+                            </td>
+                            <td>@(val.Data_Validacao?.ToString("dd/MM/yyyy") ?? "-")</td>
+                        </tr>
+                                                }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p style="color: var(--color-gray);">Nenhum documento submetido.</p>
+            }
+        </div>
+    </div>
+</div>

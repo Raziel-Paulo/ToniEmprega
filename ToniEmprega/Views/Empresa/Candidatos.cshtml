@@ -1,0 +1,87 @@
+﻿@* Views/Empresa/Candidatos.cshtml *@
+@model IEnumerable<ToniEmprega.Models.Candidatura>
+@{
+    ViewData["Title"] = "Candidatos";
+    var oferta = ViewBag.Oferta as ToniEmprega.Models.Oferta;
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-building"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Empresa/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Empresa/MinhasOfertas" class="sidebar-link active"><i class="fas fa-briefcase"></i> Minhas Ofertas</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-users"></i> Candidatos: @oferta?.Titulo
+        </h2>
+
+        <div class="card">
+            @if (Model.Any())
+            {
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Data</th>
+                                <th>Estado</th>
+                                <th>Avaliação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cand in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@cand.Aluno?.Utilizador?.Nome</strong><br />
+                                        <small>@cand.Aluno?.Curso</small>
+                                    </td>
+                                    <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="badge @(cand.Id_Estado_Candidatura == 1 ? "badge-pending" :
+                                                                                                         cand.Id_Estado_Candidatura == 3 ? "badge-approved" : "badge-rejected")">
+                                    @cand.EstadoCandidatura?.Designacao
+                                </span>
+                            </td>
+                            <td>
+                                @if (cand.Avaliacoes.Any())
+                                        {
+                                            var av = cand.Avaliacoes.First();
+                                            <span class="badge @(av.Id_Decisao_Avaliacao == 1 ? "badge-approved" : "badge-rejected")">
+                                                @av.DecisaoAvaliacao?.Designacao
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-pending">Pendente</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (cand.Ficheiros.Any())
+                                        {
+                                            <a href="@cand.Ficheiros.First().Caminho_Ficheiro" target="_blank" class="btn btn-outline btn-sm">
+                                                <i class="fas fa-download"></i> CV
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p style="color: var(--color-gray); text-align: center; padding: 2rem;">
+                    <i class="fas fa-inbox" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
+                    Ainda não há candidaturas para esta oferta.
+                </p>
+            }
+        </div>
+    </div>
+</div>
