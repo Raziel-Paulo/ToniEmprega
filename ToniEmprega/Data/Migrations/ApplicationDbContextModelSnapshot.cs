@@ -104,7 +104,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasIndex("Id_Professor");
 
-                    b.ToTable("Avaliacoes_Professor", (string)null);
+                    b.ToTable("AvaliacoesProfessores", (string)null);
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.Candidatura", b =>
@@ -171,7 +171,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasIndex("Id_Candidatura");
 
-                    b.ToTable("Candidaturas_Ficheiros", (string)null);
+                    b.ToTable("CandidaturasFicheiros", (string)null);
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.DecisaoAvaliacao", b =>
@@ -188,7 +188,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Decisoes_Avaliacao", (string)null);
+                    b.ToTable("DecisoesAvaliacao", (string)null);
 
                     b.HasData(
                         new
@@ -261,7 +261,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Estados_Candidatura", (string)null);
+                    b.ToTable("EstadosCandidatura", (string)null);
 
                     b.HasData(
                         new
@@ -305,7 +305,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Estados_Oferta", (string)null);
+                    b.ToTable("EstadosOferta", (string)null);
 
                     b.HasData(
                         new
@@ -344,7 +344,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Estados_Validacao_Documento", (string)null);
+                    b.ToTable("EstadosValidacaoDocumento", (string)null);
 
                     b.HasData(
                         new
@@ -378,7 +378,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Estados_Validacao_Utilizador", (string)null);
+                    b.ToTable("EstadosValidacaoUtilizador", (string)null);
 
                     b.HasData(
                         new
@@ -493,7 +493,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tipos_Oferta", (string)null);
+                    b.ToTable("TiposOferta", (string)null);
 
                     b.HasData(
                         new
@@ -530,7 +530,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tipos_Utilizador", (string)null);
+                    b.ToTable("TiposUtilizador", (string)null);
 
                     b.HasData(
                         new
@@ -574,7 +574,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tipos_Validacao", (string)null);
+                    b.ToTable("TiposValidacao", (string)null);
 
                     b.HasData(
                         new
@@ -655,7 +655,7 @@ namespace ToniEmprega.Data.Migrations
                     b.HasIndex("Id_Utilizador")
                         .IsUnique();
 
-                    b.ToTable("Utilizadores_Normais", (string)null);
+                    b.ToTable("UtilizadoresNormais", (string)null);
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.ValidacaoIdentidade", b =>
@@ -690,7 +690,7 @@ namespace ToniEmprega.Data.Migrations
 
                     b.HasIndex("Id_Utilizador");
 
-                    b.ToTable("Validacoes_Identidade", (string)null);
+                    b.ToTable("ValidacoesIdentidade", (string)null);
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.Admin", b =>
