@@ -23,105 +23,143 @@ namespace ToniEmprega.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Configurar TPT (Table Per Type) para herança
-            modelBuilder.Entity<Aluno>().ToTable("Alunos");
-            modelBuilder.Entity<Professor>().ToTable("Professores");
-            modelBuilder.Entity<Empresa>().ToTable("Empresas");
+            base.OnModelCreating(modelBuilder);
 
-            // CORREÇÃO: Configurar relacionamentos com NO ACTION para evitar ciclos de cascata
+            // ============================================
+            // CORREÇÃO: Configurar TPT (Table Per Type) corretamente
+            // As tabelas de especialização devem ser configuradas primeiro
+            // ============================================
 
-            // Utilizador -> TipoUtilizador (cascata permitida - não é parte do ciclo)
-            modelBuilder.Entity<Utilizador>()
-                .HasOne(u => u.TipoUtilizador)
-                .WithMany(t => t.Utilizadores)
-                .HasForeignKey(u => u.Id_Tipo_Utilizador)
-                .OnDelete(DeleteBehavior.Restrict); // Mudado para Restrict
+            // Configurar Utilizador como entidade base
+            modelBuilder.Entity<Utilizador>(entity =>
+            {
+                entity.ToTable("Utilizadores");
+                entity.HasKey(e => e.Id);
 
-            // Utilizador -> EstadoValidacao (NO ACTION)
-            modelBuilder.Entity<Utilizador>()
-                .HasOne(u => u.EstadoValidacao)
-                .WithMany(e => e.Utilizadores)
-                .HasForeignKey(u => u.Id_Estado_Validacao_Utilizador)
-                .OnDelete(DeleteBehavior.SetNull); // SetNull em vez de Cascata
+                // Relação com TipoUtilizador
+                entity.HasOne(u => u.TipoUtilizador)
+                    .WithMany(t => t.Utilizadores)
+                    .HasForeignKey(u => u.Id_Tipo_Utilizador)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            // Aluno -> Utilizador (NO ACTION)
-            modelBuilder.Entity<Aluno>()
-                .HasOne(a => a.Utilizador)
-                .WithOne()
-                .HasForeignKey<Aluno>(a => a.Id_Utilizador)
-                .OnDelete(DeleteBehavior.Cascade); // Manter cascade aqui é seguro
+                // Relação com EstadoValidacao
+                entity.HasOne(u => u.EstadoValidacao)
+                    .WithMany(e => e.Utilizadores)
+                    .HasForeignKey(u => u.Id_Estado_Validacao_Utilizador)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
 
-            // Professor -> Utilizador (NO ACTION)
-            modelBuilder.Entity<Professor>()
-                .HasOne(p => p.Utilizador)
-                .WithOne()
-                .HasForeignKey<Professor>(p => p.Id_Utilizador)
-                .OnDelete(DeleteBehavior.Cascade);
+            // Configurar Aluno - TABELA SEPARADA (TPT)
+            modelBuilder.Entity<Aluno>(entity =>
+            {
+                entity.ToTable("Alunos");
+                entity.HasKey(e => e.Id);
 
-            // Empresa -> Utilizador (NO ACTION)
-            modelBuilder.Entity<Empresa>()
-                .HasOne(e => e.Utilizador)
-                .WithOne()
-                .HasForeignKey<Empresa>(e => e.Id_Utilizador)
-                .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(a => a.Utilizador)
+                    .WithOne()
+                    .HasForeignKey<Aluno>(a => a.Id_Utilizador)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
-            // Oferta -> Empresa (NO ACTION)
-            modelBuilder.Entity<Oferta>()
-                .HasOne(o => o.Empresa)
-                .WithMany()
-                .HasForeignKey(o => o.Id_Empresa)
-                .OnDelete(DeleteBehavior.Restrict); // IMPORTANTE: Restrict para evitar ciclo
+            // Configurar Professor - TABELA SEPARADA (TPT)
+            modelBuilder.Entity<Professor>(entity =>
+            {
+                entity.ToTable("Professores");
+                entity.HasKey(e => e.Id);
 
-            // Oferta -> TipoOferta (NO ACTION)
-            modelBuilder.Entity<Oferta>()
-                .HasOne(o => o.TipoOferta)
-                .WithMany(t => t.Ofertas)
-                .HasForeignKey(o => o.Id_Tipo_Oferta)
-                .OnDelete(DeleteBehavior.SetNull);
+                entity.HasOne(p => p.Utilizador)
+                    .WithOne()
+                    .HasForeignKey<Professor>(p => p.Id_Utilizador)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
-            // Oferta -> EstadoOferta (NO ACTION)
-            modelBuilder.Entity<Oferta>()
-                .HasOne(o => o.EstadoOferta)
-                .WithMany(e => e.Ofertas)
-                .HasForeignKey(o => o.Id_Estado_Oferta)
-                .OnDelete(DeleteBehavior.SetNull);
+            // Configurar Empresa - TABELA SEPARADA (TPT)
+            modelBuilder.Entity<Empresa>(entity =>
+            {
+                entity.ToTable("Empresas");
+                entity.HasKey(e => e.Id);
 
-            // Candidatura -> Oferta (NO ACTION) - ESTE É O CRÍTICO
-            modelBuilder.Entity<Candidatura>()
-                .HasOne(c => c.Oferta)
-                .WithMany()
-                .HasForeignKey(c => c.Id_Oferta)
-                .OnDelete(DeleteBehavior.Restrict); // IMPORTANTE: Restrict em vez de Cascade
+                entity.HasOne(e => e.Utilizador)
+                    .WithOne()
+                    .HasForeignKey<Empresa>(e => e.Id_Utilizador)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
-            // Candidatura -> Aluno (NO ACTION)
-            modelBuilder.Entity<Candidatura>()
-                .HasOne(c => c.Aluno)
-                .WithMany()
-                .HasForeignKey(c => c.Id_Aluno)
-                .OnDelete(DeleteBehavior.Restrict); // Restrict para evitar múltiplos caminhos
+            // ============================================
+            // Configurar Oferta e relacionamentos
+            // ============================================
 
-            // Candidatura -> EstadoCandidatura (NO ACTION)
-            modelBuilder.Entity<Candidatura>()
-                .HasOne(c => c.EstadoCandidatura)
-                .WithMany(e => e.Candidaturas)
-                .HasForeignKey(c => c.Id_Estado_Candidatura)
-                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Oferta>(entity =>
+            {
+                entity.ToTable("Ofertas");
+                entity.HasKey(e => e.Id);
 
-            // AvaliacaoProfessor -> Candidatura (NO ACTION)
-            modelBuilder.Entity<AvaliacaoProfessor>()
-                .HasOne(a => a.Candidatura)
-                .WithMany()
-                .HasForeignKey(a => a.Id_Candidatura)
-                .OnDelete(DeleteBehavior.Cascade); // Cascade aqui é seguro
+                entity.HasOne(o => o.Empresa)
+                    .WithMany()
+                    .HasForeignKey(o => o.Id_Empresa)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-            // AvaliacaoProfessor -> Professor (NO ACTION)
-            modelBuilder.Entity<AvaliacaoProfessor>()
-                .HasOne(a => a.Professor)
-                .WithMany()
-                .HasForeignKey(a => a.Id_Professor)
-                .OnDelete(DeleteBehavior.Restrict); // Restrict para evitar ciclo
+                entity.HasOne(o => o.TipoOferta)
+                    .WithMany(t => t.Ofertas)
+                    .HasForeignKey(o => o.Id_Tipo_Oferta)
+                    .OnDelete(DeleteBehavior.SetNull);
 
-            // Seed data
+                entity.HasOne(o => o.EstadoOferta)
+                    .WithMany(e => e.Ofertas)
+                    .HasForeignKey(o => o.Id_Estado_Oferta)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ============================================
+            // Configurar Candidatura - CORREÇÃO CRÍTICA
+            // ============================================
+
+            modelBuilder.Entity<Candidatura>(entity =>
+            {
+                entity.ToTable("Candidaturas");
+                entity.HasKey(e => e.Id);
+
+                // IMPORTANTE: Restrict em ambos para evitar ciclos
+                entity.HasOne(c => c.Oferta)
+                    .WithMany()
+                    .HasForeignKey(c => c.Id_Oferta)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.Aluno)
+                    .WithMany()
+                    .HasForeignKey(c => c.Id_Aluno)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.EstadoCandidatura)
+                    .WithMany(e => e.Candidaturas)
+                    .HasForeignKey(c => c.Id_Estado_Candidatura)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ============================================
+            // Configurar AvaliacaoProfessor
+            // ============================================
+
+            modelBuilder.Entity<AvaliacaoProfessor>(entity =>
+            {
+                entity.ToTable("AvaliacoesProfessores");
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(a => a.Candidatura)
+                    .WithMany()
+                    .HasForeignKey(a => a.Id_Candidatura)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(a => a.Professor)
+                    .WithMany()
+                    .HasForeignKey(a => a.Id_Professor)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ============================================
+            // Seed Data - Dados iniciais
+            // ============================================
+
             modelBuilder.Entity<TipoUtilizador>().HasData(
                 new TipoUtilizador { Id = 1, Designacao = "Aluno" },
                 new TipoUtilizador { Id = 2, Designacao = "Professor" },

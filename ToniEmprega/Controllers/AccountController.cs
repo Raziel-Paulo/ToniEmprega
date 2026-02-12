@@ -80,17 +80,43 @@ namespace ToniEmprega.Controllers
             _context.Utilizadores.Add(utilizador);
             await _context.SaveChangesAsync();
 
+            // No método Register, substitui a parte do switch por:
             var tipo = await _context.TipoUtilizadores.FindAsync(tipoUtilizadorId);
-            switch (tipo?.Designacao)
+            if (tipo == null)
+            {
+                ModelState.AddModelError("", "Tipo de utilizador inválido.");
+                return View(utilizador);
+            }
+
+            switch (tipo.Designacao)
             {
                 case "Aluno":
-                    _context.Alunos.Add(new Aluno { Id_Utilizador = utilizador.Id });
+                    _context.Alunos.Add(new Aluno
+                    {
+                        Id_Utilizador = utilizador.Id,
+                        Curso = "",
+                        AnoLetivo = "",
+                        NumeroAluno = ""
+                    });
                     break;
                 case "Professor":
-                    _context.Professores.Add(new Professor { Id_Utilizador = utilizador.Id });
+                    _context.Professores.Add(new Professor
+                    {
+                        Id_Utilizador = utilizador.Id,
+                        Departamento = "",
+                        NumeroProfessor = ""
+                    });
                     break;
                 case "Empresa":
-                    _context.Empresas.Add(new Empresa { Id_Utilizador = utilizador.Id, NomeEmpresa = utilizador.Nome });
+                    _context.Empresas.Add(new Empresa
+                    {
+                        Id_Utilizador = utilizador.Id,
+                        NomeEmpresa = utilizador.Nome,
+                        NIF = "",
+                        Morada = "",
+                        SiteEmpresa = "",
+                        Telefone = ""
+                    });
                     break;
             }
             await _context.SaveChangesAsync();

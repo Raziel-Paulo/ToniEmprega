@@ -2,6 +2,7 @@
 @model ToniEmprega.Models.Utilizador
 @{
     ViewData["Title"] = "Registo";
+    var tipos = ViewBag.TiposUtilizador as List<TipoUtilizador> ?? new List<TipoUtilizador>();
 }
 
 <div style="max-width: 550px; margin: 2rem auto;">
@@ -22,7 +23,8 @@
             <div class="form-group">
                 <label class="form-label">Tipo</label>
                 <select name="tipoUtilizadorId" class="form-control" required>
-                    @foreach (var tipo in ViewBag.TiposUtilizador)
+                    <option value="">Selecione o tipo...</option>
+                    @foreach (var tipo in tipos)
                     {
                         <option value="@tipo.Id">@tipo.Designacao</option>
                     }
