@@ -26,7 +26,7 @@
                 <div class="form-group">
                     <label class="form-label">Tipo de Documento</label>
                     <select name="tipoValidacaoId" class="form-control" required>
-                        @foreach (var tipo in ViewBag.TiposValidacao)
+                        @foreach (var tipo in ViewBag.TiposValidacao ?? new List<TipoValidacao>())
                         {
                             <option value="@tipo.Id">@tipo.Designacao</option>
                         }
@@ -44,7 +44,7 @@
 
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-history"></i> Histórico de Validações</h3>
+                <h3 class="card-title"><i class="fas fa-history"></i> Histórico</h3>
             </div>
 
             @if (Model.Any())
@@ -54,7 +54,6 @@
                         <thead>
                             <tr>
                                 <th>Tipo</th>
-                                <th>Data Submissão</th>
                                 <th>Estado</th>
                                 <th>Data Validação</th>
                             </tr>
@@ -64,7 +63,6 @@
                             {
                                 <tr>
                                     <td>@val.TipoValidacao?.Designacao</td>
-                                    <td>@val.Ficheiro_Prova</td>
                                     <td>
                                         <span class="badge @(val.Id_Estado_Validacao_Documento == 1 ? "badge-pending" :
                                                                                                          val.Id_Estado_Validacao_Documento == 2 ? "badge-approved" : "badge-rejected")">
