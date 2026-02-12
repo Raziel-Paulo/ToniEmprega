@@ -12,7 +12,7 @@ using ToniEmprega.Data;
 namespace ToniEmprega.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260212001313_InitialCreate")]
+    [Migration("20260212002244_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -48,12 +48,10 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UtilizadorId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UtilizadorId");
+                    b.HasIndex("Id_Utilizador")
+                        .IsUnique();
 
                     b.ToTable("Alunos", (string)null);
                 });
@@ -65,9 +63,6 @@ namespace ToniEmprega.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CandidaturaId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Comentarios")
                         .IsRequired()
@@ -82,14 +77,11 @@ namespace ToniEmprega.Data.Migrations
                     b.Property<int>("Id_Professor")
                         .HasColumnType("int");
 
-                    b.Property<int>("ProfessorId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("CandidaturaId");
+                    b.HasIndex("Id_Candidatura");
 
-                    b.HasIndex("ProfessorId");
+                    b.HasIndex("Id_Professor");
 
                     b.ToTable("AvaliacoesProfessores");
                 });
@@ -102,14 +94,8 @@ namespace ToniEmprega.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AlunoId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("DataCandidatura")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("EstadoCandidaturaId")
-                        .HasColumnType("int");
 
                     b.Property<int>("Id_Aluno")
                         .HasColumnType("int");
@@ -123,16 +109,13 @@ namespace ToniEmprega.Data.Migrations
                     b.Property<string>("Mensagem")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("OfertaId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("AlunoId");
+                    b.HasIndex("Id_Aluno");
 
-                    b.HasIndex("EstadoCandidaturaId");
+                    b.HasIndex("Id_Estado_Candidatura");
 
-                    b.HasIndex("OfertaId");
+                    b.HasIndex("Id_Oferta");
 
                     b.ToTable("Candidaturas");
                 });
@@ -168,12 +151,10 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UtilizadorId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UtilizadorId");
+                    b.HasIndex("Id_Utilizador")
+                        .IsUnique();
 
                     b.ToTable("Empresas", (string)null);
                 });
@@ -303,12 +284,6 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("EmpresaId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("EstadoOfertaId")
-                        .HasColumnType("int");
-
                     b.Property<int>("Id_Empresa")
                         .HasColumnType("int");
 
@@ -326,20 +301,17 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TipoOfertaId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Titulo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EmpresaId");
+                    b.HasIndex("Id_Empresa");
 
-                    b.HasIndex("EstadoOfertaId");
+                    b.HasIndex("Id_Estado_Oferta");
 
-                    b.HasIndex("TipoOfertaId");
+                    b.HasIndex("Id_Tipo_Oferta");
 
                     b.ToTable("Ofertas");
                 });
@@ -363,12 +335,10 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UtilizadorId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UtilizadorId");
+                    b.HasIndex("Id_Utilizador")
+                        .IsUnique();
 
                     b.ToTable("Professores", (string)null);
                 });
@@ -471,9 +441,6 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("EstadoValidacaoId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("Id_Estado_Validacao_Utilizador")
                         .HasColumnType("int");
 
@@ -488,14 +455,11 @@ namespace ToniEmprega.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TipoUtilizadorId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("EstadoValidacaoId");
+                    b.HasIndex("Id_Estado_Validacao_Utilizador");
 
-                    b.HasIndex("TipoUtilizadorId");
+                    b.HasIndex("Id_Tipo_Utilizador");
 
                     b.ToTable("Utilizadores");
                 });
@@ -503,8 +467,8 @@ namespace ToniEmprega.Data.Migrations
             modelBuilder.Entity("ToniEmprega.Models.Aluno", b =>
                 {
                     b.HasOne("ToniEmprega.Models.Utilizador", "Utilizador")
-                        .WithMany()
-                        .HasForeignKey("UtilizadorId")
+                        .WithOne()
+                        .HasForeignKey("ToniEmprega.Models.Aluno", "Id_Utilizador")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -515,14 +479,14 @@ namespace ToniEmprega.Data.Migrations
                 {
                     b.HasOne("ToniEmprega.Models.Candidatura", "Candidatura")
                         .WithMany()
-                        .HasForeignKey("CandidaturaId")
+                        .HasForeignKey("Id_Candidatura")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ToniEmprega.Models.Professor", "Professor")
                         .WithMany()
-                        .HasForeignKey("ProfessorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("Id_Professor")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Candidatura");
@@ -534,18 +498,19 @@ namespace ToniEmprega.Data.Migrations
                 {
                     b.HasOne("ToniEmprega.Models.Aluno", "Aluno")
                         .WithMany()
-                        .HasForeignKey("AlunoId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("Id_Aluno")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ToniEmprega.Models.EstadoCandidatura", "EstadoCandidatura")
                         .WithMany("Candidaturas")
-                        .HasForeignKey("EstadoCandidaturaId");
+                        .HasForeignKey("Id_Estado_Candidatura")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ToniEmprega.Models.Oferta", "Oferta")
                         .WithMany()
-                        .HasForeignKey("OfertaId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("Id_Oferta")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Aluno");
@@ -558,8 +523,8 @@ namespace ToniEmprega.Data.Migrations
             modelBuilder.Entity("ToniEmprega.Models.Empresa", b =>
                 {
                     b.HasOne("ToniEmprega.Models.Utilizador", "Utilizador")
-                        .WithMany()
-                        .HasForeignKey("UtilizadorId")
+                        .WithOne()
+                        .HasForeignKey("ToniEmprega.Models.Empresa", "Id_Utilizador")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -570,17 +535,19 @@ namespace ToniEmprega.Data.Migrations
                 {
                     b.HasOne("ToniEmprega.Models.Empresa", "Empresa")
                         .WithMany()
-                        .HasForeignKey("EmpresaId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("Id_Empresa")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ToniEmprega.Models.EstadoOferta", "EstadoOferta")
                         .WithMany("Ofertas")
-                        .HasForeignKey("EstadoOfertaId");
+                        .HasForeignKey("Id_Estado_Oferta")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ToniEmprega.Models.TipoOferta", "TipoOferta")
                         .WithMany("Ofertas")
-                        .HasForeignKey("TipoOfertaId");
+                        .HasForeignKey("Id_Tipo_Oferta")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Empresa");
 
@@ -592,8 +559,8 @@ namespace ToniEmprega.Data.Migrations
             modelBuilder.Entity("ToniEmprega.Models.Professor", b =>
                 {
                     b.HasOne("ToniEmprega.Models.Utilizador", "Utilizador")
-                        .WithMany()
-                        .HasForeignKey("UtilizadorId")
+                        .WithOne()
+                        .HasForeignKey("ToniEmprega.Models.Professor", "Id_Utilizador")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -604,12 +571,13 @@ namespace ToniEmprega.Data.Migrations
                 {
                     b.HasOne("ToniEmprega.Models.EstadoValidacaoUtilizador", "EstadoValidacao")
                         .WithMany("Utilizadores")
-                        .HasForeignKey("EstadoValidacaoId");
+                        .HasForeignKey("Id_Estado_Validacao_Utilizador")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("ToniEmprega.Models.TipoUtilizador", "TipoUtilizador")
                         .WithMany("Utilizadores")
-                        .HasForeignKey("TipoUtilizadorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("Id_Tipo_Utilizador")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("EstadoValidacao");
