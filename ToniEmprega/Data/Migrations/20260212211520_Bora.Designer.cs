@@ -12,7 +12,7 @@ using ToniEmprega.Data;
 namespace ToniEmprega.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260212210159_Bora")]
+    [Migration("20260212211520_Bora")]
     partial class Bora
     {
         /// <inheritdoc />

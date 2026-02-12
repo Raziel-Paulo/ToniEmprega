@@ -1,20 +1,154 @@
-/* Adicionar ao final de site.css */
+/* wwwroot/css/site.css - CSS COMPLETO TONIEMPREGA */
 
-.badge-success {
-    background-color: rgba(40, 167, 69, 0.2);
-    color: #28a745;
-    border: 1px solid #28a745;
+:root {
+    --color-black: #000000;
+    --color-dark-gray: #121212;
+    --color-navy: #0B2545;
+    --color-blue: #1E90FF;
+    --color-white: #FFFFFF;
+    --color-gray: #B7B7B7;
+    --color-success: #28a745;
+    --color-danger: #dc3545;
+    --color-warning: #ffc107;
 }
 
-.badge-danger {
-    background-color: rgba(220, 53, 69, 0.2);
-    color: #dc3545;
-    border: 1px solid #dc3545;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--color-black);
+    color: var(--color-white);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================
+   NAVBAR
+   ============================================ */
+.navbar {
+    background-color: var(--color-dark-gray);
+    border-bottom: 2px solid var(--color-navy);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--color-blue);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+    .nav-brand img {
+        height: 40px;
+        width: auto;
+    }
+
+.nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--color-white);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.nav-list {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+    align-items: center;
+}
+
+.nav-link {
+    color: var(--color-gray);
+    text-decoration: none;
+    transition: color 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+    .nav-link:hover {
+        color: var(--color-blue);
+    }
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-left: 1px solid var(--color-navy);
+    padding-left: 2rem;
+    margin-left: 1rem;
+}
+
+.user-name {
+    color: var(--color-blue);
+    font-weight: 500;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    background-color: var(--color-blue);
+    color: var(--color-white);
+}
+
+    .btn-primary:hover {
+        background-color: #1873cc;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 144, 255, 0.3);
+    }
+
+.btn-outline {
+    background-color: transparent;
+    color: var(--color-blue);
+    border: 1px solid var(--color-blue);
+}
+
+    .btn-outline:hover {
+        background-color: var(--color-blue);
+        color: var(--color-white);
+    }
 
 .btn-success {
-    background-color: #28a745;
-    color: white;
+    background-color: var(--color-success);
+    color: var(--color-white);
 }
 
     .btn-success:hover {
@@ -22,8 +156,8 @@
     }
 
 .btn-danger {
-    background-color: #dc3545;
-    color: white;
+    background-color: var(--color-danger);
+    color: var(--color-white);
 }
 
     .btn-danger:hover {
@@ -33,4 +167,483 @@
 .btn-sm {
     padding: 0.4rem 0.8rem;
     font-size: 0.875rem;
+}
+
+/* ============================================
+   MAIN CONTENT
+   ============================================ */
+.main-content {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* ============================================
+   ALERTS
+   ============================================ */
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-success {
+    background-color: rgba(40, 167, 69, 0.1);
+    border: 1px solid var(--color-success);
+    color: var(--color-success);
+}
+
+.alert-error {
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger);
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+.card {
+    background-color: var(--color-dark-gray);
+    border: 1px solid var(--color-navy);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(11, 37, 69, 0.5);
+    }
+
+.card-header {
+    border-bottom: 1px solid var(--color-navy);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-title {
+    color: var(--color-blue);
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+.hero {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: linear-gradient(135deg, var(--color-black) 0%, var(--color-navy) 100%);
+    border-radius: 16px;
+    margin-bottom: 3rem;
+    border: 1px solid var(--color-navy);
+}
+
+    .hero h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--color-blue);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+        color: var(--color-gray);
+        margin-bottom: 2rem;
+    }
+
+/* ============================================
+   STATS GRID
+   ============================================ */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-card {
+    background-color: var(--color-dark-gray);
+    border: 1px solid var(--color-navy);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+    .stat-card:hover {
+        border-color: var(--color-blue);
+        transform: translateY(-5px);
+    }
+
+.stat-icon {
+    font-size: 2.5rem;
+    color: var(--color-blue);
+    margin-bottom: 1rem;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--color-white);
+    display: block;
+}
+
+.stat-label {
+    color: var(--color-gray);
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--color-gray);
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--color-black);
+    border: 1px solid var(--color-navy);
+    border-radius: 8px;
+    color: var(--color-white);
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--color-blue);
+        box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1);
+    }
+
+textarea.form-control {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* ============================================
+   TABLES
+   ============================================ */
+.table-container {
+    overflow-x: auto;
+    background-color: var(--color-dark-gray);
+    border-radius: 12px;
+    border: 1px solid var(--color-navy);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-navy);
+}
+
+th {
+    background-color: var(--color-navy);
+    color: var(--color-blue);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+tr:hover {
+    background-color: rgba(11, 37, 69, 0.3);
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+.badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.badge-pending {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: var(--color-warning);
+    border: 1px solid var(--color-warning);
+}
+
+.badge-approved {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: var(--color-success);
+    border: 1px solid var(--color-success);
+}
+
+.badge-rejected {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+}
+
+/* ============================================
+   OFERTAS GRID
+   ============================================ */
+.ofertas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.oferta-card {
+    background-color: var(--color-dark-gray);
+    border: 1px solid var(--color-navy);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s;
+}
+
+    .oferta-card:hover {
+        border-color: var(--color-blue);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(11, 37, 69, 0.5);
+    }
+
+.oferta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+
+.oferta-tipo {
+    background-color: var(--color-navy);
+    color: var(--color-blue);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.oferta-titulo {
+    font-size: 1.25rem;
+    color: var(--color-white);
+    margin-bottom: 0.5rem;
+}
+
+.oferta-empresa {
+    color: var(--color-gray);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.oferta-descricao {
+    color: var(--color-gray);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    flex: 1;
+}
+
+.oferta-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-navy);
+}
+
+.oferta-localizacao {
+    color: var(--color-gray);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ============================================
+   DASHBOARD & SIDEBAR
+   ============================================ */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 2rem;
+    min-height: calc(100vh - 200px);
+}
+
+.sidebar {
+    background-color: var(--color-dark-gray);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--color-navy);
+    height: fit-content;
+}
+
+.sidebar-menu {
+    list-style: none;
+}
+
+.sidebar-item {
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--color-gray);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+    .sidebar-link:hover, .sidebar-link.active {
+        background-color: var(--color-navy);
+        color: var(--color-blue);
+    }
+
+/* ============================================
+   SEARCH BOX
+   ============================================ */
+.search-box {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.footer {
+    background-color: var(--color-dark-gray);
+    border-top: 2px solid var(--color-navy);
+    padding: 2rem;
+    margin-top: auto;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+    .footer-content img {
+        height: 30px;
+        opacity: 0.7;
+        margin-bottom: 1rem;
+    }
+
+.footer-links {
+    margin-top: 1rem;
+}
+
+    .footer-links a {
+        color: var(--color-gray);
+        text-decoration: none;
+        margin: 0 0.5rem;
+        transition: color 0.3s;
+    }
+
+        .footer-links a:hover {
+            color: var(--color-blue);
+        }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: block;
+    }
+
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: var(--color-dark-gray);
+        border-top: 1px solid var(--color-navy);
+        padding: 1rem;
+    }
+
+        .nav-menu.active {
+            display: block;
+        }
+
+    .nav-list {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .nav-user {
+        border-left: none;
+        padding-left: 0;
+        margin-left: 0;
+        border-top: 1px solid var(--color-navy);
+        padding-top: 1rem;
+        flex-direction: column;
+    }
+
+    .hero h1 {
+        font-size: 2rem;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        order: 2;
+    }
+
+    .ofertas-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .search-box {
+        flex-direction: column;
+    }
 }

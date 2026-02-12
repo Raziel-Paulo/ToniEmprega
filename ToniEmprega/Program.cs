@@ -1,4 +1,4 @@
-﻿// Program.cs - VERSÃO LIMPA E DEFINITIVA
+﻿// Program.cs - SEM MIGRAÇÕES, EnsureCreated apenas
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 
@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 builder.Services.AddControllersWithViews();
 
-// DbContext - SEM MIGRAÇÕES, apenas EnsureCreated
+// DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -30,10 +30,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// IMPORTANTE: Verificar se wwwroot existe
 app.UseStaticFiles();
-
 app.UseRouting();
 app.UseSession();
 app.UseAuthorization();
@@ -42,40 +39,12 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// ============================================
-// RECRIAR BASE DE DADOS DO ZERO (SEM MIGRAÇÕES)
-// ============================================
+// Criar base de dados automaticamente (SEM MIGRAÇÕES)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-    try
-    {
-        // ELIMINAR TUDO E RECRIAR
-        context.Database.EnsureDeleted();
-        Console.WriteLine("✓ Base de dados antiga eliminada");
-
-        context.Database.EnsureCreated();
-        Console.WriteLine("✓ Base de dados criada com sucesso!");
-
-        // Verificar tabelas criadas
-        var tabelas = context.Model.GetEntityTypes()
-            .Select(t => t.GetTableName())
-            .Distinct()
-            .OrderBy(t => t)
-            .ToList();
-
-        Console.WriteLine("\nTabelas criadas:");
-        foreach (var tabela in tabelas)
-        {
-            Console.WriteLine($"  - {tabela}");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"✗ ERRO: {ex.Message}");
-        Console.WriteLine(ex.StackTrace);
-    }
+    context.Database.EnsureDeleted(); // Elimina se existir
+    context.Database.EnsureCreated(); // Cria nova
 }
 
 app.Run();
