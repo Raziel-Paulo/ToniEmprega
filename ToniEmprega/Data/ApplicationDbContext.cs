@@ -1,4 +1,4 @@
-﻿// Data/ApplicationDbContext.cs
+﻿// Data/ApplicationDbContext.cs - VERSÃO LIMPA E DEFINITIVA
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Models;
 
@@ -8,26 +8,24 @@ namespace ToniEmprega.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        // DbSets existentes
+        // DbSets - TODOS os modelos
         public DbSet<TipoUtilizador> TipoUtilizadores { get; set; }
         public DbSet<EstadoValidacaoUtilizador> EstadoValidacaoUtilizadores { get; set; }
         public DbSet<Utilizador> Utilizadores { get; set; }
         public DbSet<Aluno> Alunos { get; set; }
         public DbSet<Professor> Professores { get; set; }
         public DbSet<Empresa> Empresas { get; set; }
+        public DbSet<UtilizadorNormal> UtilizadoresNormais { get; set; }
+        public DbSet<Admin> Admins { get; set; }
         public DbSet<TipoOferta> TipoOfertas { get; set; }
         public DbSet<EstadoOferta> EstadoOfertas { get; set; }
         public DbSet<Oferta> Ofertas { get; set; }
         public DbSet<EstadoCandidatura> EstadoCandidaturas { get; set; }
         public DbSet<Candidatura> Candidaturas { get; set; }
         public DbSet<AvaliacaoProfessor> AvaliacoesProfessores { get; set; }
-
-        // NOVOS DbSets
         public DbSet<TipoValidacao> TipoValidacoes { get; set; }
         public DbSet<EstadoValidacaoDocumento> EstadoValidacaoDocumentos { get; set; }
         public DbSet<ValidacaoIdentidade> ValidacoesIdentidade { get; set; }
-        public DbSet<UtilizadorNormal> UtilizadoresNormais { get; set; }
-        public DbSet<Admin> Admins { get; set; }
         public DbSet<DecisaoAvaliacao> DecisaoAvaliacoes { get; set; }
         public DbSet<CandidaturaFicheiro> CandidaturaFicheiros { get; set; }
 
@@ -35,30 +33,28 @@ namespace ToniEmprega.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configurar nomes de tabelas exatos conforme modelo
+            // Configurar nomes de tabelas
             modelBuilder.Entity<Utilizador>().ToTable("Utilizadores");
             modelBuilder.Entity<Aluno>().ToTable("Alunos");
             modelBuilder.Entity<Professor>().ToTable("Professores");
             modelBuilder.Entity<Empresa>().ToTable("Empresas");
-            modelBuilder.Entity<UtilizadorNormal>().ToTable("Utilizadores_Normais");
+            modelBuilder.Entity<UtilizadorNormal>().ToTable("UtilizadoresNormais");
             modelBuilder.Entity<Admin>().ToTable("Admins");
-            modelBuilder.Entity<TipoUtilizador>().ToTable("Tipos_Utilizador");
-            modelBuilder.Entity<EstadoValidacaoUtilizador>().ToTable("Estados_Validacao_Utilizador");
-            modelBuilder.Entity<TipoValidacao>().ToTable("Tipos_Validacao");
-            modelBuilder.Entity<EstadoValidacaoDocumento>().ToTable("Estados_Validacao_Documento");
-            modelBuilder.Entity<ValidacaoIdentidade>().ToTable("Validacoes_Identidade");
-            modelBuilder.Entity<TipoOferta>().ToTable("Tipos_Oferta");
-            modelBuilder.Entity<EstadoOferta>().ToTable("Estados_Oferta");
+            modelBuilder.Entity<TipoUtilizador>().ToTable("TiposUtilizador");
+            modelBuilder.Entity<EstadoValidacaoUtilizador>().ToTable("EstadosValidacaoUtilizador");
+            modelBuilder.Entity<TipoValidacao>().ToTable("TiposValidacao");
+            modelBuilder.Entity<EstadoValidacaoDocumento>().ToTable("EstadosValidacaoDocumento");
+            modelBuilder.Entity<ValidacaoIdentidade>().ToTable("ValidacoesIdentidade");
+            modelBuilder.Entity<TipoOferta>().ToTable("TiposOferta");
+            modelBuilder.Entity<EstadoOferta>().ToTable("EstadosOferta");
             modelBuilder.Entity<Oferta>().ToTable("Ofertas");
-            modelBuilder.Entity<EstadoCandidatura>().ToTable("Estados_Candidatura");
+            modelBuilder.Entity<EstadoCandidatura>().ToTable("EstadosCandidatura");
             modelBuilder.Entity<Candidatura>().ToTable("Candidaturas");
-            modelBuilder.Entity<CandidaturaFicheiro>().ToTable("Candidaturas_Ficheiros");
-            modelBuilder.Entity<DecisaoAvaliacao>().ToTable("Decisoes_Avaliacao");
-            modelBuilder.Entity<AvaliacaoProfessor>().ToTable("Avaliacoes_Professor");
+            modelBuilder.Entity<CandidaturaFicheiro>().ToTable("CandidaturasFicheiros");
+            modelBuilder.Entity<DecisaoAvaliacao>().ToTable("DecisoesAvaliacao");
+            modelBuilder.Entity<AvaliacaoProfessor>().ToTable("AvaliacoesProfessores");
 
-            // Configurar chaves e relações
-
-            // Utilizador
+            // Relações com RESTRICT para evitar ciclos
             modelBuilder.Entity<Utilizador>()
                 .HasOne(u => u.TipoUtilizador)
                 .WithMany(t => t.Utilizadores)
@@ -71,61 +67,38 @@ namespace ToniEmprega.Data
                 .HasForeignKey(u => u.Id_Estado_Validacao_Utilizador)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Aluno
+            // Herança - TPT
             modelBuilder.Entity<Aluno>()
                 .HasOne(a => a.Utilizador)
                 .WithOne()
                 .HasForeignKey<Aluno>(a => a.Id_Utilizador)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Professor
             modelBuilder.Entity<Professor>()
                 .HasOne(p => p.Utilizador)
                 .WithOne()
                 .HasForeignKey<Professor>(p => p.Id_Utilizador)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Empresa
             modelBuilder.Entity<Empresa>()
                 .HasOne(e => e.Utilizador)
                 .WithOne()
                 .HasForeignKey<Empresa>(e => e.Id_Utilizador)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // UtilizadorNormal
             modelBuilder.Entity<UtilizadorNormal>()
                 .HasOne(un => un.Utilizador)
                 .WithOne()
                 .HasForeignKey<UtilizadorNormal>(un => un.Id_Utilizador)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Admin
             modelBuilder.Entity<Admin>()
                 .HasOne(a => a.Utilizador)
                 .WithOne()
                 .HasForeignKey<Admin>(a => a.Id_Utilizador)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ValidacaoIdentidade
-            modelBuilder.Entity<ValidacaoIdentidade>()
-                .HasOne(v => v.Utilizador)
-                .WithMany(u => u.ValidacoesIdentidade)
-                .HasForeignKey(v => v.Id_Utilizador)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ValidacaoIdentidade>()
-                .HasOne(v => v.TipoValidacao)
-                .WithMany(t => t.Validacoes)
-                .HasForeignKey(v => v.Id_Tipo_Validacao)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ValidacaoIdentidade>()
-                .HasOne(v => v.EstadoValidacaoDocumento)
-                .WithMany(e => e.Validacoes)
-                .HasForeignKey(v => v.Id_Estado_Validacao_Documento)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            // Oferta
+            // Ofertas
             modelBuilder.Entity<Oferta>()
                 .HasOne(o => o.Empresa)
                 .WithMany(e => e.Ofertas)
@@ -144,7 +117,7 @@ namespace ToniEmprega.Data
                 .HasForeignKey(o => o.Id_Estado_Oferta)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Candidatura
+            // Candidaturas - RESTRICT em ambos
             modelBuilder.Entity<Candidatura>()
                 .HasOne(c => c.Oferta)
                 .WithMany(o => o.Candidaturas)
@@ -163,14 +136,14 @@ namespace ToniEmprega.Data
                 .HasForeignKey(c => c.Id_Estado_Candidatura)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // CandidaturaFicheiro
+            // Ficheiros
             modelBuilder.Entity<CandidaturaFicheiro>()
                 .HasOne(cf => cf.Candidatura)
                 .WithMany(c => c.Ficheiros)
                 .HasForeignKey(cf => cf.Id_Candidatura)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // AvaliacaoProfessor
+            // Avaliações
             modelBuilder.Entity<AvaliacaoProfessor>()
                 .HasOne(a => a.Candidatura)
                 .WithMany(c => c.Avaliacoes)
@@ -189,7 +162,26 @@ namespace ToniEmprega.Data
                 .HasForeignKey(a => a.Id_Decisao_Avaliacao)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // SEED DATA conforme proposta
+            // Validações
+            modelBuilder.Entity<ValidacaoIdentidade>()
+                .HasOne(v => v.Utilizador)
+                .WithMany(u => u.ValidacoesIdentidade)
+                .HasForeignKey(v => v.Id_Utilizador)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ValidacaoIdentidade>()
+                .HasOne(v => v.TipoValidacao)
+                .WithMany(t => t.Validacoes)
+                .HasForeignKey(v => v.Id_Tipo_Validacao)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ValidacaoIdentidade>()
+                .HasOne(v => v.EstadoValidacaoDocumento)
+                .WithMany(e => e.Validacoes)
+                .HasForeignKey(v => v.Id_Estado_Validacao_Documento)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // SEED DATA
             modelBuilder.Entity<TipoUtilizador>().HasData(
                 new TipoUtilizador { Id = 1, Designacao = "Aluno" },
                 new TipoUtilizador { Id = 2, Designacao = "Professor" },
