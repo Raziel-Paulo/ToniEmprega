@@ -1,0 +1,59 @@
+﻿@* Views/Professor/Dashboard.cshtml *@
+@{
+    ViewData["Title"] = "Dashboard do Professor";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-chalkboard-teacher"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Professor/Dashboard" class="sidebar-link active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Professor/Candidaturas" class="sidebar-link"><i class="fas fa-clipboard-check"></i> Avaliar Candidaturas</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-chalkboard-teacher"></i> Bem-vindo, @Context.Session.GetString("UserName")
+        </h2>
+
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <div class="stat-card">
+                <i class="fas fa-clipboard-list stat-icon"></i>
+                <span class="stat-number">@ViewBag.AvaliacoesPendentes</span>
+                <span class="stat-label">Candidaturas Pendentes</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-check-double stat-icon"></i>
+                <span class="stat-number">@ViewBag.MinhasAvaliacoes</span>
+                <span class="stat-label">Minhas Avaliações</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle"></i> Sobre o Processo de Avaliação</h3>
+            </div>
+            <div style="color: var(--color-gray); line-height: 1.8;">
+                <p style="margin-bottom: 1rem;">
+                    <i class="fas fa-1" style="color: var(--color-blue);"></i>
+                    <strong>Análise de Candidaturas:</strong> Revise as candidaturas submetidas pelos alunos.
+                </p>
+                <p style="margin-bottom: 1rem;">
+                    <i class="fas fa-2" style="color: var(--color-blue);"></i>
+                    <strong>Avaliação Formal:</strong> Atribua uma decisão estruturada com comentários.
+                </p>
+                <p>
+                    <i class="fas fa-3" style="color: var(--color-blue);"></i>
+                    <strong>Feedback:</strong> Os alunos recebem notificação sobre a avaliação.
+                </p>
+            </div>
+
+            <div style="margin-top: 2rem; text-align: center;">
+                <a href="/Professor/Candidaturas" class="btn btn-primary" style="padding: 0.8rem 2rem;">
+                    <i class="fas fa-clipboard-check"></i> Iniciar Avaliações
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

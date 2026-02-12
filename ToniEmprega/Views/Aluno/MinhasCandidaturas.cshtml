@@ -1,0 +1,80 @@
+﻿@* Views/Aluno/MinhasCandidaturas.cshtml *@
+@model IEnumerable<ToniEmprega.Models.Candidatura>
+@{
+    ViewData["Title"] = "Minhas Candidaturas";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-user-graduate"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Aluno/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Ofertas" class="sidebar-link"><i class="fas fa-briefcase"></i> Procurar Ofertas</a></li>
+            <li><a href="/Aluno/MinhasCandidaturas" class="sidebar-link active"><i class="fas fa-file-signature"></i> Minhas Candidaturas</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-file-signature"></i> Minhas Candidaturas
+        </h2>
+
+        <div class="card">
+            @if (Model.Any())
+            {
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Oferta</th>
+                                <th>Empresa</th>
+                                <th>Data</th>
+                                <th>Estado</th>
+                                <th>Avaliação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cand in Model)
+                            {
+                                <tr>
+                                    <td><strong>@cand.Oferta?.Titulo</strong></td>
+                                    <td>@cand.Oferta?.Empresa?.Nome_Empresa</td>
+                                    <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="badge @(cand.Id_Estado_Candidatura == 1 ? "badge-pending" :
+                                                                                                         cand.Id_Estado_Candidatura == 3 ? "badge-approved" : "badge-rejected")">
+                                    @cand.EstadoCandidatura?.Designacao
+                                </span>
+                            </td>
+                            <td>
+                                @if (cand.Avaliacoes?.Any() == true)
+                                        {
+                                            var av = cand.Avaliacoes.First();
+                                            <span class="badge @(av.Id_Decisao_Avaliacao == 1 ? "badge-approved" : "badge-rejected")">
+                                                @av.DecisaoAvaliacao?.Designacao
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-pending">Pendente</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 3rem; color: var(--color-gray);">
+                    <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h3>Ainda não realizou nenhuma candidatura</h3>
+                    <a href="/Ofertas" class="btn btn-primary" style="margin-top: 1rem;">
+                        <i class="fas fa-briefcase"></i> Ver Ofertas
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

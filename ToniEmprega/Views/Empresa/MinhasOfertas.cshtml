@@ -1,0 +1,79 @@
+﻿@* Views/Empresa/MinhasOfertas.cshtml *@
+@model IEnumerable<ToniEmprega.Models.Oferta>
+@{
+    ViewData["Title"] = "Minhas Ofertas";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-building"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Empresa/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Empresa/MinhasOfertas" class="sidebar-link active"><i class="fas fa-briefcase"></i> Minhas Ofertas</a></li>
+            <li><a href="/Empresa/CriarOferta" class="sidebar-link"><i class="fas fa-plus-circle"></i> Nova Oferta</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: #1E90FF;"><i class="fas fa-briefcase"></i> Minhas Ofertas</h2>
+            <a href="/Empresa/CriarOferta" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Criar Nova Oferta
+            </a>
+        </div>
+
+        <div class="card">
+            @if (Model.Any())
+            {
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Tipo</th>
+                                <th>Publicação</th>
+                                <th>Estado</th>
+                                <th>Candidaturas</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var oferta in Model)
+                            {
+                                <tr>
+                                    <td><strong>@oferta.Titulo</strong></td>
+                                    <td>@oferta.TipoOferta?.Designacao</td>
+                                    <td>@oferta.Data_Publicacao.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="badge @(oferta.Id_Estado_Oferta == 1 ? "badge-approved" : "badge-pending")">
+                                            @oferta.EstadoOferta?.Designacao
+                                        </span>
+                                    </td>
+                                    <td style="text-align: center;">
+                                        <span class="badge badge-pending">@oferta.Candidaturas?.Count</span>
+                                    </td>
+                                    <td>
+                                        <a href="/Empresa/Candidatos/@oferta.Id" class="btn btn-outline btn-sm">
+                                            <i class="fas fa-users"></i> Ver Candidatos
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 3rem; color: var(--color-gray);">
+                    <i class="fas fa-briefcase" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h3>Ainda não criou nenhuma oferta</h3>
+                    <p>Comece por criar a sua primeira oferta de emprego ou estágio.</p>
+                    <a href="/Empresa/CriarOferta" class="btn btn-primary" style="margin-top: 1rem;">
+                        <i class="fas fa-plus"></i> Criar Oferta
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

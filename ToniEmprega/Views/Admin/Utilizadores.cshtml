@@ -1,0 +1,54 @@
+﻿@* Views/Admin/Utilizadores.cshtml *@
+@model IEnumerable<ToniEmprega.Models.Utilizador>
+@{
+    ViewData["Title"] = "Gestão de Utilizadores";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-cog"></i> Admin</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Admin/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Admin/Utilizadores" class="sidebar-link active"><i class="fas fa-users"></i> Utilizadores</a></li>
+            <li><a href="/Admin/Validacoes" class="sidebar-link"><i class="fas fa-id-card"></i> Validações</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-users"></i> Gestão de Utilizadores
+        </h2>
+
+        <div class="card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>Registo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td><strong>@user.Nome</strong></td>
+                                <td>@user.Email</td>
+                                <td>@user.TipoUtilizador?.Designacao</td>
+                                <td>
+                                    <span class="badge @(user.Id_Estado_Validacao_Utilizador == 2 ? "badge-approved" : "badge-pending")">
+                                        @user.EstadoValidacao?.Designacao
+                                    </span>
+                                </td>
+                                <td>@user.Data_Registro.ToString("dd/MM/yyyy")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

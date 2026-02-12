@@ -40,11 +40,28 @@ namespace ToniEmprega.Controllers
             var oferta = await _context.Ofertas
                 .Include(o => o.Empresa)
                 .Include(o => o.TipoOferta)
+                .Include(o => o.EstadoOferta)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (oferta == null) return NotFound();
 
+            // Verificar se aluno já candidatou
+            var userId = HttpContext.Session.GetInt32("UserId");
+            var userType = HttpContext.Session.GetString("UserType");
+
+            if (userId.HasValue && userType == "Aluno")
+            {
+                var aluno = await _context.Alunos.FirstOrDefaultAsync(a => a.Id_Utilizador == userId);
+                if (aluno != null)
+                {
+                    ViewBag.JaCandidatou = await _context.Candidaturas
+                        .AnyAsync(c => c.Id_Oferta == id && c.Id_Aluno == aluno.Id);
+                }
+            }
+
             return View(oferta);
         }
+
+
     }
 }

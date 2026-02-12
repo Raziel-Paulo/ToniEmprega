@@ -1,0 +1,75 @@
+﻿@* Views/Ofertas/Details.cshtml *@
+@model ToniEmprega.Models.Oferta
+@{
+    ViewData["Title"] = "Detalhes da Oferta";
+    var userType = Context.Session.GetString("UserType");
+    var isAluno = userType == "Aluno";
+    var jaCandidatou = ViewBag.JaCandidatou as bool? ?? false;
+}
+
+<div style="max-width: 900px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-header" style="flex-direction: column; align-items: flex-start;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                <span class="oferta-tipo">@Model.TipoOferta?.Designacao</span>
+                <span class="badge @(Model.Id_Estado_Oferta == 1 ? "badge-approved" : "badge-pending")">
+                    @Model.EstadoOferta?.Designacao
+                </span>
+            </div>
+            <h1 style="color: var(--color-blue); margin-top: 1rem;">@Model.Titulo</h1>
+            <div class="oferta-empresa" style="font-size: 1.1rem;">
+                <i class="fas fa-building"></i> @Model.Empresa?.Nome_Empresa
+                <span style="margin: 0 1rem;">|</span>
+                <i class="fas fa-map-marker-alt"></i> @Model.Localizacao
+            </div>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h3 style="color: var(--color-blue); margin-bottom: 1rem;"><i class="fas fa-align-left"></i> Descrição</h3>
+            <p style="color: var(--color-gray); line-height: 1.8;">@Model.Descricao</p>
+        </div>
+
+        <div style="margin-bottom: 2rem;">
+            <h3 style="color: var(--color-blue); margin-bottom: 1rem;"><i class="fas fa-list-check"></i> Requisitos</h3>
+            <p style="color: var(--color-gray); line-height: 1.8;">@Model.Requisitos</p>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; border-top: 1px solid var(--color-navy);">
+            <div style="color: var(--color-gray);">
+                <i class="fas fa-calendar"></i> Publicada em: @Model.Data_Publicacao.ToString("dd/MM/yyyy")
+                @if (Model.Data_Expiracao.HasValue)
+                {
+                    <span style="margin-left: 2rem;"><i class="fas fa-hourglass-end"></i> Expira em: @Model.Data_Expiracao.Value.ToString("dd/MM/yyyy")</span>
+                }
+            </div>
+
+            @if (isAluno)
+            {
+                @if (jaCandidatou)
+                {
+                    <button class="btn btn-outline" disabled>
+                        <i class="fas fa-check"></i> Já Candidatado
+                    </button>
+                }
+                else
+                {
+                    <a href="/Aluno/Candidatar/@Model.Id" class="btn btn-primary btn-lg">
+                        <i class="fas fa-paper-plane"></i> Candidatar-me
+                    </a>
+                }
+            }
+            else if (userType == null)
+            {
+                <a href="/Account/Login" class="btn btn-outline">
+                    <i class="fas fa-sign-in-alt"></i> Entre para se candidatar
+                </a>
+            }
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 2rem;">
+        <a href="/Ofertas" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Voltar às Ofertas
+        </a>
+    </div>
+</div>

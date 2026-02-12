@@ -1,0 +1,55 @@
+﻿@* Views/Admin/Dashboard.cshtml *@
+@{
+    ViewData["Title"] = "Dashboard Administrativo";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-cog"></i> Admin</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Admin/Dashboard" class="sidebar-link active"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Admin/Utilizadores" class="sidebar-link"><i class="fas fa-users"></i> Utilizadores</a></li>
+            <li><a href="/Admin/Validacoes" class="sidebar-link"><i class="fas fa-id-card"></i> Validações</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-cog"></i> Painel de Administração
+        </h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <span class="stat-number">@ViewBag.TotalUtilizadores</span>
+                <span class="stat-label">Total Utilizadores</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-briefcase stat-icon"></i>
+                <span class="stat-number">@ViewBag.TotalOfertas</span>
+                <span class="stat-label">Total Ofertas</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-file-signature stat-icon"></i>
+                <span class="stat-number">@ViewBag.TotalCandidaturas</span>
+                <span class="stat-label">Total Candidaturas</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-id-card stat-icon"></i>
+                <span class="stat-number">@ViewBag.ValidacoesPendentes</span>
+                <span class="stat-label">Validações Pendentes</span>
+            </div>
+        </div>
+
+        @if (ViewBag.ValidacoesPendentes > 0)
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-circle"></i>
+                Existem <strong>@ViewBag.ValidacoesPendentes</strong> documentos pendentes de validação.
+                <a href="/Admin/Validacoes" class="btn btn-primary btn-sm" style="margin-left: 1rem;">
+                    Revisar Agora
+                </a>
+            </div>
+        }
+    </div>
+</div>
