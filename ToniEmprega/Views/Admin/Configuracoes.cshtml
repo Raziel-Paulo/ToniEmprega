@@ -1,0 +1,57 @@
+﻿@{
+    ViewData["Title"] = "Configurações do Sistema";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-cog"></i> Admin</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Admin/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Admin/Utilizadores" class="sidebar-link"><i class="fas fa-users"></i> Utilizadores</a></li>
+            <li><a href="/Admin/Validacoes" class="sidebar-link"><i class="fas fa-id-card"></i> Validações</a></li>
+            <li><a href="/Admin/Ofertas" class="sidebar-link"><i class="fas fa-briefcase"></i> Ofertas</a></li>
+            <li><a href="/Admin/Configuracoes" class="sidebar-link active"><i class="fas fa-cogs"></i> Configurações</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-cogs"></i> Configurações do Sistema
+        </h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h4 style="color: var(--color-blue); margin-bottom: 1rem;">Tipos de Oferta</h4>
+                <ul style="list-style: none; padding: 0;">
+                    @foreach (var tipo in ViewBag.TiposOferta)
+                    {
+                        <li style="padding: 0.5rem; border-bottom: 1px solid var(--color-navy);">
+                            @tipo.Designacao
+                            <form method="post" asp-action="RemoverTipoOferta" style="display: inline; float: right;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@tipo.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-times"></i></button>
+                            </form>
+                        </li>
+                    }
+                </ul>
+                <form method="post" asp-action="AdicionarTipoOferta" style="margin-top: 1rem;">
+                    @Html.AntiForgeryToken()
+                    <input type="text" name="designacao" placeholder="Designação" class="form-control" required style="margin-bottom: 0.5rem;" />
+                    <input type="text" name="descricao" placeholder="Descrição" class="form-control" required style="margin-bottom: 0.5rem;" />
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Adicionar</button>
+                </form>
+            </div>
+
+            <div class="stat-card">
+                <h4 style="color: var(--color-blue); margin-bottom: 1rem;">Exportações</h4>
+                <a href="/Admin/ExportarCandidaturas" class="btn btn-primary" style="width: 100%; margin-bottom: 0.5rem;">
+                    <i class="fas fa-download"></i> Exportar Candidaturas (CSV)
+                </a>
+                <a href="/Admin/ExportarUtilizadores" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-download"></i> Exportar Utilizadores (CSV)
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

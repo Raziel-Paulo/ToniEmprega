@@ -1,5 +1,4 @@
-﻿// Controllers/EmpresaController.cs (ATUALIZADO COMPLETO)
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
@@ -42,6 +41,15 @@ namespace ToniEmprega.Controllers
                 .CountAsync(o => o.Id_Empresa == empresa.Id && o.Id_Estado_Oferta == 1);
             ViewBag.TotalCandidaturas = await _context.Candidaturas
                 .CountAsync(c => c.Oferta.Id_Empresa == empresa.Id);
+            ViewBag.CandidaturasPendentes = await _context.Candidaturas
+                .CountAsync(c => c.Oferta.Id_Empresa == empresa.Id && c.Id_Estado_Candidatura == 1);
+
+            // Notificações
+            ViewBag.Notificacoes = await _context.Notificacoes
+                .Where(n => n.Id_Utilizador == empresa.Id_Utilizador && !n.Lida)
+                .OrderByDescending(n => n.Data_Criacao)
+                .Take(5)
+                .ToListAsync();
 
             return View(ofertas);
         }
@@ -69,19 +77,85 @@ namespace ToniEmprega.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CriarOferta(Oferta oferta)
         {
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
 
             oferta.Id_Empresa = empresa.Id;
-            oferta.Id_Estado_Oferta = 1; // Ativa
+            oferta.Id_Estado_Oferta = 1;
             oferta.Data_Publicacao = DateTime.Now;
 
             _context.Ofertas.Add(oferta);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Oferta criada com sucesso!";
+            return RedirectToAction("MinhasOfertas");
+        }
+
+        public async Task<IActionResult> EditarOferta(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var empresa = await GetCurrentEmpresa();
+            var oferta = await _context.Ofertas
+                .FirstOrDefaultAsync(o => o.Id == id && o.Id_Empresa == empresa!.Id);
+
+            if (oferta == null) return NotFound();
+
+            ViewBag.TiposOferta = await _context.TipoOfertas.ToListAsync();
+            return View(oferta);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditarOferta(int id, Oferta oferta)
+        {
+            var empresa = await GetCurrentEmpresa();
+            if (empresa == null) return RedirectToAction("Login", "Account");
+
+            var existing = await _context.Ofertas
+                .FirstOrDefaultAsync(o => o.Id == id && o.Id_Empresa == empresa.Id);
+
+            if (existing == null) return NotFound();
+
+            existing.Titulo = oferta.Titulo;
+            existing.Descricao = oferta.Descricao;
+            existing.Requisitos = oferta.Requisitos;
+            existing.Localizacao = oferta.Localizacao;
+            existing.Id_Tipo_Oferta = oferta.Id_Tipo_Oferta;
+            existing.Data_Expiracao = oferta.Data_Expiracao;
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Oferta atualizada com sucesso!";
+            return RedirectToAction("MinhasOfertas");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EliminarOferta(int id)
+        {
+            var empresa = await GetCurrentEmpresa();
+            var oferta = await _context.Ofertas
+                .FirstOrDefaultAsync(o => o.Id == id && o.Id_Empresa == empresa!.Id);
+
+            if (oferta == null) return NotFound();
+
+            var temCandidaturas = await _context.Candidaturas.AnyAsync(c => c.Id_Oferta == id);
+
+            if (temCandidaturas)
+            {
+                oferta.Id_Estado_Oferta = 4; // Desativada
+                TempData["Success"] = "Oferta desativada (tinha candidaturas associadas).";
+            }
+            else
+            {
+                _context.Ofertas.Remove(oferta);
+                TempData["Success"] = "Oferta eliminada permanentemente.";
+            }
+
+            await _context.SaveChangesAsync();
             return RedirectToAction("MinhasOfertas");
         }
 
@@ -109,6 +183,38 @@ namespace ToniEmprega.Controllers
 
             ViewBag.Oferta = oferta;
             return View(candidaturas);
+        }
+
+        // PERFIL DA EMPRESA
+        public async Task<IActionResult> Perfil()
+        {
+            var empresa = await GetCurrentEmpresa();
+            if (empresa == null) return RedirectToAction("Login", "Account");
+
+            return View(empresa);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AtualizarPerfil(string nomeEmpresa, string nif, string morada, string telefone, string site)
+        {
+            var empresa = await GetCurrentEmpresa();
+            if (empresa == null) return RedirectToAction("Login", "Account");
+
+            empresa.Nome_Empresa = nomeEmpresa;
+            empresa.Nif = nif;
+            empresa.Morada = morada;
+            empresa.Telefone = telefone;
+            empresa.Site_Empresa = site;
+
+            // Atualizar também o nome do utilizador
+            empresa.Utilizador.Nome = nomeEmpresa;
+
+            await _context.SaveChangesAsync();
+            HttpContext.Session.SetString("UserName", nomeEmpresa);
+
+            TempData["Success"] = "Perfil atualizado com sucesso!";
+            return RedirectToAction("Perfil");
         }
     }
 }

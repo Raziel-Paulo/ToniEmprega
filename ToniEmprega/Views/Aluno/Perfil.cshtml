@@ -1,0 +1,57 @@
+﻿@model ToniEmprega.Models.Aluno
+@{
+    ViewData["Title"] = "Perfil Académico";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-user-graduate"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Aluno/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Aluno/Perfil" class="sidebar-link active"><i class="fas fa-id-card"></i> Perfil</a></li>
+            <li><a href="/Ofertas" class="sidebar-link"><i class="fas fa-briefcase"></i> Ofertas</a></li>
+            <li><a href="/Aluno/MinhasCandidaturas" class="sidebar-link"><i class="fas fa-file-signature"></i> Candidaturas</a></li>
+            <li><a href="/Validacao/Index" class="sidebar-link"><i class="fas fa-shield-alt"></i> Validar Identidade</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-id-card"></i> Perfil Académico
+        </h2>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-graduation-cap"></i> Informações Académicas</h3>
+            </div>
+            <form method="post" asp-action="AtualizarPerfil">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label">Nome</label>
+                    <input type="text" class="form-control" value="@Model.Utilizador?.Nome" disabled />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Curso</label>
+                    <select name="curso" class="form-control" required>
+                        @foreach (var curso in ViewBag.Cursos)
+                        {
+                            <option value="@curso" selected="@(Model.Curso == curso)">@curso</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ano Letivo</label>
+                    <input type="text" name="anoLetivo" class="form-control" value="@Model.Ano_Letivo"
+                           placeholder="Ex: 2024/2025" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Número de Aluno</label>
+                    <input type="text" name="numeroAluno" class="form-control" value="@Model.Numero_Aluno" required />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,10 +1,10 @@
-﻿// Controllers/AccountController.cs
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Text;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
+
+// ADICIONAR ESTE USING:
+using BCryptNet = BCrypt.Net.BCrypt;
 
 namespace ToniEmprega.Controllers
 {
@@ -23,22 +23,38 @@ namespace ToniEmprega.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string email, string password)
         {
-            var hashedPassword = HashPassword(password);
             var user = await _context.Utilizadores
                 .Include(u => u.TipoUtilizador)
-                .FirstOrDefaultAsync(u => u.Email == email && u.Palavra_Passe == hashedPassword);
+                .FirstOrDefaultAsync(u => u.Email == email);
 
-            if (user == null)
+            // CORREÇÃO: Usar BCryptNet.Verify
+            if (user == null || !BCryptNet.Verify(password, user.Palavra_Passe))
             {
                 ViewBag.Error = "Email ou palavra-passe incorretos.";
+                return View();
+            }
+
+            if (user.Id_Estado_Validacao_Utilizador != 2)
+            {
+                ViewBag.Error = "Conta pendente de aprovação. Aguarde validação da identidade.";
                 return View();
             }
 
             HttpContext.Session.SetInt32("UserId", user.Id);
             HttpContext.Session.SetString("UserName", user.Nome);
             HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
+
+            _context.Notificacoes.Add(new Notificacao
+            {
+                Id_Utilizador = user.Id,
+                Titulo = "Novo login",
+                Mensagem = $"Login realizado em {DateTime.Now:dd/MM/yyyy HH:mm}",
+                Tipo = "info"
+            });
+            await _context.SaveChangesAsync();
 
             return user.TipoUtilizador.Designacao switch
             {
@@ -59,6 +75,7 @@ namespace ToniEmprega.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword, int tipoUtilizadorId)
         {
             if (utilizador.Palavra_Passe != confirmPassword)
@@ -80,8 +97,11 @@ namespace ToniEmprega.Controllers
             }
 
             utilizador.Id_Tipo_Utilizador = tipoUtilizadorId;
-            utilizador.Id_Estado_Validacao_Utilizador = 1;
-            utilizador.Palavra_Passe = HashPassword(utilizador.Palavra_Passe);
+            utilizador.Id_Estado_Validacao_Utilizador = 1; // Pendente
+
+            // CORREÇÃO: Usar BCryptNet.HashPassword
+            utilizador.Palavra_Passe = BCryptNet.HashPassword(utilizador.Palavra_Passe);
+
             utilizador.Data_Registro = DateTime.Now;
 
             _context.Utilizadores.Add(utilizador);
@@ -128,6 +148,17 @@ namespace ToniEmprega.Controllers
             }
             await _context.SaveChangesAsync();
 
+            _context.Notificacoes.Add(new Notificacao
+            {
+                Id_Utilizador = utilizador.Id,
+                Titulo = "Bem-vindo ao ToniEmprega!",
+                Mensagem = "Complete a validação de identidade para aceder a todas as funcionalidades.",
+                Tipo = "warning",
+                Link = "/Validacao/Index"
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Registo efetuado! Faça login e complete a validação de identidade.";
             return RedirectToAction("Login");
         }
 
@@ -137,10 +168,72 @@ namespace ToniEmprega.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        private static string HashPassword(string password)
+        public async Task<IActionResult> Perfil()
         {
-            using var sha256 = SHA256.Create();
-            return Convert.ToBase64String(sha256.ComputeHash(Encoding.UTF8.GetBytes(password)));
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue) return RedirectToAction("Login");
+
+            var user = await _context.Utilizadores
+                .Include(u => u.TipoUtilizador)
+                .Include(u => u.EstadoValidacao)
+                .FirstOrDefaultAsync(u => u.Id == userId.Value);
+
+            if (user == null) return NotFound();
+
+            ViewBag.NotificacoesNaoLidas = await _context.Notificacoes
+                .CountAsync(n => n.Id_Utilizador == userId.Value && !n.Lida);
+
+            return View(user);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AtualizarPerfil(string nome, DateTime? dataNascimento)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue) return RedirectToAction("Login");
+
+            var user = await _context.Utilizadores.FindAsync(userId.Value);
+            if (user == null) return NotFound();
+
+            user.Nome = nome;
+            user.Data_Nascimento = dataNascimento;
+            await _context.SaveChangesAsync();
+
+            HttpContext.Session.SetString("UserName", user.Nome);
+            TempData["Success"] = "Perfil atualizado com sucesso!";
+            return RedirectToAction("Perfil");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AlterarPassword(string passwordAtual, string novaPassword, string confirmarPassword)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue) return RedirectToAction("Login");
+
+            var user = await _context.Utilizadores.FindAsync(userId.Value);
+            if (user == null) return NotFound();
+
+            // CORREÇÃO: Usar BCryptNet.Verify
+            if (!BCryptNet.Verify(passwordAtual, user.Palavra_Passe))
+            {
+                TempData["Error"] = "Password atual incorreta.";
+                return RedirectToAction("Perfil");
+            }
+
+            if (novaPassword != confirmarPassword)
+            {
+                TempData["Error"] = "As novas passwords não coincidem.";
+                return RedirectToAction("Perfil");
+            }
+
+            // CORREÇÃO: Usar BCryptNet.HashPassword
+            user.Palavra_Passe = BCryptNet.HashPassword(novaPassword);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Password alterada com sucesso!";
+            return RedirectToAction("Perfil");
         }
     }
 }

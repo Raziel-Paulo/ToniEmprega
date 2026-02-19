@@ -1,0 +1,69 @@
+﻿@model ToniEmprega.Models.Utilizador
+@{
+    ViewData["Title"] = "Meu Perfil";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-user"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Account/Perfil" class="sidebar-link active"><i class="fas fa-id-card"></i> Perfil</a></li>
+            <li><a href="/Validacao/Index" class="sidebar-link"><i class="fas fa-shield-alt"></i> Validar Identidade</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-user-circle"></i> Meu Perfil
+        </h2>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle"></i> Informações Pessoais</h3>
+            </div>
+            <form method="post" asp-action="AtualizarPerfil">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label">Nome Completo</label>
+                    <input type="text" name="nome" class="form-control" value="@Model.Nome" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" value="@Model.Email" disabled />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data de Nascimento</label>
+                    <input type="date" name="dataNascimento" class="form-control"
+                           value="@(Model.Data_Nascimento?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar Alterações
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-lock"></i> Alterar Password</h3>
+            </div>
+            <form method="post" asp-action="AlterarPassword">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label">Password Atual</label>
+                    <input type="password" name="passwordAtual" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nova Password</label>
+                    <input type="password" name="novaPassword" class="form-control" required minlength="6" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirmar Nova Password</label>
+                    <input type="password" name="confirmarPassword" class="form-control" required />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-key"></i> Alterar Password
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

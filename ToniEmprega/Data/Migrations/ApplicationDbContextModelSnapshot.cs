@@ -8,7 +8,7 @@ using ToniEmprega.Data;
 
 #nullable disable
 
-namespace ToniEmprega.Data.Migrations
+namespace ToniEmprega.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -398,6 +398,44 @@ namespace ToniEmprega.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ToniEmprega.Models.Notificacao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Data_Criacao")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Id_Utilizador")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Lida")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Link")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Mensagem")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tipo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Id_Utilizador");
+
+                    b.ToTable("Notificacoes", (string)null);
+                });
+
             modelBuilder.Entity("ToniEmprega.Models.Oferta", b =>
                 {
                     b.Property<int>("Id")
@@ -783,6 +821,17 @@ namespace ToniEmprega.Data.Migrations
                     b.HasOne("ToniEmprega.Models.Utilizador", "Utilizador")
                         .WithOne()
                         .HasForeignKey("ToniEmprega.Models.Empresa", "Id_Utilizador")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Utilizador");
+                });
+
+            modelBuilder.Entity("ToniEmprega.Models.Notificacao", b =>
+                {
+                    b.HasOne("ToniEmprega.Models.Utilizador", "Utilizador")
+                        .WithMany()
+                        .HasForeignKey("Id_Utilizador")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

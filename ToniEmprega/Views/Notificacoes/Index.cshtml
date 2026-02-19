@@ -1,0 +1,60 @@
+﻿@model IEnumerable<ToniEmprega.Models.Notificacao>
+@{
+    ViewData["Title"] = "Notificações";
+}
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+        <i class="fas fa-bell"></i> Notificações
+    </h2>
+
+    <div class="card">
+        @if (Model.Any())
+        {
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                @foreach (var notif in Model)
+                {
+                    <div style="padding: 1rem; border-radius: 8px; border-left: 4px solid var(--color-blue);
+                                        background-color: var(--color-dark-gray); @(notif.Lida ? "opacity: 0.7;" : "")">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <h4 style="color: var(--color-white); margin-bottom: 0.5rem;">
+                                    @if (notif.Tipo == "success")
+                                    {
+                                        <i class="fas fa-check-circle" style="color: var(--color-success);"></i>
+                                    }
+                                    else if (notif.Tipo == "warning")
+                                    {
+                                        <i class="fas fa-exclamation-triangle" style="color: var(--color-warning);"></i>
+                                    }
+                                    else if (notif.Tipo == "error")
+                                    {
+                                        <i class="fas fa-times-circle" style="color: var(--color-danger);"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-info-circle" style="color: var(--color-blue);"></i>
+                                    }
+                                    @notif.Titulo
+                                </h4>
+                                <p style="color: var(--color-gray); margin: 0;">@notif.Mensagem</p>
+                                <small style="color: var(--color-gray);">@notif.Data_Criacao.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                            @if (!string.IsNullOrEmpty(notif.Link))
+                            {
+                                <a href="@notif.Link" class="btn btn-primary btn-sm">Ver</a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p style="color: var(--color-gray); text-align: center; padding: 2rem;">
+                <i class="fas fa-bell-slash" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
+                Não tem notificações.
+            </p>
+        }
+    </div>
+</div>

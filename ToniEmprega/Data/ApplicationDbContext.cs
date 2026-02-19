@@ -1,5 +1,4 @@
-﻿// Data/ApplicationDbContext.cs - VERSÃO LIMPA E DEFINITIVA
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Models;
 
 namespace ToniEmprega.Data
@@ -8,7 +7,7 @@ namespace ToniEmprega.Data
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        // DbSets - TODOS os modelos
+        // DbSets - APENAS UMA VEZ CADA UM
         public DbSet<TipoUtilizador> TipoUtilizadores { get; set; }
         public DbSet<EstadoValidacaoUtilizador> EstadoValidacaoUtilizadores { get; set; }
         public DbSet<Utilizador> Utilizadores { get; set; }
@@ -28,12 +27,13 @@ namespace ToniEmprega.Data
         public DbSet<ValidacaoIdentidade> ValidacoesIdentidade { get; set; }
         public DbSet<DecisaoAvaliacao> DecisaoAvaliacoes { get; set; }
         public DbSet<CandidaturaFicheiro> CandidaturaFicheiros { get; set; }
+        public DbSet<Notificacao> Notificacoes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configurar nomes de tabelas
+            // Nomes de tabelas
             modelBuilder.Entity<Utilizador>().ToTable("Utilizadores");
             modelBuilder.Entity<Aluno>().ToTable("Alunos");
             modelBuilder.Entity<Professor>().ToTable("Professores");
@@ -53,8 +53,9 @@ namespace ToniEmprega.Data
             modelBuilder.Entity<CandidaturaFicheiro>().ToTable("CandidaturasFicheiros");
             modelBuilder.Entity<DecisaoAvaliacao>().ToTable("DecisoesAvaliacao");
             modelBuilder.Entity<AvaliacaoProfessor>().ToTable("AvaliacoesProfessores");
+            modelBuilder.Entity<Notificacao>().ToTable("Notificacoes");
 
-            // Relações com RESTRICT para evitar ciclos
+            // Relações
             modelBuilder.Entity<Utilizador>()
                 .HasOne(u => u.TipoUtilizador)
                 .WithMany(t => t.Utilizadores)
@@ -67,7 +68,7 @@ namespace ToniEmprega.Data
                 .HasForeignKey(u => u.Id_Estado_Validacao_Utilizador)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Herança - TPT
+            // Herança TPT
             modelBuilder.Entity<Aluno>()
                 .HasOne(a => a.Utilizador)
                 .WithOne()
@@ -117,7 +118,7 @@ namespace ToniEmprega.Data
                 .HasForeignKey(o => o.Id_Estado_Oferta)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Candidaturas - RESTRICT em ambos
+            // Candidaturas
             modelBuilder.Entity<Candidatura>()
                 .HasOne(c => c.Oferta)
                 .WithMany(o => o.Candidaturas)
@@ -181,7 +182,18 @@ namespace ToniEmprega.Data
                 .HasForeignKey(v => v.Id_Estado_Validacao_Documento)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // Notificações
+            modelBuilder.Entity<Notificacao>()
+                .HasOne(n => n.Utilizador)
+                .WithMany()
+                .HasForeignKey(n => n.Id_Utilizador)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ============================================
             // SEED DATA
+            // ============================================
+
+            // Tipos de Utilizador
             modelBuilder.Entity<TipoUtilizador>().HasData(
                 new TipoUtilizador { Id = 1, Designacao = "Aluno" },
                 new TipoUtilizador { Id = 2, Designacao = "Professor" },
@@ -190,6 +202,7 @@ namespace ToniEmprega.Data
                 new TipoUtilizador { Id = 5, Designacao = "Administrador" }
             );
 
+            // Estados de Validação
             modelBuilder.Entity<EstadoValidacaoUtilizador>().HasData(
                 new EstadoValidacaoUtilizador { Id = 1, Designacao = "Pendente" },
                 new EstadoValidacaoUtilizador { Id = 2, Designacao = "Aprovado" },
@@ -202,18 +215,21 @@ namespace ToniEmprega.Data
                 new EstadoValidacaoDocumento { Id = 3, Designacao = "Rejeitado" }
             );
 
+            // Tipos de Validação
             modelBuilder.Entity<TipoValidacao>().HasData(
                 new TipoValidacao { Id = 1, Designacao = "Cartão de Estudante" },
                 new TipoValidacao { Id = 2, Designacao = "Bilhete de Identidade" },
                 new TipoValidacao { Id = 3, Designacao = "Cartão de Cidadão" }
             );
 
+            // Tipos de Oferta
             modelBuilder.Entity<TipoOferta>().HasData(
                 new TipoOferta { Id = 1, Designacao = "Estágio", Descricao = "Estágio curricular ou profissional" },
                 new TipoOferta { Id = 2, Designacao = "Emprego", Descricao = "Contrato de trabalho" },
                 new TipoOferta { Id = 3, Designacao = "Projeto", Descricao = "Participação em projeto" }
             );
 
+            // Estados de Oferta
             modelBuilder.Entity<EstadoOferta>().HasData(
                 new EstadoOferta { Id = 1, Designacao = "Ativa" },
                 new EstadoOferta { Id = 2, Designacao = "Expirada" },
@@ -221,6 +237,7 @@ namespace ToniEmprega.Data
                 new EstadoOferta { Id = 4, Designacao = "Desativada" }
             );
 
+            // Estados de Candidatura
             modelBuilder.Entity<EstadoCandidatura>().HasData(
                 new EstadoCandidatura { Id = 1, Designacao = "Pendente" },
                 new EstadoCandidatura { Id = 2, Designacao = "Em Análise" },
@@ -229,6 +246,7 @@ namespace ToniEmprega.Data
                 new EstadoCandidatura { Id = 5, Designacao = "Cancelada" }
             );
 
+            // Decisões de Avaliação
             modelBuilder.Entity<DecisaoAvaliacao>().HasData(
                 new DecisaoAvaliacao { Id = 1, Designacao = "Aprovado" },
                 new DecisaoAvaliacao { Id = 2, Designacao = "Rejeitado" },

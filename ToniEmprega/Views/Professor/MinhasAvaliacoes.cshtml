@@ -1,0 +1,65 @@
+﻿@model IEnumerable<ToniEmprega.Models.AvaliacaoProfessor>
+@{
+    ViewData["Title"] = "Minhas Avaliações";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-chalkboard-teacher"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Professor/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Professor/Perfil" class="sidebar-link"><i class="fas fa-id-card"></i> Perfil</a></li>
+            <li><a href="/Professor/Candidaturas" class="sidebar-link"><i class="fas fa-clipboard-check"></i> Avaliar</a></li>
+            <li><a href="/Professor/MinhasAvaliacoes" class="sidebar-link active"><i class="fas fa-history"></i> Minhas Avaliações</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-history"></i> Histórico de Avaliações
+        </h2>
+
+        <div class="card">
+            @if (Model.Any())
+            {
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Oferta</th>
+                                <th>Decisão</th>
+                                <th>Data</th>
+                                <th>Comentários</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var av in Model)
+                            {
+                                <tr>
+                                    <td>@av.Candidatura?.Aluno?.Utilizador?.Nome</td>
+                                    <td>@av.Candidatura?.Oferta?.Titulo</td>
+                                    <td>
+                                        <span class="badge @(av.Id_Decisao_Avaliacao == 1 ? "badge-approved" :
+                                                                                                          av.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
+                                    @av.DecisaoAvaliacao?.Designacao
+                                </span>
+                            </td>
+                            <td>@av.Data_Avaliacao.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@(av.Comentarios?.Length > 50 ? av.Comentarios.Substring(0, 50) + "..." : av.Comentarios)</td>
+                        </tr>
+                                                }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p style="color: var(--color-gray); text-align: center; padding: 2rem;">
+                    <i class="fas fa-inbox" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
+                    Ainda não realizou nenhuma avaliação.
+                </p>
+            }
+        </div>
+    </div>
+</div>

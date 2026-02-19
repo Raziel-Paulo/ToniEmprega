@@ -1,5 +1,4 @@
-﻿// Controllers/ProfessorController.cs (ATUALIZADO COMPLETO)
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
@@ -30,17 +29,20 @@ namespace ToniEmprega.Controllers
             if (professor == null) return RedirectToAction("Login", "Account");
 
             var avaliacoesPendentes = await _context.Candidaturas
-                .Include(c => c.Aluno)
-                .ThenInclude(a => a.Utilizador)
-                .Include(c => c.Oferta)
-                .Where(c => c.Id_Estado_Candidatura == 2) // Em Análise
-                .CountAsync();
+                .CountAsync(c => c.Id_Estado_Candidatura == 1 || c.Id_Estado_Candidatura == 2);
 
             var minhasAvaliacoes = await _context.AvaliacoesProfessores
                 .CountAsync(a => a.Id_Professor == professor.Id);
 
             ViewBag.AvaliacoesPendentes = avaliacoesPendentes;
             ViewBag.MinhasAvaliacoes = minhasAvaliacoes;
+
+            // Notificações
+            ViewBag.Notificacoes = await _context.Notificacoes
+                .Where(n => n.Id_Utilizador == professor.Id_Utilizador && !n.Lida)
+                .OrderByDescending(n => n.Data_Criacao)
+                .Take(5)
+                .ToListAsync();
 
             return View();
         }
@@ -80,11 +82,22 @@ namespace ToniEmprega.Controllers
 
             if (candidatura == null) return NotFound();
 
+            // Verificar se já foi avaliada por este professor
+            var jaAvaliou = await _context.AvaliacoesProfessores
+                .AnyAsync(a => a.Id_Candidatura == id && a.Id_Professor == professor.Id);
+
+            if (jaAvaliou)
+            {
+                TempData["Error"] = "Já avaliou esta candidatura.";
+                return RedirectToAction("Candidaturas");
+            }
+
             ViewBag.Decisoes = await _context.DecisaoAvaliacoes.ToListAsync();
             return View(candidatura);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Avaliar(int candidaturaId, int decisaoId, string comentarios)
         {
             var professor = await GetCurrentProfessor();
@@ -101,17 +114,77 @@ namespace ToniEmprega.Controllers
 
             _context.AvaliacoesProfessores.Add(avaliacao);
 
-            // Atualizar estado da candidatura
-            var candidatura = await _context.Candidaturas.FindAsync(candidaturaId);
-            if (candidatura != null)
-            {
-                candidatura.Id_Estado_Candidatura = decisaoId == 1 ? 3 : 4; // Aprovada ou Rejeitada
-            }
+            var candidatura = await _context.Candidaturas
+                .Include(c => c.Aluno)
+                .ThenInclude(a => a.Utilizador)
+                .FirstAsync(c => c.Id == candidaturaId);
 
+            // Atualizar estado da candidatura
+            candidatura.Id_Estado_Candidatura = decisaoId switch
+            {
+                1 => 3, // Aprovado -> Candidatura Aprovada
+                2 => 4, // Rejeitado -> Candidatura Rejeitada
+                _ => 2  // Necessita Revisão -> Em Análise
+            };
+
+            await _context.SaveChangesAsync();
+
+            // Notificar aluno
+            _context.Notificacoes.Add(new Notificacao
+            {
+                Id_Utilizador = candidatura.Aluno.Id_Utilizador,
+                Titulo = "Candidatura avaliada!",
+                Mensagem = $"A sua candidatura para '{candidatura.Oferta?.Titulo}' foi avaliada.",
+                Tipo = decisaoId == 1 ? "success" : "warning",
+                Link = "/Aluno/MinhasCandidaturas"
+            });
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Avaliação registada com sucesso!";
             return RedirectToAction("Candidaturas");
+        }
+
+        public async Task<IActionResult> MinhasAvaliacoes()
+        {
+            var professor = await GetCurrentProfessor();
+            if (professor == null) return RedirectToAction("Login", "Account");
+
+            var avaliacoes = await _context.AvaliacoesProfessores
+                .Include(a => a.Candidatura)
+                .ThenInclude(c => c.Aluno)
+                .ThenInclude(a => a.Utilizador)
+                .Include(a => a.Candidatura)
+                .ThenInclude(c => c.Oferta)
+                .Include(a => a.DecisaoAvaliacao)
+                .Where(a => a.Id_Professor == professor.Id)
+                .OrderByDescending(a => a.Data_Avaliacao)
+                .ToListAsync();
+
+            return View(avaliacoes);
+        }
+
+        // PERFIL DO PROFESSOR
+        public async Task<IActionResult> Perfil()
+        {
+            var professor = await GetCurrentProfessor();
+            if (professor == null) return RedirectToAction("Login", "Account");
+
+            return View(professor);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AtualizarPerfil(string departamento, string numeroProfessor)
+        {
+            var professor = await GetCurrentProfessor();
+            if (professor == null) return RedirectToAction("Login", "Account");
+
+            professor.Departamento = departamento;
+            professor.Numero_Professor = numeroProfessor;
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Perfil atualizado com sucesso!";
+            return RedirectToAction("Perfil");
         }
     }
 }

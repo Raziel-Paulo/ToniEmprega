@@ -1,0 +1,100 @@
+﻿@model IEnumerable<ToniEmprega.Models.Oferta>
+@{
+    ViewData["Title"] = "Gestão de Ofertas";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-cog"></i> Admin</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Admin/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Admin/Utilizadores" class="sidebar-link"><i class="fas fa-users"></i> Utilizadores</a></li>
+            <li><a href="/Admin/Validacoes" class="sidebar-link"><i class="fas fa-id-card"></i> Validações</a></li>
+            <li><a href="/Admin/Ofertas" class="sidebar-link active"><i class="fas fa-briefcase"></i> Ofertas</a></li>
+            <li><a href="/Admin/Configuracoes" class="sidebar-link"><i class="fas fa-cogs"></i> Configurações</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-briefcase"></i> Gestão de Ofertas
+        </h2>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <form method="get" class="search-box">
+                <input type="text" name="searchString" class="form-control search-input"
+                       placeholder="Pesquisar ofertas..." value="@Context.Request.Query["searchString"]" />
+                <select name="estadoId" class="form-control">
+                    <option value="">Todos os Estados</option>
+                    @foreach (var estado in ViewBag.EstadosOferta)
+                    {
+                        <option value="@estado.Id" selected="@(Context.Request.Query["estadoId"] == estado.Id.ToString())">
+                            @estado.Designacao
+                        </option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Empresa</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>Data</th>
+                            <th>Candidaturas</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var oferta in Model)
+                        {
+                            <tr>
+                                <td><strong>@oferta.Titulo</strong></td>
+                                <td>@oferta.Empresa?.Nome_Empresa</td>
+                                <td>@oferta.TipoOferta?.Designacao</td>
+                                <td>
+                                    <span class="badge @(oferta.Id_Estado_Oferta == 1 ? "badge-approved" :
+                                                                                                  oferta.Id_Estado_Oferta == 4 ? "badge-rejected" : "badge-pending")">
+                                    @oferta.EstadoOferta?.Designacao
+                                </span>
+                            </td>
+                            <td>@oferta.Data_Publicacao.ToString("dd/MM/yyyy")</td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-pending">@oferta.Candidaturas?.Count</span>
+                            </td>
+                            <td>
+                                <form method="post" asp-action="AlterarEstadoOferta" style="display: inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@oferta.Id" />
+                                    <select name="novoEstado" class="form-control" style="width: auto; display: inline;" onchange="this.form.submit()">
+                                        @foreach (var estado in ViewBag.EstadosOferta)
+                                            {
+                                                <option value="@estado.Id" selected="@(oferta.Id_Estado_Oferta == estado.Id)">
+                                                    @estado.Designacao
+                                                </option>
+                                            }
+                                        </select>
+                                    </form>
+                                    <form method="post" asp-action="EliminarOferta" style="display: inline; margin-left: 0.5rem;"
+                                          onsubmit="return confirm('Tem certeza?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@oferta.Id" />
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

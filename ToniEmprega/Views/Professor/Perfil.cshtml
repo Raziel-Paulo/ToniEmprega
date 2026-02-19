@@ -1,0 +1,46 @@
+﻿@model ToniEmprega.Models.Professor
+@{
+    ViewData["Title"] = "Perfil do Professor";
+}
+
+<div class="dashboard-grid">
+    <aside class="sidebar">
+        <h3 style="color: #1E90FF;"><i class="fas fa-chalkboard-teacher"></i> Menu</h3>
+        <ul class="sidebar-menu">
+            <li><a href="/Professor/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="/Professor/Perfil" class="sidebar-link active"><i class="fas fa-id-card"></i> Perfil</a></li>
+            <li><a href="/Professor/Candidaturas" class="sidebar-link"><i class="fas fa-clipboard-check"></i> Avaliar</a></li>
+            <li><a href="/Professor/MinhasAvaliacoes" class="sidebar-link"><i class="fas fa-history"></i> Minhas Avaliações</a></li>
+        </ul>
+    </aside>
+
+    <div>
+        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
+            <i class="fas fa-chalkboard-teacher"></i> Perfil do Professor
+        </h2>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-info-circle"></i> Informações Profissionais</h3>
+            </div>
+            <form method="post" asp-action="AtualizarPerfil">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label">Nome</label>
+                    <input type="text" class="form-control" value="@Model.Utilizador?.Nome" disabled />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Departamento</label>
+                    <input type="text" name="departamento" class="form-control" value="@Model.Departamento" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Número de Professor</label>
+                    <input type="text" name="numeroProfessor" class="form-control" value="@Model.Numero_Professor" required />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

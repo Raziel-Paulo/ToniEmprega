@@ -1,0 +1,59 @@
+﻿@model ToniEmprega.Models.Oferta
+@{
+    ViewData["Title"] = "Editar Oferta";
+}
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-edit"></i> Editar Oferta</h2>
+        </div>
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div class="form-group">
+                <label class="form-label">Título</label>
+                <input asp-for="Titulo" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Tipo</label>
+                <select asp-for="Id_Tipo_Oferta" class="form-control" required>
+                    @foreach (var tipo in ViewBag.TiposOferta)
+                    {
+                        <option value="@tipo.Id">@tipo.Designacao</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Localização</label>
+                <input asp-for="Localizacao" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Descrição</label>
+                <textarea asp-for="Descricao" class="form-control" rows="4" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Requisitos</label>
+                <textarea asp-for="Requisitos" class="form-control" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Data de Expiração (opcional)</label>
+                <input asp-for="Data_Expiracao" type="date" class="form-control" />
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar Alterações
+                </button>
+                <a href="/Empresa/MinhasOfertas" class="btn btn-outline">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
