@@ -18,37 +18,29 @@ namespace ToniEmprega.Controllers
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             if (!userId.HasValue) return null;
-
             return await _context.Empresas
                 .Include(e => e.Utilizador)
                 .FirstOrDefaultAsync(e => e.Id_Utilizador == userId.Value);
         }
 
-        // ✅ DASHBOARD CORRIGIDO
         public async Task<IActionResult> Dashboard()
         {
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
 
-            // ✅ CORREÇÃO: Buscar ofertas corretamente com Include
             var ofertas = await _context.Ofertas
                 .Include(o => o.TipoOferta)
                 .Include(o => o.EstadoOferta)
-                .Where(o => o.Id_Empresa == empresa.Id)  // Usar empresa.Id, não empresa.Id_Empresa
+                .Where(o => o.Id_Empresa == empresa.Id)
                 .OrderByDescending(o => o.Data_Publicacao)
                 .Take(5)
                 .ToListAsync();
 
-            // ✅ CORREÇÃO: Estatísticas precisas
-            ViewBag.TotalOfertas = await _context.Ofertas
-                .CountAsync(o => o.Id_Empresa == empresa.Id);
-
+            ViewBag.TotalOfertas = await _context.Ofertas.CountAsync(o => o.Id_Empresa == empresa.Id);
             ViewBag.OfertasAtivas = await _context.Ofertas
                 .CountAsync(o => o.Id_Empresa == empresa.Id && o.Id_Estado_Oferta == 1);
-
             ViewBag.TotalCandidaturas = await _context.Candidaturas
                 .CountAsync(c => c.Oferta.Id_Empresa == empresa.Id);
-
             ViewBag.CandidaturasPendentes = await _context.Candidaturas
                 .CountAsync(c => c.Oferta.Id_Empresa == empresa.Id && c.Id_Estado_Candidatura == 1);
 
@@ -59,21 +51,18 @@ namespace ToniEmprega.Controllers
                 .Take(5)
                 .ToListAsync();
 
-            // ✅ IMPORTANTE: Passar o modelo (ofertas) para a View
             return View(ofertas);
         }
 
-        // ✅ MINHAS OFERTAS CORRIGIDO
         public async Task<IActionResult> MinhasOfertas()
         {
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
 
-            // ✅ CORREÇÃO: Include nas candidaturas para contar corretamente
             var ofertas = await _context.Ofertas
                 .Include(o => o.TipoOferta)
                 .Include(o => o.EstadoOferta)
-                .Include(o => o.Candidaturas)  // Necessário para contar candidaturas
+                .Include(o => o.Candidaturas)
                 .Where(o => o.Id_Empresa == empresa.Id)
                 .OrderByDescending(o => o.Data_Publicacao)
                 .ToListAsync();
@@ -87,7 +76,9 @@ namespace ToniEmprega.Controllers
             if (empresa == null) return RedirectToAction("Login", "Account");
 
             ViewBag.TiposOferta = await _context.TipoOfertas.ToListAsync();
-            return View();
+
+            // ✅ Retornar modelo vazio em vez de null
+            return View(new Oferta());
         }
 
         [HttpPost]
@@ -97,22 +88,16 @@ namespace ToniEmprega.Controllers
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
 
-            // ✅ CORREÇÃO: Verificar se modelo é válido
-            if (!ModelState.IsValid)
-            {
-                ViewBag.TiposOferta = await _context.TipoOfertas.ToListAsync();
-                return View(oferta);
-            }
-
+            // Preencher campos automáticos
             oferta.Id_Empresa = empresa.Id;
-            oferta.Id_Estado_Oferta = 1; // Ativa
+            oferta.Id_Estado_Oferta = 1;
             oferta.Data_Publicacao = DateTime.Now;
 
             _context.Ofertas.Add(oferta);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Oferta criada com sucesso!";
-            return RedirectToAction("MinhasOfertas"); // ✅ Redirecionar para MinhasOfertas em vez de Dashboard
+            return RedirectToAction("MinhasOfertas");
         }
 
         public async Task<IActionResult> EditarOferta(int? id)

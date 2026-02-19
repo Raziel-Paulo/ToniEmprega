@@ -1,5 +1,4 @@
-﻿@* Views/Empresa/Candidatos.cshtml *@
-@model IEnumerable<ToniEmprega.Models.Candidatura>
+﻿@model IEnumerable<ToniEmprega.Models.Candidatura>
 @{
     ViewData["Title"] = "Candidatos";
     var oferta = ViewBag.Oferta as ToniEmprega.Models.Oferta;
@@ -11,6 +10,8 @@
         <ul class="sidebar-menu">
             <li><a href="/Empresa/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/Empresa/MinhasOfertas" class="sidebar-link active"><i class="fas fa-briefcase"></i> Minhas Ofertas</a></li>
+            <!-- ✅ ADICIONAR ESTE LINK QUE ESTAVA A FALTAR -->
+            <li><a href="/Empresa/CriarOferta" class="sidebar-link"><i class="fas fa-plus-circle"></i> Nova Oferta</a></li>
         </ul>
     </aside>
 
@@ -44,7 +45,7 @@
                                     <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
                                     <td>
                                         <span class="badge @(cand.Id_Estado_Candidatura == 1 ? "badge-pending" :
-                                                                                                         cand.Id_Estado_Candidatura == 3 ? "badge-approved" : "badge-rejected")">
+                                                                                                                                                       cand.Id_Estado_Candidatura == 3 ? "badge-approved" : "badge-rejected")">
                                     @cand.EstadoCandidatura?.Designacao
                                 </span>
                             </td>

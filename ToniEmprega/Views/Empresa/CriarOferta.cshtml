@@ -1,5 +1,4 @@
-﻿@* Views/Empresa/CriarOferta.cshtml *@
-@model ToniEmprega.Models.Oferta
+﻿@model ToniEmprega.Models.Oferta
 @{
     ViewData["Title"] = "Nova Oferta";
 }
@@ -10,33 +9,54 @@
             <h2 class="card-title"><i class="fas fa-plus-circle"></i> Criar Oferta</h2>
         </div>
 
-        <form method="post">
+        <form method="post" action="/Empresa/CriarOferta">
+            @Html.AntiForgeryToken()
+
             <div class="form-group">
                 <label class="form-label">Título</label>
-                <input asp-for="Titulo" class="form-control" required />
+                <input type="text" name="Titulo" class="form-control" required
+                       value="@(Model?.Titulo ?? "")" />
             </div>
+
             <div class="form-group">
                 <label class="form-label">Tipo</label>
-                <select asp-for="Id_Tipo_Oferta" class="form-control" required>
-                    @foreach (var tipo in ViewBag.TiposOferta)
+                <select name="Id_Tipo_Oferta" class="form-control" required>
+                    <option value="">-- Selecione --</option>
+                    @if (ViewBag.TiposOferta != null)
                     {
-                        <option value="@tipo.Id">@tipo.Designacao</option>
+                        @foreach (var tipo in ViewBag.TiposOferta)
+                        {
+                            <option value="@tipo.Id">@tipo.Designacao</option>
+                        }
                     }
                 </select>
             </div>
+
             <div class="form-group">
                 <label class="form-label">Localização</label>
-                <input asp-for="Localizacao" class="form-control" required />
+                <input type="text" name="Localizacao" class="form-control" required
+                       value="@(Model?.Localizacao ?? "")" />
             </div>
+
             <div class="form-group">
                 <label class="form-label">Descrição</label>
-                <textarea asp-for="Descricao" class="form-control" rows="4" required></textarea>
+                <textarea name="Descricao" class="form-control" rows="4" required>@(Model?.Descricao ?? "")</textarea>
             </div>
+
             <div class="form-group">
                 <label class="form-label">Requisitos</label>
-                <textarea asp-for="Requisitos" class="form-control" rows="3" required></textarea>
+                <textarea name="Requisitos" class="form-control" rows="3" required>@(Model?.Requisitos ?? "")</textarea>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Publicar</button>
+
+            <div class="form-group">
+                <label class="form-label">Data de Expiração (opcional)</label>
+                <input type="date" name="Data_Expiracao" class="form-control"
+                       value="@(Model?.Data_Expiracao?.ToString("yyyy-MM-dd") ?? "")" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Publicar
+            </button>
         </form>
     </div>
 </div>
