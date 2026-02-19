@@ -1,32 +1,67 @@
 ﻿@model IEnumerable<ToniEmprega.Models.ValidacaoIdentidade>
 @{
     ViewData["Title"] = "Validação de Identidade";
+    Layout = "_ValidationLayout"; // Usar layout especial sem menu de navegação!
 }
 
-<div style="max-width: 800px; margin: 0 auto;">
-    <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
-        <i class="fas fa-id-card"></i> Validação de Identidade
+<style>
+    /* Esconder elementos de navegação quando em validação pendente */
+    .nav-menu, .sidebar, .navbar-nav {
+        display: none !important;
+    }
+
+    .validation-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .validation-locked {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.9);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<div class="validation-container">
+    <h2 style="color: #1E90FF; margin-bottom: 1.5rem; text-align: center;">
+        <i class="fas fa-shield-alt"></i> Validação de Identidade Obrigatória
     </h2>
 
-    <!-- ✅ ALERTA DE ESTADO -->
     @{
         var estadoAtual = ViewBag.EstadoAtual as int?;
     }
 
     @if (estadoAtual == 1)
     {
-        <div class="alert alert-warning" style="margin-bottom: 1.5rem;">
-            <i class="fas fa-clock"></i>
-            <strong>Aguardando aprovação.</strong> O seu documento está a ser analisado pelo administrador.
+        <div class="alert alert-warning" style="margin-bottom: 1.5rem; text-align: center;">
+            <i class="fas fa-clock fa-2x" style="display: block; margin-bottom: 1rem;"></i>
+            <strong>Aguardando aprovação.</strong><br>
+            O seu documento está a ser analisado pelo administrador.<br>
+            <small>Não pode aceder à plataforma até ser aprovado.</small>
         </div>
+
+        <!-- Refresh automático para verificar se foi aprovado -->
+        <meta http-equiv="refresh" content="30">
     }
     else if (estadoAtual == 2)
     {
         <div class="alert alert-success" style="margin-bottom: 1.5rem;">
             <i class="fas fa-check-circle"></i>
-            <strong>Validação aprovada!</strong> Já pode aceder a todas as funcionalidades.
-            <a href="/Account/Login" class="btn btn-primary btn-sm" style="margin-left: 1rem;">Iniciar Sessão</a>
+            <strong>Validação aprovada!</strong> A redirecionar...
         </div>
+        <script>
+            setTimeout(function() {
+                window.location.href = '/';
+            }, 2000);
+        </script>
     }
     else if (estadoAtual == 3 || ViewBag.PrecisaNovaValidacao == true)
     {
@@ -43,7 +78,7 @@
         </div>
     }
 
-    <!-- ✅ FORMULÁRIO DE SUBMISSÃO (só se não estiver aprovado) -->
+    <!-- Só mostrar formulário se não estiver aprovado -->
     @if (estadoAtual != 2)
     {
         <div class="card" style="margin-bottom: 2rem;">
@@ -68,21 +103,29 @@
                         Formatos aceites: PDF, JPG, PNG. Máximo 10MB.
                     </small>
                 </div>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
                     <i class="fas fa-upload"></i> Submeter para Validação
+                </button>
+            </form>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <form method="post" asp-controller="Account" asp-action="Logout" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline">
+                    <i class="fas fa-sign-out-alt"></i> Sair da Conta
                 </button>
             </form>
         </div>
     }
 
-    <!-- ✅ HISTÓRICO -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-history"></i> Histórico</h3>
-        </div>
-
-        @if (Model.Any())
-        {
+    <!-- Histórico -->
+    @if (Model.Any())
+    {
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-history"></i> Histórico</h3>
+            </div>
             <div class="table-container">
                 <table>
                     <thead>
@@ -100,7 +143,7 @@
                                 <td>@val.TipoValidacao?.Designacao</td>
                                 <td>
                                     <span class="badge @(val.Id_Estado_Validacao_Documento == 1 ? "badge-pending" :
-                                                                                                   val.Id_Estado_Validacao_Documento == 2 ? "badge-approved" : "badge-rejected")">
+                                                                                                     val.Id_Estado_Validacao_Documento == 2 ? "badge-approved" : "badge-rejected")">
                                 @val.EstadoValidacaoDocumento?.Designacao
                             </span>
                         </td>
@@ -115,10 +158,6 @@
                     </tbody>
                 </table>
             </div>
-        }
-        else
-        {
-            <p style="color: var(--color-gray);">Nenhum documento submetido ainda.</p>
-        }
-    </div>
+        </div>
+    }
 </div>

@@ -1,5 +1,4 @@
-﻿// Controllers/ValidacaoController.cs - ATUALIZADO
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
@@ -15,10 +14,45 @@ namespace ToniEmprega.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? mensagem)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue) return RedirectToAction("Login", "Account");
+
+            // Se não estiver logado, mandar para login
+            if (!userId.HasValue)
+                return RedirectToAction("Login", "Account");
+
+            var utilizador = await _context.Utilizadores.FindAsync(userId.Value);
+            if (utilizador == null)
+            {
+                HttpContext.Session.Clear();
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Se já estiver aprovado, redirecionar para o dashboard apropriado
+            if (utilizador.Id_Estado_Validacao_Utilizador == 2)
+            {
+                // Verificar se há URL de retorno
+                var returnUrl = HttpContext.Session.GetString("ReturnUrl");
+                HttpContext.Session.Remove("ReturnUrl");
+
+                if (!string.IsNullOrEmpty(returnUrl))
+                    return Redirect(returnUrl);
+
+                // Redirecionar conforme o tipo
+                return utilizador.Id_Tipo_Utilizador switch
+                {
+                    1 => RedirectToAction("Dashboard", "Aluno"),
+                    2 => RedirectToAction("Dashboard", "Professor"),
+                    3 => RedirectToAction("Dashboard", "Empresa"),
+                    5 => RedirectToAction("Dashboard", "Admin"),
+                    _ => RedirectToAction("Index", "Home")
+                };
+            }
+
+            // Se chegou aqui, precisa de validação
+            if (!string.IsNullOrEmpty(mensagem))
+                TempData["Warning"] = mensagem;
 
             var validacoes = await _context.ValidacoesIdentidade
                 .Include(v => v.TipoValidacao)
@@ -27,14 +61,12 @@ namespace ToniEmprega.Controllers
                 .OrderByDescending(v => v.Id)
                 .ToListAsync();
 
-            var utilizador = await _context.Utilizadores.FindAsync(userId.Value);
+            ViewBag.PrecisaNovaValidacao = utilizador.Id_Estado_Validacao_Utilizador == 3;
+            ViewBag.EstadoAtual = utilizador.Id_Estado_Validacao_Utilizador;
+            ViewBag.TipoUtilizador = utilizador.Id_Tipo_Utilizador;
 
-            ViewBag.PrecisaNovaValidacao = utilizador?.Id_Estado_Validacao_Utilizador == 3; // Rejeitado
-            ViewBag.EstadoAtual = utilizador?.Id_Estado_Validacao_Utilizador;
-            ViewBag.TipoUtilizador = utilizador?.Id_Tipo_Utilizador;
-
-            // ✅ Se for Aluno, sugerir Cartão de Estudante
-            if (utilizador?.Id_Tipo_Utilizador == 1) // Aluno
+            // Tipos de validação específicos por tipo de utilizador
+            if (utilizador.Id_Tipo_Utilizador == 1) // Aluno
             {
                 ViewBag.TiposValidacao = await _context.TipoValidacoes
                     .Where(t => t.Designacao == "Cartão de Estudante")
@@ -53,7 +85,8 @@ namespace ToniEmprega.Controllers
         public async Task<IActionResult> Submeter(IFormFile documento, int tipoValidacaoId)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue) return RedirectToAction("Login", "Account");
+            if (!userId.HasValue)
+                return RedirectToAction("Login", "Account");
 
             if (documento == null || documento.Length == 0)
             {
@@ -64,7 +97,7 @@ namespace ToniEmprega.Controllers
             // Validações de segurança
             var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
             var allowedTypes = new[] { "application/pdf", "image/jpeg", "image/png" };
-            const long maxSize = 10 * 1024 * 1024; // 10MB
+            const long maxSize = 10 * 1024 * 1024;
 
             var ext = Path.GetExtension(documento.FileName).ToLower();
             if (!allowedExtensions.Contains(ext))
@@ -85,6 +118,7 @@ namespace ToniEmprega.Controllers
                 return RedirectToAction("Index");
             }
 
+            // Guardar ficheiro
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "documentos");
             Directory.CreateDirectory(uploadsFolder);
 
@@ -107,16 +141,16 @@ namespace ToniEmprega.Controllers
 
             _context.ValidacoesIdentidade.Add(validacao);
 
-            // ✅ MANTER ESTADO PENDENTE ATÉ APROVAÇÃO
+            // Manter estado pendente até aprovação
             var utilizador = await _context.Utilizadores.FindAsync(userId.Value);
             if (utilizador != null)
             {
-                utilizador.Id_Estado_Validacao_Utilizador = 1; // Pendente (aguarda aprovação do admin)
+                utilizador.Id_Estado_Validacao_Utilizador = 1; // Pendente
             }
 
             await _context.SaveChangesAsync();
 
-            // ✅ NOTIFICAR ADMINISTRADORES
+            // Notificar administradores
             var admins = await _context.Admins.Include(a => a.Utilizador).ToListAsync();
             foreach (var admin in admins)
             {

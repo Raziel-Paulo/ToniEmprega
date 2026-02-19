@@ -1,6 +1,7 @@
 ﻿// Program.cs - ADMIN COM PASSWORD 123
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
+using ToniEmprega.Filters;
 using ToniEmprega.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,12 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+});
+
+builder.Services.AddControllersWithViews(options =>
+{
+    // Adicionar o filter globalmente - protege TODAS as actions
+    options.Filters.Add<RequireValidationFilter>();
 });
 
 var app = builder.Build();

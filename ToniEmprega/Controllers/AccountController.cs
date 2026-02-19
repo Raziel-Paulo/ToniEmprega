@@ -34,30 +34,25 @@ namespace ToniEmprega.Controllers
                 return View();
             }
 
-            // ✅ VERIFICAR ESTADO DA CONTA
+            // Definir session
+            HttpContext.Session.SetInt32("UserId", user.Id);
+            HttpContext.Session.SetString("UserName", user.Nome);
+            HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
+
+            // ✅ VERIFICAR ESTADO DA CONTA - se não estiver aprovado, mandar para validação
             if (user.Id_Estado_Validacao_Utilizador == 1) // Pendente
             {
                 TempData["Warning"] = "Precisa de completar a validação de identidade.";
-                HttpContext.Session.SetInt32("UserId", user.Id);
-                HttpContext.Session.SetString("UserName", user.Nome);
-                HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
                 return RedirectToAction("Index", "Validacao");
             }
 
             if (user.Id_Estado_Validacao_Utilizador == 3) // Rejeitado
             {
                 TempData["Error"] = "A sua validação foi rejeitada. Submeta novo documento.";
-                HttpContext.Session.SetInt32("UserId", user.Id);
-                HttpContext.Session.SetString("UserName", user.Nome);
-                HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
                 return RedirectToAction("Index", "Validacao");
             }
 
             // ✅ APROVADO - Login normal
-            HttpContext.Session.SetInt32("UserId", user.Id);
-            HttpContext.Session.SetString("UserName", user.Nome);
-            HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
-
             _context.Notificacoes.Add(new Notificacao
             {
                 Id_Utilizador = user.Id,
@@ -108,13 +103,14 @@ namespace ToniEmprega.Controllers
             }
 
             utilizador.Id_Tipo_Utilizador = tipoUtilizadorId;
-            utilizador.Id_Estado_Validacao_Utilizador = 1; // ✅ Pendente (aguarda documento)
+            utilizador.Id_Estado_Validacao_Utilizador = 1; // Pendente
             utilizador.Palavra_Passe = BCrypt.Net.BCrypt.HashPassword(utilizador.Palavra_Passe);
             utilizador.Data_Registro = DateTime.Now;
 
             _context.Utilizadores.Add(utilizador);
             await _context.SaveChangesAsync();
 
+            // Criar perfil específico
             var tipo = await _context.TipoUtilizadores.FindAsync(tipoUtilizadorId);
             switch (tipo?.Designacao)
             {
@@ -156,7 +152,7 @@ namespace ToniEmprega.Controllers
             }
             await _context.SaveChangesAsync();
 
-            // ✅ CRIAR NOTIFICAÇÃO PARA ADMIN
+            // Notificar admins
             var admins = await _context.Admins.Include(a => a.Utilizador).ToListAsync();
             foreach (var admin in admins)
             {
@@ -171,11 +167,12 @@ namespace ToniEmprega.Controllers
             }
             await _context.SaveChangesAsync();
 
-            // ✅ REDIRECIONAR PARA VALIDAÇÃO DE IDENTIDADE
+            // ✅ SÓ AGORA definir session - mas redirecionar imediatamente para validação
             HttpContext.Session.SetInt32("UserId", utilizador.Id);
             HttpContext.Session.SetString("UserName", utilizador.Nome);
             HttpContext.Session.SetString("UserType", tipo?.Designacao ?? "Utilizador");
 
+            // ✅ REDIRECIONAR DIRETAMENTE PARA VALIDAÇÃO - não pode ir a lado nenhum antes
             TempData["Success"] = "Registo efetuado! Agora submeta o seu documento de identificação.";
             return RedirectToAction("Index", "Validacao");
         }

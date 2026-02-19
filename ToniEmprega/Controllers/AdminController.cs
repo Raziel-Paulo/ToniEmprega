@@ -136,7 +136,9 @@ namespace ToniEmprega.Controllers
             {
                 validacao.Id_Estado_Validacao_Documento = 2; // Aprovado
                 validacao.Data_Validacao = DateTime.Now;
-                validacao.Utilizador.Id_Estado_Validacao_Utilizador = 2; // ✅ APROVAR UTILIZADOR
+
+                // ✅ APROVAR UTILIZADOR - estado 2
+                validacao.Utilizador.Id_Estado_Validacao_Utilizador = 2;
 
                 await _context.SaveChangesAsync();
 
@@ -168,7 +170,9 @@ namespace ToniEmprega.Controllers
             {
                 validacao.Id_Estado_Validacao_Documento = 3; // Rejeitado
                 validacao.Data_Validacao = DateTime.Now;
-                validacao.Utilizador.Id_Estado_Validacao_Utilizador = 3; // ✅ REJEITAR UTILIZADOR
+
+                // ✅ REJEITAR UTILIZADOR - estado 3
+                validacao.Utilizador.Id_Estado_Validacao_Utilizador = 3;
 
                 await _context.SaveChangesAsync();
 
