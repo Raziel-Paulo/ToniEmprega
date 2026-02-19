@@ -1,6 +1,24 @@
-﻿@model ToniEmprega.Models.Utilizador
+﻿@using Microsoft.EntityFrameworkCore
+@model ToniEmprega.Models.Utilizador
 @{
     ViewData["Title"] = "Meu Perfil";
+
+    // ALTERAÇÃO: Verificar estado de validação
+    var userId = Context.Session.GetInt32("UserId");
+    var isValidated = false;
+
+    if (userId.HasValue)
+    {
+        var dbContext = Context.RequestServices.GetService<ToniEmprega.Data.ApplicationDbContext>();
+        if (dbContext != null)
+        {
+            var utilizador = dbContext.Utilizadores
+                .AsNoTracking()
+                .FirstOrDefault(u => u.Id == userId.Value);
+
+            isValidated = utilizador?.Id_Estado_Validacao_Utilizador == 2;
+        }
+    }
 }
 
 <div class="dashboard-grid">
@@ -8,7 +26,12 @@
         <h3 style="color: #1E90FF;"><i class="fas fa-user"></i> Menu</h3>
         <ul class="sidebar-menu">
             <li><a href="/Account/Perfil" class="sidebar-link active"><i class="fas fa-id-card"></i> Perfil</a></li>
-            <li><a href="/Validacao/Index" class="sidebar-link"><i class="fas fa-shield-alt"></i> Validar Identidade</a></li>
+
+            <!-- ALTERAÇÃO: Só mostrar "Validar Identidade" se NÃO estiver validado -->
+            @if (!isValidated)
+            {
+                <li><a href="/Validacao/Index" class="sidebar-link"><i class="fas fa-shield-alt"></i> Validar Identidade</a></li>
+            }
         </ul>
     </aside>
 
@@ -16,6 +39,22 @@
         <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
             <i class="fas fa-user-circle"></i> Meu Perfil
         </h2>
+
+        <!-- Mostrar badge de validação -->
+        <div style="margin-bottom: 1.5rem;">
+            @if (isValidated)
+            {
+                <span class="badge badge-approved" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="fas fa-check-circle"></i> Identidade Validada
+                </span>
+            }
+            else
+            {
+                <span class="badge badge-pending" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                    <i class="fas fa-clock"></i> Validação Pendente
+                </span>
+            }
+        </div>
 
         <div class="card" style="margin-bottom: 2rem;">
             <div class="card-header">
