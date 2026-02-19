@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// Controllers/AccountController.cs - COMPLETO COM VALIDAÇÃO NO REGISTO
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
-
-// ADICIONAR ESTE USING:
-using BCryptNet = BCrypt.Net.BCrypt;
 
 namespace ToniEmprega.Controllers
 {
@@ -30,19 +28,32 @@ namespace ToniEmprega.Controllers
                 .Include(u => u.TipoUtilizador)
                 .FirstOrDefaultAsync(u => u.Email == email);
 
-            // CORREÇÃO: Usar BCryptNet.Verify
-            if (user == null || !BCryptNet.Verify(password, user.Palavra_Passe))
+            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Palavra_Passe))
             {
                 ViewBag.Error = "Email ou palavra-passe incorretos.";
                 return View();
             }
 
-            if (user.Id_Estado_Validacao_Utilizador != 2)
+            // ✅ VERIFICAR ESTADO DA CONTA
+            if (user.Id_Estado_Validacao_Utilizador == 1) // Pendente
             {
-                ViewBag.Error = "Conta pendente de aprovação. Aguarde validação da identidade.";
-                return View();
+                TempData["Warning"] = "Precisa de completar a validação de identidade.";
+                HttpContext.Session.SetInt32("UserId", user.Id);
+                HttpContext.Session.SetString("UserName", user.Nome);
+                HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
+                return RedirectToAction("Index", "Validacao");
             }
 
+            if (user.Id_Estado_Validacao_Utilizador == 3) // Rejeitado
+            {
+                TempData["Error"] = "A sua validação foi rejeitada. Submeta novo documento.";
+                HttpContext.Session.SetInt32("UserId", user.Id);
+                HttpContext.Session.SetString("UserName", user.Nome);
+                HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
+                return RedirectToAction("Index", "Validacao");
+            }
+
+            // ✅ APROVADO - Login normal
             HttpContext.Session.SetInt32("UserId", user.Id);
             HttpContext.Session.SetString("UserName", user.Nome);
             HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
@@ -97,11 +108,8 @@ namespace ToniEmprega.Controllers
             }
 
             utilizador.Id_Tipo_Utilizador = tipoUtilizadorId;
-            utilizador.Id_Estado_Validacao_Utilizador = 1; // Pendente
-
-            // CORREÇÃO: Usar BCryptNet.HashPassword
-            utilizador.Palavra_Passe = BCryptNet.HashPassword(utilizador.Palavra_Passe);
-
+            utilizador.Id_Estado_Validacao_Utilizador = 1; // ✅ Pendente (aguarda documento)
+            utilizador.Palavra_Passe = BCrypt.Net.BCrypt.HashPassword(utilizador.Palavra_Passe);
             utilizador.Data_Registro = DateTime.Now;
 
             _context.Utilizadores.Add(utilizador);
@@ -148,18 +156,28 @@ namespace ToniEmprega.Controllers
             }
             await _context.SaveChangesAsync();
 
-            _context.Notificacoes.Add(new Notificacao
+            // ✅ CRIAR NOTIFICAÇÃO PARA ADMIN
+            var admins = await _context.Admins.Include(a => a.Utilizador).ToListAsync();
+            foreach (var admin in admins)
             {
-                Id_Utilizador = utilizador.Id,
-                Titulo = "Bem-vindo ao ToniEmprega!",
-                Mensagem = "Complete a validação de identidade para aceder a todas as funcionalidades.",
-                Tipo = "warning",
-                Link = "/Validacao/Index"
-            });
+                _context.Notificacoes.Add(new Notificacao
+                {
+                    Id_Utilizador = admin.Id_Utilizador,
+                    Titulo = "Novo registo pendente",
+                    Mensagem = $"{utilizador.Nome} ({tipo?.Designacao}) registou-se e aguarda validação de documento.",
+                    Tipo = "warning",
+                    Link = "/Admin/Validacoes"
+                });
+            }
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Registo efetuado! Faça login e complete a validação de identidade.";
-            return RedirectToAction("Login");
+            // ✅ REDIRECIONAR PARA VALIDAÇÃO DE IDENTIDADE
+            HttpContext.Session.SetInt32("UserId", utilizador.Id);
+            HttpContext.Session.SetString("UserName", utilizador.Nome);
+            HttpContext.Session.SetString("UserType", tipo?.Designacao ?? "Utilizador");
+
+            TempData["Success"] = "Registo efetuado! Agora submeta o seu documento de identificação.";
+            return RedirectToAction("Index", "Validacao");
         }
 
         public IActionResult Logout()
@@ -215,8 +233,7 @@ namespace ToniEmprega.Controllers
             var user = await _context.Utilizadores.FindAsync(userId.Value);
             if (user == null) return NotFound();
 
-            // CORREÇÃO: Usar BCryptNet.Verify
-            if (!BCryptNet.Verify(passwordAtual, user.Palavra_Passe))
+            if (!BCrypt.Net.BCrypt.Verify(passwordAtual, user.Palavra_Passe))
             {
                 TempData["Error"] = "Password atual incorreta.";
                 return RedirectToAction("Perfil");
@@ -228,8 +245,7 @@ namespace ToniEmprega.Controllers
                 return RedirectToAction("Perfil");
             }
 
-            // CORREÇÃO: Usar BCryptNet.HashPassword
-            user.Palavra_Passe = BCryptNet.HashPassword(novaPassword);
+            user.Palavra_Passe = BCrypt.Net.BCrypt.HashPassword(novaPassword);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Password alterada com sucesso!";

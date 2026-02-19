@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// Controllers/ValidacaoController.cs - ATUALIZADO
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
@@ -27,10 +28,23 @@ namespace ToniEmprega.Controllers
                 .ToListAsync();
 
             var utilizador = await _context.Utilizadores.FindAsync(userId.Value);
+
             ViewBag.PrecisaNovaValidacao = utilizador?.Id_Estado_Validacao_Utilizador == 3; // Rejeitado
             ViewBag.EstadoAtual = utilizador?.Id_Estado_Validacao_Utilizador;
+            ViewBag.TipoUtilizador = utilizador?.Id_Tipo_Utilizador;
 
-            ViewBag.TiposValidacao = await _context.TipoValidacoes.ToListAsync();
+            // ✅ Se for Aluno, sugerir Cartão de Estudante
+            if (utilizador?.Id_Tipo_Utilizador == 1) // Aluno
+            {
+                ViewBag.TiposValidacao = await _context.TipoValidacoes
+                    .Where(t => t.Designacao == "Cartão de Estudante")
+                    .ToListAsync();
+            }
+            else
+            {
+                ViewBag.TiposValidacao = await _context.TipoValidacoes.ToListAsync();
+            }
+
             return View(validacoes);
         }
 
@@ -93,34 +107,31 @@ namespace ToniEmprega.Controllers
 
             _context.ValidacoesIdentidade.Add(validacao);
 
-            // Atualizar estado do utilizador para pendente
+            // ✅ MANTER ESTADO PENDENTE ATÉ APROVAÇÃO
             var utilizador = await _context.Utilizadores.FindAsync(userId.Value);
             if (utilizador != null)
             {
-                utilizador.Id_Estado_Validacao_Utilizador = 1;
+                utilizador.Id_Estado_Validacao_Utilizador = 1; // Pendente (aguarda aprovação do admin)
             }
 
             await _context.SaveChangesAsync();
 
-            // Notificar administradores (simplificado - na prática, teria lista de admins)
-            var admins = await _context.Admins
-                .Include(a => a.Utilizador)
-                .ToListAsync();
-
+            // ✅ NOTIFICAR ADMINISTRADORES
+            var admins = await _context.Admins.Include(a => a.Utilizador).ToListAsync();
             foreach (var admin in admins)
             {
                 _context.Notificacoes.Add(new Notificacao
                 {
                     Id_Utilizador = admin.Id_Utilizador,
-                    Titulo = "Nova validação pendente",
-                    Mensagem = $"{utilizador?.Nome} submeteu documento para validação.",
+                    Titulo = "Novo documento para validar",
+                    Mensagem = $"{utilizador?.Nome} submeteu documento de {validacao.TipoValidacao?.Designacao}.",
                     Tipo = "warning",
                     Link = "/Admin/Validacoes"
                 });
             }
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Documento submetido com sucesso! Aguarde validação.";
+            TempData["Success"] = "Documento submetido com sucesso! Aguarde aprovação do administrador.";
             return RedirectToAction("Index");
         }
     }

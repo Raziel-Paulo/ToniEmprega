@@ -94,16 +94,34 @@ namespace ToniEmprega.Controllers
         }
 
         // GESTÃO DE VALIDAÇÕES
+        // AdminController.cs - MÉTODO VALIDACOES CORRIGIDO
         public async Task<IActionResult> Validacoes()
         {
-            var validacoes = await _context.ValidacoesIdentidade
+            // ✅ BUSCAR TODOS OS UTILIZADORES PENDENTES (com ou sem documento submetido)
+            var utilizadoresPendentes = await _context.Utilizadores
+                .Include(u => u.TipoUtilizador)
+                .Include(u => u.ValidacoesIdentidade)
+                .ThenInclude(v => v.TipoValidacao)
+                .Include(u => u.ValidacoesIdentidade)
+                .ThenInclude(v => v.EstadoValidacaoDocumento)
+                .Where(u => u.Id_Estado_Validacao_Utilizador == 1) // Pendente
+                .Where(u => u.Id_Tipo_Utilizador != 5) // Excluir admins
+                .ToListAsync();
+
+            // ✅ BUSCAR DOCUMENTOS PENDENTES
+            var documentosPendentes = await _context.ValidacoesIdentidade
                 .Include(v => v.Utilizador)
                 .Include(v => v.TipoValidacao)
                 .Include(v => v.EstadoValidacaoDocumento)
-                .Where(v => v.Id_Estado_Validacao_Documento == 1)
+                .Where(v => v.Id_Estado_Validacao_Documento == 1) // Pendente
                 .ToListAsync();
 
-            return View(validacoes);
+            // Combinar ambos na view
+            ViewBag.UtilizadoresSemDocumento = utilizadoresPendentes
+                .Where(u => !u.ValidacoesIdentidade.Any())
+                .ToList();
+
+            return View(documentosPendentes);
         }
 
         [HttpPost]
@@ -116,9 +134,9 @@ namespace ToniEmprega.Controllers
 
             if (validacao != null)
             {
-                validacao.Id_Estado_Validacao_Documento = 2;
+                validacao.Id_Estado_Validacao_Documento = 2; // Aprovado
                 validacao.Data_Validacao = DateTime.Now;
-                validacao.Utilizador.Id_Estado_Validacao_Utilizador = 2;
+                validacao.Utilizador.Id_Estado_Validacao_Utilizador = 2; // ✅ APROVAR UTILIZADOR
 
                 await _context.SaveChangesAsync();
 
@@ -128,7 +146,7 @@ namespace ToniEmprega.Controllers
                     Titulo = "Documento aprovado!",
                     Mensagem = "A sua validação de identidade foi aprovada. Já pode aceder a todas as funcionalidades.",
                     Tipo = "success",
-                    Link = "/Validacao/Index"
+                    Link = "/Account/Login"
                 });
                 await _context.SaveChangesAsync();
 
@@ -148,9 +166,9 @@ namespace ToniEmprega.Controllers
 
             if (validacao != null)
             {
-                validacao.Id_Estado_Validacao_Documento = 3;
+                validacao.Id_Estado_Validacao_Documento = 3; // Rejeitado
                 validacao.Data_Validacao = DateTime.Now;
-                validacao.Utilizador.Id_Estado_Validacao_Utilizador = 3;
+                validacao.Utilizador.Id_Estado_Validacao_Utilizador = 3; // ✅ REJEITAR UTILIZADOR
 
                 await _context.SaveChangesAsync();
 

@@ -1,5 +1,4 @@
-﻿@* Views/Admin/Validacoes.cshtml *@
-@model IEnumerable<ToniEmprega.Models.ValidacaoIdentidade>
+﻿@model IEnumerable<ToniEmprega.Models.ValidacaoIdentidade>
 @{
     ViewData["Title"] = "Validações Pendentes";
 }
@@ -11,6 +10,8 @@
             <li><a href="/Admin/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/Admin/Utilizadores" class="sidebar-link"><i class="fas fa-users"></i> Utilizadores</a></li>
             <li><a href="/Admin/Validacoes" class="sidebar-link active"><i class="fas fa-id-card"></i> Validações</a></li>
+            <li><a href="/Admin/Ofertas" class="sidebar-link"><i class="fas fa-briefcase"></i> Ofertas</a></li>
+            <li><a href="/Admin/Configuracoes" class="sidebar-link"><i class="fas fa-cogs"></i> Configurações</a></li>
         </ul>
     </aside>
 
@@ -19,7 +20,57 @@
             <i class="fas fa-id-card"></i> Validações Pendentes
         </h2>
 
+        <!-- ✅ UTILIZADORES SEM DOCUMENTO -->
+        @if (ViewBag.UtilizadoresSemDocumento != null && ViewBag.UtilizadoresSemDocumento.Count > 0)
+        {
+            <div class="card" style="margin-bottom: 2rem; border: 2px solid var(--color-warning);">
+                <div class="card-header">
+                    <h3 class="card-title" style="color: var(--color-warning);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Utilizadores Aguardando Documento (@ViewBag.UtilizadoresSemDocumento.Count)
+                    </h3>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Registo</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in ViewBag.UtilizadoresSemDocumento)
+                            {
+                                <tr style="background-color: rgba(255, 193, 7, 0.1);">
+                                    <td><strong>@user.Nome</strong></td>
+                                    <td>@user.Email</td>
+                                    <td>@user.TipoUtilizador?.Designacao</td>
+                                    <td>@user.Data_Registro.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="badge badge-pending">
+                                            <i class="fas fa-clock"></i> Aguarda Documento
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <!-- ✅ DOCUMENTOS PENDENTES DE APROVAÇÃO -->
         <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-file-alt"></i>
+                    Documentos Submetidos (@Model.Count())
+                </h3>
+            </div>
+
             @if (Model.Any())
             {
                 <div class="table-container">
@@ -28,6 +79,7 @@
                             <tr>
                                 <th>Utilizador</th>
                                 <th>Tipo Documento</th>
+                                <th>Data Submissão</th>
                                 <th>Documento</th>
                                 <th>Ações</th>
                             </tr>
@@ -41,21 +93,24 @@
                                         <small>@val.Utilizador?.Email</small>
                                     </td>
                                     <td>@val.TipoValidacao?.Designacao</td>
+                                    <td>@val.Data_Validacao?.ToString("dd/MM/yyyy") ?? "N/A"</td>
                                     <td>
                                         <a href="@val.Ficheiro_Prova" target="_blank" class="btn btn-outline btn-sm">
-                                            <i class="fas fa-eye"></i> Ver
+                                            <i class="fas fa-eye"></i> Ver Documento
                                         </a>
                                     </td>
                                     <td>
                                         <form method="post" asp-action="AprovarValidacao" style="display: inline;">
+                                            @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@val.Id" />
                                             <button type="submit" class="btn btn-success btn-sm">
                                                 <i class="fas fa-check"></i> Aprovar
                                             </button>
                                         </form>
                                         <form method="post" asp-action="RejeitarValidacao" style="display: inline; margin-left: 0.5rem;">
+                                            @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@val.Id" />
-                                            <button type="submit" class="btn btn-danger btn-sm">
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return prompt('Motivo da rejeição:') || false;">
                                                 <i class="fas fa-times"></i> Rejeitar
                                             </button>
                                         </form>
@@ -70,7 +125,7 @@
             {
                 <p style="color: var(--color-gray); text-align: center; padding: 2rem;">
                     <i class="fas fa-check-circle" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
-                    Não há validações pendentes.
+                    Não há documentos pendentes de aprovação.
                 </p>
             }
         </div>
