@@ -10,15 +10,19 @@
         <ul class="sidebar-menu">
             <li><a href="/Empresa/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/Empresa/MinhasOfertas" class="sidebar-link active"><i class="fas fa-briefcase"></i> Minhas Ofertas</a></li>
-            <!-- ✅ ADICIONAR ESTE LINK QUE ESTAVA A FALTAR -->
             <li><a href="/Empresa/CriarOferta" class="sidebar-link"><i class="fas fa-plus-circle"></i> Nova Oferta</a></li>
         </ul>
     </aside>
 
     <div>
-        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
-            <i class="fas fa-users"></i> Candidatos: @oferta?.Titulo
-        </h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: #1E90FF;">
+                <i class="fas fa-users"></i> Candidatos: @oferta?.Titulo
+            </h2>
+            <a href="/Empresa/MinhasOfertas" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
 
         <div class="card">
             @if (Model.Any())
@@ -30,7 +34,8 @@
                                 <th>Aluno</th>
                                 <th>Data</th>
                                 <th>Estado</th>
-                                <th>Avaliação</th>
+                                <th>Avaliação Professor</th>
+                                <th>CV</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -40,34 +45,70 @@
                                 <tr>
                                     <td>
                                         <strong>@cand.Aluno?.Utilizador?.Nome</strong><br />
-                                        <small>@cand.Aluno?.Curso</small>
+                                        <small style="color: var(--color-gray);">@cand.Aluno?.Curso</small>
                                     </td>
                                     <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
                                     <td>
                                         <span class="badge @(cand.Id_Estado_Candidatura == 1 ? "badge-pending" :
-                                                                                                                                                       cand.Id_Estado_Candidatura == 3 ? "badge-approved" : "badge-rejected")">
+                                                                                                           cand.Id_Estado_Candidatura == 3 ? "badge-approved" :
+                                                                                                           cand.Id_Estado_Candidatura == 4 ? "badge-rejected" : "badge-pending")">
                                     @cand.EstadoCandidatura?.Designacao
                                 </span>
                             </td>
                             <td>
-                                @if (cand.Avaliacoes.Any())
+                                @if (cand.Avaliacoes?.Any() == true)
                                         {
                                             var av = cand.Avaliacoes.First();
-                                            <span class="badge @(av.Id_Decisao_Avaliacao == 1 ? "badge-approved" : "badge-rejected")">
-                                                @av.DecisaoAvaliacao?.Designacao
-                                            </span>
-                                        }
+                                            <span class="badge @(av.Id_Decisao_Avaliacao == 1 ? "badge-approved" :
+                                                                                                                   av.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
+                                    @av.DecisaoAvaliacao?.Designacao
+                                </span>
+                                                                }
                                         else
                                         {
-                                            <span class="badge badge-pending">Pendente</span>
+                                            <span class="badge badge-pending">Sem Avaliação</span>
                                         }
                                     </td>
                                     <td>
-                                        @if (cand.Ficheiros.Any())
+                                        @if (cand.Ficheiros?.Any() == true)
                                         {
                                             <a href="@cand.Ficheiros.First().Caminho_Ficheiro" target="_blank" class="btn btn-outline btn-sm">
                                                 <i class="fas fa-download"></i> CV
                                             </a>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: var(--color-gray);">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (cand.Id_Estado_Candidatura == 1 || cand.Id_Estado_Candidatura == 2)
+                                        {
+                                            <!-- ✅ BOTÕES DE AÇÃO -->
+                                            <div style="display: flex; gap: 0.5rem;">
+                                                <form method="post" asp-action="AprovarCandidatura" style="display: inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@cand.Id" />
+                                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Tem certeza que deseja APROVAR esta candidatura?');">
+                                                        <i class="fas fa-check"></i> Aprovar
+                                                    </button>
+                                                </form>
+
+                                                <form method="post" asp-action="RejeitarCandidatura" style="display: inline;" onsubmit="return confirmarRejeicao(this);">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@cand.Id" />
+                                                    <input type="hidden" name="motivo" class="motivo-rejeicao" value="" />
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-times"></i> Rejeitar
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span style="color: var(--color-gray); font-size: 0.9rem;">
+                                                <i class="fas fa-lock"></i> Processada
+                                            </span>
                                         }
                                     </td>
                                 </tr>
@@ -78,11 +119,29 @@
             }
             else
             {
-                <p style="color: var(--color-gray); text-align: center; padding: 2rem;">
-                    <i class="fas fa-inbox" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
-                    Ainda não há candidaturas para esta oferta.
-                </p>
+                <div style="text-align: center; padding: 3rem; color: var(--color-gray);">
+                    <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <h3>Ainda não há candidaturas para esta oferta</h3>
+                    <p>Os candidatos aparecerão aqui quando se candidatarem.</p>
+                    <a href="/Empresa/MinhasOfertas" class="btn btn-outline" style="margin-top: 1rem;">
+                        <i class="fas fa-arrow-left"></i> Voltar às Ofertas
+                    </a>
+                </div>
             }
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function confirmarRejeicao(form) {
+            var motivo = prompt("Por favor, indique o motivo da rejeição:");
+            if (motivo == null || motivo.trim() == "") {
+                alert("É necessário indicar um motivo para rejeitar.");
+                return false;
+            }
+            form.querySelector('.motivo-rejeicao').value = motivo;
+            return confirm('Tem certeza que deseja REJEITAR esta candidatura?');
+        }
+    </script>
+}

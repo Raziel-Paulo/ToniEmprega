@@ -28,21 +28,32 @@ namespace ToniEmprega.Controllers
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
 
+            // ✅ CORREÇÃO: Buscar ofertas com candidaturas incluídas
             var ofertas = await _context.Ofertas
                 .Include(o => o.TipoOferta)
                 .Include(o => o.EstadoOferta)
+                .Include(o => o.Candidaturas)  // ✅ Garantir que candidaturas são carregadas
+                .ThenInclude(c => c.Aluno)      // ✅ Incluir aluno para mostrar nome se necessário
                 .Where(o => o.Id_Empresa == empresa.Id)
                 .OrderByDescending(o => o.Data_Publicacao)
                 .Take(5)
                 .ToListAsync();
 
-            ViewBag.TotalOfertas = await _context.Ofertas.CountAsync(o => o.Id_Empresa == empresa.Id);
+            // ✅ CORREÇÃO: Contagem correta de candidaturas
+            ViewBag.TotalOfertas = await _context.Ofertas
+                .CountAsync(o => o.Id_Empresa == empresa.Id);
+
             ViewBag.OfertasAtivas = await _context.Ofertas
                 .CountAsync(o => o.Id_Empresa == empresa.Id && o.Id_Estado_Oferta == 1);
+
+            // ✅ CORREÇÃO: Contar candidaturas diretamente da tabela Candidaturas
             ViewBag.TotalCandidaturas = await _context.Candidaturas
-                .CountAsync(c => c.Oferta.Id_Empresa == empresa.Id);
+                .Where(c => c.Oferta.Id_Empresa == empresa.Id)
+                .CountAsync();
+
             ViewBag.CandidaturasPendentes = await _context.Candidaturas
-                .CountAsync(c => c.Oferta.Id_Empresa == empresa.Id && c.Id_Estado_Candidatura == 1);
+                .Where(c => c.Oferta.Id_Empresa == empresa.Id && c.Id_Estado_Candidatura == 1)
+                .CountAsync();
 
             // Notificações
             ViewBag.Notificacoes = await _context.Notificacoes
@@ -68,6 +79,76 @@ namespace ToniEmprega.Controllers
                 .ToListAsync();
 
             return View(ofertas);
+        }
+
+        // APROVAR CANDIDATURA
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AprovarCandidatura(int id)
+        {
+            var empresa = await GetCurrentEmpresa();
+            if (empresa == null) return RedirectToAction("Login", "Account");
+
+            var candidatura = await _context.Candidaturas
+                .Include(c => c.Oferta)
+                .Include(c => c.Aluno)
+                .ThenInclude(a => a.Utilizador)
+                .FirstOrDefaultAsync(c => c.Id == id && c.Oferta.Id_Empresa == empresa.Id);
+
+            if (candidatura == null) return NotFound();
+
+            // Atualizar estado para Aprovada (3)
+            candidatura.Id_Estado_Candidatura = 3;
+            await _context.SaveChangesAsync();
+
+            // Notificar aluno
+            _context.Notificacoes.Add(new Notificacao
+            {
+                Id_Utilizador = candidatura.Aluno.Id_Utilizador,
+                Titulo = "Candidatura Aprovada!",
+                Mensagem = $"A sua candidatura para '{candidatura.Oferta.Titulo}' foi aprovada pela empresa.",
+                Tipo = "success",
+                Link = "/Aluno/MinhasCandidaturas"
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Candidatura aprovada com sucesso!";
+            return RedirectToAction("Candidatos", new { id = candidatura.Id_Oferta });
+        }
+
+        // REJEITAR CANDIDATURA
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejeitarCandidatura(int id, string motivo)
+        {
+            var empresa = await GetCurrentEmpresa();
+            if (empresa == null) return RedirectToAction("Login", "Account");
+
+            var candidatura = await _context.Candidaturas
+                .Include(c => c.Oferta)
+                .Include(c => c.Aluno)
+                .ThenInclude(a => a.Utilizador)
+                .FirstOrDefaultAsync(c => c.Id == id && c.Oferta.Id_Empresa == empresa.Id);
+
+            if (candidatura == null) return NotFound();
+
+            // Atualizar estado para Rejeitada (4)
+            candidatura.Id_Estado_Candidatura = 4;
+            await _context.SaveChangesAsync();
+
+            // Notificar aluno
+            _context.Notificacoes.Add(new Notificacao
+            {
+                Id_Utilizador = candidatura.Aluno.Id_Utilizador,
+                Titulo = "Candidatura Rejeitada",
+                Mensagem = $"A sua candidatura para '{candidatura.Oferta.Titulo}' foi rejeitada. Motivo: {motivo}",
+                Tipo = "error",
+                Link = "/Aluno/MinhasCandidaturas"
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Candidatura rejeitada.";
+            return RedirectToAction("Candidatos", new { id = candidatura.Id_Oferta });
         }
 
         public async Task<IActionResult> CriarOferta()

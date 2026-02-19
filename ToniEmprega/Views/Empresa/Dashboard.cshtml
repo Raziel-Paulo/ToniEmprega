@@ -1,5 +1,4 @@
-﻿@* Views/Empresa/Dashboard.cshtml *@
-@model IEnumerable<ToniEmprega.Models.Oferta>
+﻿@model IEnumerable<ToniEmprega.Models.Oferta>
 @{
     ViewData["Title"] = "Dashboard Empresa";
 }
@@ -69,6 +68,9 @@
                         <tbody>
                             @foreach (var oferta in Model)
                             {
+                                // ✅ CORREÇÃO: Contar candidaturas diretamente
+                                var numCandidaturas = oferta.Candidaturas?.Count ?? 0;
+
                                 <tr>
                                     <td><strong>@oferta.Titulo</strong></td>
                                     <td>
@@ -81,9 +83,7 @@
                                 </span>
                             </td>
                             <td style="text-align: center;">
-                                <span class="badge badge-pending">
-                                    @(oferta.Candidaturas?.Count ?? 0)
-                                </span>
+                                <span class="badge badge-pending">@numCandidaturas</span>
                             </td>
                             <td>@oferta.Data_Publicacao.ToString("dd/MM/yyyy")</td>
                             <td>
@@ -96,15 +96,6 @@
                         </tbody>
                     </table>
                 </div>
-
-                @if (Model.Count() == 5 && ViewBag.TotalOfertas > 5)
-                {
-                    <div style="text-align: center; margin-top: 1rem;">
-                        <a href="/Empresa/MinhasOfertas" class="btn btn-outline">
-                            Ver Todas as Ofertas <i class="fas fa-arrow-right"></i>
-                        </a>
-                    </div>
-                }
             }
             else
             {
