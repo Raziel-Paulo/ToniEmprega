@@ -1,5 +1,4 @@
-﻿@* Views/Admin/Utilizadores.cshtml *@
-@model IEnumerable<ToniEmprega.Models.Utilizador>
+﻿@model IEnumerable<ToniEmprega.Models.Utilizador>
 @{
     ViewData["Title"] = "Gestão de Utilizadores";
 }
@@ -11,6 +10,8 @@
             <li><a href="/Admin/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
             <li><a href="/Admin/Utilizadores" class="sidebar-link active"><i class="fas fa-users"></i> Utilizadores</a></li>
             <li><a href="/Admin/Validacoes" class="sidebar-link"><i class="fas fa-id-card"></i> Validações</a></li>
+            <li><a href="/Admin/Ofertas" class="sidebar-link"><i class="fas fa-briefcase"></i> Ofertas</a></li>
+            <li><a href="/Admin/Configuracoes" class="sidebar-link"><i class="fas fa-cogs"></i> Configurações</a></li>
         </ul>
     </aside>
 
@@ -18,6 +19,23 @@
         <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
             <i class="fas fa-users"></i> Gestão de Utilizadores
         </h2>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <form method="get" class="search-box">
+                <input type="text" name="searchString" class="form-control search-input"
+                       placeholder="Pesquisar utilizadores..." value="@ViewBag.SearchString" />
+                <select name="tipoId" class="form-control">
+                    <option value="">Todos os Tipos</option>
+                    @foreach (var tipo in ViewBag.TiposUtilizador)
+                    {
+                        <option value="@tipo.Id" selected="@(ViewBag.TipoId == tipo.Id)">
+                            @tipo.Designacao
+                        </option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
 
         <div class="card">
             <div class="table-container">
@@ -39,13 +57,14 @@
                                 <td>@user.Email</td>
                                 <td>@user.TipoUtilizador?.Designacao</td>
                                 <td>
-                                    <span class="badge @(user.Id_Estado_Validacao_Utilizador == 2 ? "badge-approved" : "badge-pending")">
-                                        @user.EstadoValidacao?.Designacao
-                                    </span>
-                                </td>
-                                <td>@user.Data_Registro.ToString("dd/MM/yyyy")</td>
-                            </tr>
-                        }
+                                    <span class="badge @(user.Id_Estado_Validacao_Utilizador == 2 ? "badge-approved" :
+                                                                                                  user.Id_Estado_Validacao_Utilizador == 3 ? "badge-rejected" : "badge-pending")">
+                                    @user.EstadoValidacao?.Designacao
+                                </span>
+                            </td>
+                            <td>@user.Data_Registro.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                                                }
                     </tbody>
                 </table>
             </div>
