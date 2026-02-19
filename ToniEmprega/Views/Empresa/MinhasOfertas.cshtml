@@ -23,7 +23,7 @@
         </div>
 
         <div class="card">
-            @if (Model.Any())
+            @if (Model != null && Model.Any())
             {
                 <div class="table-container">
                     <table>
@@ -45,20 +45,26 @@
                                     <td>@oferta.TipoOferta?.Designacao</td>
                                     <td>@oferta.Data_Publicacao.ToString("dd/MM/yyyy")</td>
                                     <td>
-                                        <span class="badge @(oferta.Id_Estado_Oferta == 1 ? "badge-approved" : "badge-pending")">
-                                            @oferta.EstadoOferta?.Designacao
-                                        </span>
-                                    </td>
-                                    <td style="text-align: center;">
-                                        <span class="badge badge-pending">@oferta.Candidaturas?.Count</span>
-                                    </td>
-                                    <td>
-                                        <a href="/Empresa/Candidatos/@oferta.Id" class="btn btn-outline btn-sm">
-                                            <i class="fas fa-users"></i> Ver Candidatos
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
+                                        <span class="badge @(oferta.Id_Estado_Oferta == 1 ? "badge-approved" :
+                                                                                                             oferta.Id_Estado_Oferta == 4 ? "badge-rejected" : "badge-pending")">
+                                    @oferta.EstadoOferta?.Designacao
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="badge badge-pending">@(oferta.Candidaturas?.Count ?? 0)</span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <a href="/Empresa/Candidatos/@oferta.Id" class="btn btn-outline btn-sm">
+                                        <i class="fas fa-users"></i> Candidatos
+                                    </a>
+                                    <a href="/Empresa/EditarOferta/@oferta.Id" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                                                }
                         </tbody>
                     </table>
                 </div>
