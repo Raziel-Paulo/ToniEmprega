@@ -57,7 +57,7 @@ using (var scope = app.Services.CreateScope())
     if (!adminExiste)
     {
         // ✅ HASH DA PASSWORD "123"
-        var passwordHash = "$2a$12$QZtXZqKQZQZQZQZQZQZQZuPqJZqKQZQZQZQZQZQZQZQZQZQZQZQZa"; // Hash de "123"
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword("123"); // Hash de "123"
 
         // Se quiseres gerar novo hash, descomenta:
         // passwordHash = BCrypt.Net.BCrypt.HashPassword("123");

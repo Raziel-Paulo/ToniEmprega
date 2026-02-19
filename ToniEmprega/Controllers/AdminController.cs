@@ -25,13 +25,25 @@ namespace ToniEmprega.Controllers
             ViewBag.NotificacoesPendentes = await _context.Notificacoes
                 .CountAsync(n => !n.Lida);
 
-            // Estatísticas para gráficos
-            ViewBag.CandidaturasPorMes = await _context.Candidaturas
+            // ✅ CORRIGIDO - Gráfico de candidaturas por mês
+            var candidaturasRaw = await _context.Candidaturas
                 .GroupBy(c => new { c.Data_Candidatura.Year, c.Data_Candidatura.Month })
-                .Select(g => new { Mes = $"{g.Key.Month}/{g.Key.Year}", Count = g.Count() })
-                .OrderBy(x => x.Mes)
+                .Select(g => new {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Count = g.Count()
+                })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
                 .Take(6)
                 .ToListAsync();
+
+            // Formatar em memória (client-side)
+            ViewBag.CandidaturasPorMes = candidaturasRaw
+                .Select(x => new {
+                    Mes = $"{x.Month}/{x.Year}",
+                    x.Count
+                })
+                .ToList();
 
             return View();
         }
@@ -67,7 +79,6 @@ namespace ToniEmprega.Controllers
             user.Id_Estado_Validacao_Utilizador = novoEstado;
             await _context.SaveChangesAsync();
 
-            // Notificar utilizador
             var estado = await _context.EstadoValidacaoUtilizadores.FindAsync(novoEstado);
             _context.Notificacoes.Add(new Notificacao
             {
@@ -111,7 +122,6 @@ namespace ToniEmprega.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Notificar utilizador
                 _context.Notificacoes.Add(new Notificacao
                 {
                     Id_Utilizador = validacao.Id_Utilizador,
@@ -144,7 +154,6 @@ namespace ToniEmprega.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Notificar utilizador
                 _context.Notificacoes.Add(new Notificacao
                 {
                     Id_Utilizador = validacao.Id_Utilizador,
@@ -194,7 +203,6 @@ namespace ToniEmprega.Controllers
                 oferta.Id_Estado_Oferta = novoEstado;
                 await _context.SaveChangesAsync();
 
-                // Notificar empresa
                 _context.Notificacoes.Add(new Notificacao
                 {
                     Id_Utilizador = oferta.Empresa.Id_Utilizador,
