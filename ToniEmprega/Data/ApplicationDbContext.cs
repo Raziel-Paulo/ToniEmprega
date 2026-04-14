@@ -172,11 +172,13 @@ namespace ToniEmprega.Data
                 .HasForeignKey(v => v.Id_Utilizador)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<ValidacaoIdentidade>()
-                .HasOne(v => v.TipoValidacao)
-                .WithMany(t => t.Validacoes)
-                .HasForeignKey(v => v.Id_Tipo_Validacao)
-                .OnDelete(DeleteBehavior.Restrict);
+            
+                modelBuilder.Entity<ValidacaoIdentidade>()
+                    .HasOne(v => v.TipoValidacao)
+                    .WithMany(t => t.Validacoes)
+                    .HasForeignKey(v => v.Id_Tipo_Validacao)
+                    .OnDelete(DeleteBehavior.Restrict);
+            
 
             modelBuilder.Entity<ValidacaoIdentidade>()
                 .HasOne(v => v.EstadoValidacaoDocumento)

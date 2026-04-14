@@ -21,5 +21,7 @@ namespace ToniEmprega.Models
 
         // ✅ NOVO: Motivo da rejeição (para mostrar ao utilizador)
         public string? Motivo_Rejeicao { get; set; }
+        public int? Id_Tipo_Validacao { get; set; }  // ✅ Deve ter
+        public TipoValidacao? TipoValidacao { get; set; }
     }
 }

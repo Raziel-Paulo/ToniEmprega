@@ -58,7 +58,15 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
     // ✅ MODIFICADO: Apenas cria se não existir (não apaga mais)
-    context.Database.EnsureCreated();
+    if (!context.Database.CanConnect())
+    {
+        context.Database.EnsureCreated();
+        Console.WriteLine("✅ Base de dados criada!");
+    }
+    else
+    {
+        Console.WriteLine("✅ Base de dados já existe.");
+    }
 
     Console.WriteLine("✅ Base de dados verificada!");
 
