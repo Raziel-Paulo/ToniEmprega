@@ -28,6 +28,7 @@ namespace ToniEmprega.Data
         public DbSet<DecisaoAvaliacao> DecisaoAvaliacoes { get; set; }
         public DbSet<CandidaturaFicheiro> CandidaturaFicheiros { get; set; }
         public DbSet<Notificacao> Notificacoes { get; set; }
+        public DbSet<DocumentoValidacao> DocumentosValidacao { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -54,6 +55,7 @@ namespace ToniEmprega.Data
             modelBuilder.Entity<DecisaoAvaliacao>().ToTable("DecisoesAvaliacao");
             modelBuilder.Entity<AvaliacaoProfessor>().ToTable("AvaliacoesProfessores");
             modelBuilder.Entity<Notificacao>().ToTable("Notificacoes");
+            modelBuilder.Entity<DocumentoValidacao>().ToTable("DocumentosValidacao");
 
             // Relações
             modelBuilder.Entity<Utilizador>()
@@ -187,6 +189,12 @@ namespace ToniEmprega.Data
                 .HasOne(n => n.Utilizador)
                 .WithMany()
                 .HasForeignKey(n => n.Id_Utilizador)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DocumentoValidacao>()
+                .HasOne(d => d.ValidacaoIdentidade)
+                .WithMany(v => v.Documentos)
+                .HasForeignKey(d => d.Id_Validacao_Identidade)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // ============================================

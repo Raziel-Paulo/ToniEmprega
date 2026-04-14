@@ -1,6 +1,8 @@
 ﻿// Controllers/AccountController.cs - COMPLETO COM VALIDAÇÃO NO REGISTO
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
+using System.Net.Mail;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
 
@@ -84,9 +86,29 @@ namespace ToniEmprega.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword, int tipoUtilizadorId)
         {
+            // ✅ 2.3 - Validação de Password Complexa
+            if (!IsPasswordComplex(utilizador.Palavra_Passe))
+            {
+                ModelState.AddModelError("", "A palavra-passe deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais.");
+                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
+                    .Where(t => t.Designacao != "Administrador")
+                    .ToListAsync();
+                return View(utilizador);
+            }
+
             if (utilizador.Palavra_Passe != confirmPassword)
             {
                 ModelState.AddModelError("", "As palavras-passe não coincidem.");
+                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
+                    .Where(t => t.Designacao != "Administrador")
+                    .ToListAsync();
+                return View(utilizador);
+            }
+
+            // ✅ 2.1 - Validação de Email (formato e unicidade)
+            if (!IsValidEmail(utilizador.Email))
+            {
+                ModelState.AddModelError("", "Email inválido. Use um formato válido (ex: nome@dominio.pt)");
                 ViewBag.TiposUtilizador = await _context.TipoUtilizadores
                     .Where(t => t.Designacao != "Administrador")
                     .ToListAsync();
@@ -102,6 +124,40 @@ namespace ToniEmprega.Controllers
                 return View(utilizador);
             }
 
+            // ✅ 2.2 - Validação de Idade
+            if (!utilizador.Data_Nascimento.HasValue)
+            {
+                ModelState.AddModelError("", "Data de nascimento é obrigatória.");
+                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
+                    .Where(t => t.Designacao != "Administrador")
+                    .ToListAsync();
+                return View(utilizador);
+            }
+
+            var idade = CalcularIdade(utilizador.Data_Nascimento.Value);
+            var tipo = await _context.TipoUtilizadores.FindAsync(tipoUtilizadorId);
+
+            // ✅ 2.2.1 - Aluno >= 17 anos
+            if (tipo?.Designacao == "Aluno" && idade < 17)
+            {
+                ModelState.AddModelError("", "Para se registar como Aluno, deve ter pelo menos 17 anos.");
+                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
+                    .Where(t => t.Designacao != "Administrador")
+                    .ToListAsync();
+                return View(utilizador);
+            }
+
+            // ✅ 2.2.2 - Utilizador Normal >= 18 anos
+            if (tipo?.Designacao == "Utilizador Normal" && idade < 18)
+            {
+                ModelState.AddModelError("", "Para se registar, deve ter pelo menos 18 anos.");
+                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
+                    .Where(t => t.Designacao != "Administrador")
+                    .ToListAsync();
+                return View(utilizador);
+            }
+
+            // Resto do código de registo mantém-se...
             utilizador.Id_Tipo_Utilizador = tipoUtilizadorId;
             utilizador.Id_Estado_Validacao_Utilizador = 1; // Pendente
             utilizador.Palavra_Passe = BCrypt.Net.BCrypt.HashPassword(utilizador.Palavra_Passe);
@@ -110,8 +166,7 @@ namespace ToniEmprega.Controllers
             _context.Utilizadores.Add(utilizador);
             await _context.SaveChangesAsync();
 
-            // Criar perfil específico
-            var tipo = await _context.TipoUtilizadores.FindAsync(tipoUtilizadorId);
+            // Criar perfil específico...
             switch (tipo?.Designacao)
             {
                 case "Aluno":
@@ -152,7 +207,7 @@ namespace ToniEmprega.Controllers
             }
             await _context.SaveChangesAsync();
 
-            // Notificar admins
+            // Notificar admins...
             var admins = await _context.Admins.Include(a => a.Utilizador).ToListAsync();
             foreach (var admin in admins)
             {
@@ -167,15 +222,205 @@ namespace ToniEmprega.Controllers
             }
             await _context.SaveChangesAsync();
 
-            // ✅ SÓ AGORA definir session - mas redirecionar imediatamente para validação
             HttpContext.Session.SetInt32("UserId", utilizador.Id);
             HttpContext.Session.SetString("UserName", utilizador.Nome);
             HttpContext.Session.SetString("UserType", tipo?.Designacao ?? "Utilizador");
 
-            // ✅ REDIRECIONAR DIRETAMENTE PARA VALIDAÇÃO - não pode ir a lado nenhum antes
             TempData["Success"] = "Registo efetuado! Agora submeta o seu documento de identificação.";
             return RedirectToAction("Index", "Validacao");
         }
+
+        public IActionResult RecuperarPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecuperarPassword(string email)
+        {
+            var user = await _context.Utilizadores.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                // Não revelar se email existe ou não (segurança)
+                TempData["Success"] = "Se o email existir no sistema, receberá um código de recuperação.";
+                return RedirectToAction("RecuperarPassword");
+            }
+
+            // Gerar código de 6 dígitos
+            var codigo = new Random().Next(100000, 999999).ToString();
+
+            // Guardar código na sessão (temporário)
+            HttpContext.Session.SetString("ResetCode", codigo);
+            HttpContext.Session.SetString("ResetEmail", email);
+            HttpContext.Session.SetString("ResetTime", DateTime.Now.ToString());
+
+            // Enviar email (simulação - em produção usar serviço de email real)
+            // TODO: Configurar SMTP no appsettings.json
+            try
+            {
+                await EnviarEmailRecuperacao(email, codigo, user.Nome);
+                TempData["Success"] = "Código de recuperação enviado para o seu email.";
+                return RedirectToAction("VerificarCodigo");
+            }
+            catch
+            {
+                // Em desenvolvimento, mostrar código na tela
+                TempData["Warning"] = $"Modo desenvolvimento: O seu código é {codigo}";
+                return RedirectToAction("VerificarCodigo");
+            }
+        }
+
+        public IActionResult VerificarCodigo()
+        {
+            if (HttpContext.Session.GetString("ResetCode") == null)
+                return RedirectToAction("RecuperarPassword");
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult VerificarCodigo(string codigo)
+        {
+            var storedCode = HttpContext.Session.GetString("ResetCode");
+            var resetTime = DateTime.Parse(HttpContext.Session.GetString("ResetTime") ?? DateTime.MinValue.ToString());
+
+            // Código expira em 15 minutos
+            if (DateTime.Now > resetTime.AddMinutes(15))
+            {
+                TempData["Error"] = "Código expirado. Solicite novo código.";
+                HttpContext.Session.Remove("ResetCode");
+                return RedirectToAction("RecuperarPassword");
+            }
+
+            if (codigo != storedCode)
+            {
+                TempData["Error"] = "Código incorreto.";
+                return View();
+            }
+
+            return RedirectToAction("NovaPassword");
+        }
+
+        // ✅ VIEW NOVA PASSWORD
+        public IActionResult NovaPassword()
+        {
+            if (HttpContext.Session.GetString("ResetCode") == null)
+                return RedirectToAction("RecuperarPassword");
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> NovaPassword(string novaPassword, string confirmarPassword)
+        {
+            if (novaPassword != confirmarPassword)
+            {
+                TempData["Error"] = "As passwords não coincidem.";
+                return View();
+            }
+
+            if (!IsPasswordComplex(novaPassword))
+            {
+                TempData["Error"] = "A palavra-passe deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais.";
+                return View();
+            }
+
+            var email = HttpContext.Session.GetString("ResetEmail");
+            var user = await _context.Utilizadores.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                return RedirectToAction("RecuperarPassword");
+            }
+
+            user.Palavra_Passe = BCrypt.Net.BCrypt.HashPassword(novaPassword);
+            await _context.SaveChangesAsync();
+
+            // Limpar sessão
+            HttpContext.Session.Remove("ResetCode");
+            HttpContext.Session.Remove("ResetEmail");
+            HttpContext.Session.Remove("ResetTime");
+
+            TempData["Success"] = "Password alterada com sucesso! Faça login com a nova password.";
+            return RedirectToAction("Login");
+        }
+
+        private async Task EnviarEmailRecuperacao(string email, string codigo, string nome)
+        {
+            // Configuração SMTP - deve ser colocada no appsettings.json
+            var smtpServer = _configuration["Email:SmtpServer"] ?? "smtp.gmail.com";
+            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+            var smtpUser = _configuration["Email:SmtpUser"] ?? "";
+            var smtpPass = _configuration["Email:SmtpPass"] ?? "";
+            var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@toniemprega.pt";
+
+            using var client = new SmtpClient(smtpServer, smtpPort)
+            {
+                EnableSsl = true,
+                Credentials = new NetworkCredential(smtpUser, smtpPass)
+            };
+
+            var message = new MailMessage
+            {
+                From = new MailAddress(fromEmail, "ToniEmprega"),
+                Subject = "Recuperação de Password",
+                Body = $@"
+            <h2>Recuperação de Password - ToniEmprega</h2>
+            <p>Olá {nome},</p>
+            <p>Recebemos um pedido para recuperar a password da sua conta.</p>
+            <p>O seu código de verificação é:</p>
+            <h1 style='color: #1E90FF; font-size: 32px; letter-spacing: 5px;'>{codigo}</h1>
+            <p>Este código é válido por 15 minutos.</p>
+            <p>Se não solicitou esta recuperação, ignore este email.</p>
+            <br>
+            <p>Atenciosamente,<br>Equipa ToniEmprega</p>
+        ",
+                IsBodyHtml = true
+            };
+
+            message.To.Add(email);
+            await client.SendMailAsync(message);
+        }
+
+
+        private bool IsPasswordComplex(string password)
+        {
+            if (string.IsNullOrEmpty(password) || password.Length < 8)
+                return false;
+
+            bool hasUpper = password.Any(char.IsUpper);
+            bool hasLower = password.Any(char.IsLower);
+            bool hasDigit = password.Any(char.IsDigit);
+            bool hasSpecial = password.Any(c => !char.IsLetterOrDigit(c));
+
+            return hasUpper && hasLower && hasDigit && hasSpecial;
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email && email.Contains(".");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private int CalcularIdade(DateTime dataNascimento)
+        {
+            var hoje = DateTime.Today;
+            var idade = hoje.Year - dataNascimento.Year;
+            if (dataNascimento.Date > hoje.AddYears(-idade)) idade--;
+            return idade;
+        }
+
 
         public IActionResult Logout()
         {

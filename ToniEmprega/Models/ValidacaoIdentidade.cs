@@ -10,13 +10,16 @@ namespace ToniEmprega.Models
         public int Id_Utilizador { get; set; }
         public Utilizador Utilizador { get; set; } = null!;
 
-        public int Id_Tipo_Validacao { get; set; }
-        public TipoValidacao TipoValidacao { get; set; } = null!;
+        // ✅ MODIFICADO: Agora é uma coleção de documentos
+        public ICollection<DocumentoValidacao> Documentos { get; set; } = new List<DocumentoValidacao>();
 
-        public string Ficheiro_Prova { get; set; } = string.Empty; // Caminho do ficheiro
         public DateTime? Data_Validacao { get; set; }
+        public DateTime Data_Criacao { get; set; } = DateTime.Now;
 
         public int? Id_Estado_Validacao_Documento { get; set; }
         public EstadoValidacaoDocumento? EstadoValidacaoDocumento { get; set; }
+
+        // ✅ NOVO: Motivo da rejeição (para mostrar ao utilizador)
+        public string? Motivo_Rejeicao { get; set; }
     }
 }

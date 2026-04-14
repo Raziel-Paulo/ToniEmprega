@@ -1,0 +1,43 @@
+﻿@* Views/Account/VerificarCodigo.cshtml (NOVO) *@
+@{
+    ViewData["Title"] = "Verificar Código";
+}
+
+<div style="max-width: 450px; margin: 2rem auto;">
+    <div class="card">
+        <div class="card-header" style="text-align: center;">
+            <h2 class="card-title"><i class="fas fa-shield-alt"></i> Verificar Código</h2>
+        </div>
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
+        }
+        @if (TempData["Warning"] != null)
+        {
+            <div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> @TempData["Warning"]</div>
+        }
+
+        <p style="color: var(--color-gray); margin-bottom: 1.5rem; text-align: center;">
+            Introduza o código de 6 dígitos enviado para o seu email.
+        </p>
+
+        <form method="post">
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-hashtag"></i> Código de Verificação</label>
+                <input type="text" name="codigo" class="form-control" required
+                       placeholder="000000" maxlength="6" pattern="\d{6}"
+                       style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;" />
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-check"></i> Verificar
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <a href="/Account/RecuperarPassword" class="btn btn-outline btn-sm">
+                <i class="fas fa-redo"></i> Solicitar novo código
+            </a>
+        </div>
+    </div>
+</div>

@@ -32,10 +32,16 @@
                 </select>
             </div>
 
+            <!-- ✅ NOVO: Localização com Autocomplete do Google Maps -->
             <div class="form-group">
-                <label class="form-label">Localização</label>
-                <input type="text" name="Localizacao" class="form-control" required
-                       value="@(Model?.Localizacao ?? "")" />
+                <label class="form-label"><i class="fas fa-map-marker-alt"></i> Localização</label>
+                <input type="text" id="localizacao" name="Localizacao" class="form-control" required
+                       value="@(Model?.Localizacao ?? "")" placeholder="Comece a escrever a morada..." />
+                <small style="color: var(--color-gray);">
+                    <i class="fas fa-info-circle"></i> Comece a escrever e selecione a morada sugerida
+                </small>
+                <!-- Container para o mapa -->
+                <div id="map" style="width: 100%; height: 300px; margin-top: 1rem; border-radius: 8px; display: none;"></div>
             </div>
 
             <div class="form-group">
@@ -60,3 +66,44 @@
         </form>
     </div>
 </div>
+
+<!-- ✅ SCRIPTS DO GOOGLE MAPS PLACES API -->
+@section Scripts {
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA SUA_CHAVE_AQUI &libraries=places"></script>
+    <script>
+        function initAutocomplete() {
+        const input = document.getElementById('localizacao');
+        const autocomplete = new google.maps.places.Autocomplete(input, {
+        types: ['address'],
+        componentRestrictions: { country: 'pt' } // Restringir a Portugal
+        });
+
+        // Quando selecionar uma morada
+        autocomplete.addListener('place_changed', function() {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+        console.log('Morada selecionada:', place.formatted_address);
+                    
+        // Mostrar mapa
+        document.getElementById('map').style.display = 'block';
+                    
+        // Criar mapa
+        const map = new google.maps.Map(document.getElementById('map'), {
+        center: place.geometry.location,
+        zoom: 15
+        });
+                    
+        // Adicionar marcador
+        new google.maps.Marker({
+        map: map,
+        position: place.geometry.location,
+        title: place.formatted_address
+        });
+        }
+        });
+        }
+
+        // Inicializar quando a página carregar
+        window.onload = initAutocomplete;
+    </script>
+}

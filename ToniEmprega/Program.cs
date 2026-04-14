@@ -1,4 +1,4 @@
-﻿// Program.cs - ADMIN COM PASSWORD 123
+﻿// Program.cs - MODIFICADO
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Filters;
@@ -9,9 +9,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 builder.Services.AddControllersWithViews();
 
-// DbContext
+// DbContext - MODIFICADO: Caminho relativo para pasta BaseDados
+var baseDadosPath = Path.Combine(Directory.GetCurrentDirectory(), "BaseDados");
+Directory.CreateDirectory(baseDadosPath); // Cria pasta se não existir
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")?
+    .Replace("|DataDirectory|", baseDadosPath);
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
 // Session
 builder.Services.AddDistributedMemoryCache();
@@ -24,7 +30,6 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddControllersWithViews(options =>
 {
-    // Adicionar o filter globalmente - protege TODAS as actions
     options.Filters.Add<RequireValidationFilter>();
 });
 
@@ -47,27 +52,22 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// ✅ CRIAR BASE DE DADES E ADMIN DEFAULT (PASSWORD 123)
+// ✅ CRIAR BASE DE DADES E ADMIN DEFAULT (APENAS SE NÃO EXISTIR)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    // Apaga e recria
-    context.Database.EnsureDeleted();
+    // ✅ MODIFICADO: Apenas cria se não existir (não apaga mais)
     context.Database.EnsureCreated();
 
-    Console.WriteLine("✅ Base de dados criada!");
+    Console.WriteLine("✅ Base de dados verificada!");
 
     // Verifica se admin já existe
     var adminExiste = context.Utilizadores.Any(u => u.Email == "admin@toniemprega.pt");
 
     if (!adminExiste)
     {
-        // ✅ HASH DA PASSWORD "123"
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword("123"); // Hash de "123"
-
-        // Se quiseres gerar novo hash, descomenta:
-        // passwordHash = BCrypt.Net.BCrypt.HashPassword("123");
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword("123");
 
         var adminUser = new Utilizador
         {
@@ -83,7 +83,6 @@ using (var scope = app.Services.CreateScope())
         context.Utilizadores.Add(adminUser);
         context.SaveChanges();
 
-        // Criar registo na tabela Admins
         var adminRecord = new Admin
         {
             Id_Utilizador = adminUser.Id
@@ -95,8 +94,6 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("✅✅✅ ADMIN CRIADO COM SUCESSO! ✅✅✅");
         Console.WriteLine("   Email: admin@toniemprega.pt");
         Console.WriteLine("   Password: 123");
-        Console.WriteLine("   Tipo: Administrador");
-        Console.WriteLine("   Estado: Aprovado");
     }
     else
     {

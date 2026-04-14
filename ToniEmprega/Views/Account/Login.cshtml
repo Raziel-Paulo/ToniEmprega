@@ -1,4 +1,4 @@
-﻿@* Views/Account/Login.cshtml *@
+﻿@* Views/Account/Login.cshtml - MODIFICADO *@
 @{
     ViewData["Title"] = "Login";
 }
@@ -27,6 +27,13 @@
                 <i class="fas fa-sign-in-alt"></i> Entrar
             </button>
         </form>
+
+        <!-- ✅ NOVO: Link para recuperar password -->
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="/Account/RecuperarPassword" style="color: var(--color-blue); font-size: 0.9rem;">
+                <i class="fas fa-key"></i> Esqueceu a password?
+            </a>
+        </div>
 
         <div style="text-align: center; margin-top: 1.5rem;">
             <a href="/Account/Register" class="btn btn-outline" style="width: 100%;">Criar Conta</a>

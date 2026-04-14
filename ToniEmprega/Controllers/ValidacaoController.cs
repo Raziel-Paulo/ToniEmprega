@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// Controllers/ValidacaoController.cs - MODIFICADO
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
@@ -18,7 +19,6 @@ namespace ToniEmprega.Controllers
         {
             var userId = HttpContext.Session.GetInt32("UserId");
 
-            // Se não estiver logado, mandar para login
             if (!userId.HasValue)
                 return RedirectToAction("Login", "Account");
 
@@ -29,17 +29,15 @@ namespace ToniEmprega.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // Se já estiver aprovado, redirecionar para o dashboard apropriado
+            // Se já estiver aprovado, redirecionar
             if (utilizador.Id_Estado_Validacao_Utilizador == 2)
             {
-                // Verificar se há URL de retorno
                 var returnUrl = HttpContext.Session.GetString("ReturnUrl");
                 HttpContext.Session.Remove("ReturnUrl");
 
                 if (!string.IsNullOrEmpty(returnUrl))
                     return Redirect(returnUrl);
 
-                // Redirecionar conforme o tipo
                 return utilizador.Id_Tipo_Utilizador switch
                 {
                     1 => RedirectToAction("Dashboard", "Aluno"),
@@ -50,39 +48,36 @@ namespace ToniEmprega.Controllers
                 };
             }
 
-            // Se chegou aqui, precisa de validação
             if (!string.IsNullOrEmpty(mensagem))
                 TempData["Warning"] = mensagem;
 
-            var validacoes = await _context.ValidacoesIdentidade
-                .Include(v => v.TipoValidacao)
+            // ✅ MODIFICADO: Buscar validação única do utilizador com documentos
+            var validacao = await _context.ValidacoesIdentidade
+                .Include(v => v.Documentos)
                 .Include(v => v.EstadoValidacaoDocumento)
-                .Where(v => v.Id_Utilizador == userId.Value)
-                .OrderByDescending(v => v.Id)
-                .ToListAsync();
+                .FirstOrDefaultAsync(v => v.Id_Utilizador == userId.Value);
 
             ViewBag.PrecisaNovaValidacao = utilizador.Id_Estado_Validacao_Utilizador == 3;
             ViewBag.EstadoAtual = utilizador.Id_Estado_Validacao_Utilizador;
             ViewBag.TipoUtilizador = utilizador.Id_Tipo_Utilizador;
+            ViewBag.MotivoRejeicao = validacao?.Motivo_Rejeicao;
 
-            // Tipos de validação específicos por tipo de utilizador
-            if (utilizador.Id_Tipo_Utilizador == 1) // Aluno
+            // Tipos de documentos disponíveis
+            ViewBag.TiposDocumento = new List<string>
             {
-                ViewBag.TiposValidacao = await _context.TipoValidacoes
-                    .Where(t => t.Designacao == "Cartão de Estudante")
-                    .ToListAsync();
-            }
-            else
-            {
-                ViewBag.TiposValidacao = await _context.TipoValidacoes.ToListAsync();
-            }
+                "Cartão de Estudante",
+                "Bilhete de Identidade",
+                "Cartão de Cidadão",
+                "Passaporte",
+                "Comprovativo de Morada"
+            };
 
-            return View(validacoes);
+            return View(validacao);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Submeter(IFormFile documento, int tipoValidacaoId)
+        public async Task<IActionResult> SubmeterDocumento(IFormFile documento, string tipoDocumento)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             if (!userId.HasValue)
@@ -118,6 +113,32 @@ namespace ToniEmprega.Controllers
                 return RedirectToAction("Index");
             }
 
+            // ✅ MODIFICADO: Verificar se já existe validação para este utilizador
+            var validacao = await _context.ValidacoesIdentidade
+                .FirstOrDefaultAsync(v => v.Id_Utilizador == userId.Value);
+
+            // Se não existir, criar nova validação
+            if (validacao == null)
+            {
+                validacao = new ValidacaoIdentidade
+                {
+                    Id_Utilizador = userId.Value,
+                    Id_Estado_Validacao_Documento = 1, // Pendente
+                    Data_Criacao = DateTime.Now
+                };
+                _context.ValidacoesIdentidade.Add(validacao);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                // ✅ Se foi rejeitada, volta a pendente ao submeter novo documento
+                if (validacao.Id_Estado_Validacao_Documento == 3)
+                {
+                    validacao.Id_Estado_Validacao_Documento = 1;
+                    validacao.Motivo_Rejeicao = null;
+                }
+            }
+
             // Guardar ficheiro
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "documentos");
             Directory.CreateDirectory(uploadsFolder);
@@ -130,22 +151,23 @@ namespace ToniEmprega.Controllers
                 await documento.CopyToAsync(stream);
             }
 
-            var validacao = new ValidacaoIdentidade
+            // ✅ Adicionar documento à validação existente
+            var docValidacao = new DocumentoValidacao
             {
-                Id_Utilizador = userId.Value,
-                Id_Tipo_Validacao = tipoValidacaoId,
-                Id_Estado_Validacao_Documento = 1, // Pendente
-                Ficheiro_Prova = $"/uploads/documentos/{uniqueFileName}",
-                Data_Validacao = null
+                Id_Validacao_Identidade = validacao.Id,
+                Tipo_Documento = tipoDocumento,
+                Nome_Ficheiro = documento.FileName,
+                Caminho_Ficheiro = $"/uploads/documentos/{uniqueFileName}",
+                Data_Upload = DateTime.Now
             };
 
-            _context.ValidacoesIdentidade.Add(validacao);
+            _context.DocumentosValidacao.Add(docValidacao);
 
-            // Manter estado pendente até aprovação
+            // Atualizar estado do utilizador para pendente
             var utilizador = await _context.Utilizadores.FindAsync(userId.Value);
             if (utilizador != null)
             {
-                utilizador.Id_Estado_Validacao_Utilizador = 1; // Pendente
+                utilizador.Id_Estado_Validacao_Utilizador = 1;
             }
 
             await _context.SaveChangesAsync();
@@ -158,14 +180,48 @@ namespace ToniEmprega.Controllers
                 {
                     Id_Utilizador = admin.Id_Utilizador,
                     Titulo = "Novo documento para validar",
-                    Mensagem = $"{utilizador?.Nome} submeteu documento de {validacao.TipoValidacao?.Designacao}.",
+                    Mensagem = $"{utilizador?.Nome} submeteu {tipoDocumento}.",
                     Tipo = "warning",
                     Link = "/Admin/Validacoes"
                 });
             }
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Documento submetido com sucesso! Aguarde aprovação do administrador.";
+            TempData["Success"] = "Documento adicionado com sucesso! Aguarde aprovação.";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoverDocumento(int id)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue) return RedirectToAction("Login", "Account");
+
+            var documento = await _context.DocumentosValidacao
+                .Include(d => d.ValidacaoIdentidade)
+                .FirstOrDefaultAsync(d => d.Id == id && d.ValidacaoIdentidade.Id_Utilizador == userId.Value);
+
+            if (documento == null) return NotFound();
+
+            // Verificar se a validação ainda está pendente
+            if (documento.ValidacaoIdentidade.Id_Estado_Validacao_Documento != 1)
+            {
+                TempData["Error"] = "Não pode remover documentos de uma validação já processada.";
+                return RedirectToAction("Index");
+            }
+
+            // Remover ficheiro físico
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", documento.Caminho_Ficheiro.TrimStart('/'));
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
+
+            _context.DocumentosValidacao.Remove(documento);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Documento removido com sucesso.";
             return RedirectToAction("Index");
         }
     }

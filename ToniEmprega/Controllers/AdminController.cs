@@ -97,31 +97,28 @@ namespace ToniEmprega.Controllers
         // AdminController.cs - MÉTODO VALIDACOES CORRIGIDO
         public async Task<IActionResult> Validacoes()
         {
-            // ✅ BUSCAR TODOS OS UTILIZADORES PENDENTES (com ou sem documento submetido)
-            var utilizadoresPendentes = await _context.Utilizadores
-                .Include(u => u.TipoUtilizador)
-                .Include(u => u.ValidacoesIdentidade)
-                .ThenInclude(v => v.TipoValidacao)
-                .Include(u => u.ValidacoesIdentidade)
-                .ThenInclude(v => v.EstadoValidacaoDocumento)
-                .Where(u => u.Id_Estado_Validacao_Utilizador == 1) // Pendente
-                .Where(u => u.Id_Tipo_Utilizador != 5) // Excluir admins
-                .ToListAsync();
-
-            // ✅ BUSCAR DOCUMENTOS PENDENTES
-            var documentosPendentes = await _context.ValidacoesIdentidade
+            // Buscar todas as validações pendentes com documentos
+            var validacoesPendentes = await _context.ValidacoesIdentidade
                 .Include(v => v.Utilizador)
-                .Include(v => v.TipoValidacao)
+                .ThenInclude(u => u.TipoUtilizador)
+                .Include(v => v.Documentos)
                 .Include(v => v.EstadoValidacaoDocumento)
                 .Where(v => v.Id_Estado_Validacao_Documento == 1) // Pendente
+                .Where(v => v.Utilizador.Id_Tipo_Utilizador != 5) // Excluir admins
+                .OrderBy(v => v.Data_Criacao)
                 .ToListAsync();
 
-            // Combinar ambos na view
-            ViewBag.UtilizadoresSemDocumento = utilizadoresPendentes
-                .Where(u => !u.ValidacoesIdentidade.Any())
-                .ToList();
+            // Buscar utilizadores sem validação (nunca submeteram)
+            var utilizadoresSemValidacao = await _context.Utilizadores
+                .Include(u => u.TipoUtilizador)
+                .Where(u => u.Id_Estado_Validacao_Utilizador == 1) // Pendente
+                .Where(u => u.Id_Tipo_Utilizador != 5)
+                .Where(u => !_context.ValidacoesIdentidade.Any(v => v.Id_Utilizador == u.Id))
+                .ToListAsync();
 
-            return View(documentosPendentes);
+            ViewBag.UtilizadoresSemDocumento = utilizadoresSemValidacao;
+
+            return View(validacoesPendentes);
         }
 
         [HttpPost]
@@ -130,6 +127,7 @@ namespace ToniEmprega.Controllers
         {
             var validacao = await _context.ValidacoesIdentidade
                 .Include(v => v.Utilizador)
+                .Include(v => v.Documentos)
                 .FirstOrDefaultAsync(v => v.Id == id);
 
             if (validacao != null)
@@ -137,7 +135,7 @@ namespace ToniEmprega.Controllers
                 validacao.Id_Estado_Validacao_Documento = 2; // Aprovado
                 validacao.Data_Validacao = DateTime.Now;
 
-                // ✅ APROVAR UTILIZADOR - estado 2
+                // Aprovar utilizador
                 validacao.Utilizador.Id_Estado_Validacao_Utilizador = 2;
 
                 await _context.SaveChangesAsync();
@@ -146,7 +144,7 @@ namespace ToniEmprega.Controllers
                 {
                     Id_Utilizador = validacao.Id_Utilizador,
                     Titulo = "Documento aprovado!",
-                    Mensagem = "A sua validação de identidade foi aprovada. Já pode aceder a todas as funcionalidades.",
+                    Mensagem = $"A sua validação de identidade foi aprovada. Já pode aceder a todas as funcionalidades.",
                     Tipo = "success",
                     Link = "/Account/Login"
                 });
@@ -170,8 +168,9 @@ namespace ToniEmprega.Controllers
             {
                 validacao.Id_Estado_Validacao_Documento = 3; // Rejeitado
                 validacao.Data_Validacao = DateTime.Now;
+                validacao.Motivo_Rejeicao = motivo; // ✅ Guardar motivo
 
-                // ✅ REJEITAR UTILIZADOR - estado 3
+                // Rejeitar utilizador
                 validacao.Utilizador.Id_Estado_Validacao_Utilizador = 3;
 
                 await _context.SaveChangesAsync();

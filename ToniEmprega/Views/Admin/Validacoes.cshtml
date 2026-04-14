@@ -1,4 +1,5 @@
-﻿@model IEnumerable<ToniEmprega.Models.ValidacaoIdentidade>
+﻿@* Views/Admin/Validacoes.cshtml - MODIFICADO *@
+@model IEnumerable<ToniEmprega.Models.ValidacaoIdentidade>
 @{
     ViewData["Title"] = "Validações Pendentes";
 }
@@ -20,7 +21,7 @@
             <i class="fas fa-id-card"></i> Validações Pendentes
         </h2>
 
-        <!-- ✅ UTILIZADORES SEM DOCUMENTO -->
+        <!-- Utilizadores Sem Documento -->
         @if (ViewBag.UtilizadoresSemDocumento != null && ViewBag.UtilizadoresSemDocumento.Count > 0)
         {
             <div class="card" style="margin-bottom: 2rem; border: 2px solid var(--color-warning);">
@@ -62,72 +63,113 @@
             </div>
         }
 
-        <!-- ✅ DOCUMENTOS PENDENTES DE APROVAÇÃO -->
+        <!-- Validações com Documentos -->
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fas fa-file-alt"></i>
-                    Documentos Submetidos (@Model.Count())
+                    Validações Pendentes (@Model.Count())
                 </h3>
             </div>
 
             @if (Model.Any())
             {
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Utilizador</th>
-                                <th>Tipo Documento</th>
-                                <th>Data Submissão</th>
-                                <th>Documento</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var val in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <strong>@val.Utilizador?.Nome</strong><br />
-                                        <small>@val.Utilizador?.Email</small>
-                                    </td>
-                                    <td>@val.TipoValidacao?.Designacao</td>
-                                    <td>@val.Data_Validacao?.ToString("dd/MM/yyyy") ?? "N/A"</td>
-                                    <td>
-                                        <a href="@val.Ficheiro_Prova" target="_blank" class="btn btn-outline btn-sm">
-                                            <i class="fas fa-eye"></i> Ver Documento
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <form method="post" asp-action="AprovarValidacao" style="display: inline;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@val.Id" />
-                                            <button type="submit" class="btn btn-success btn-sm">
-                                                <i class="fas fa-check"></i> Aprovar
-                                            </button>
-                                        </form>
-                                        <form method="post" asp-action="RejeitarValidacao" style="display: inline; margin-left: 0.5rem;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@val.Id" />
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return prompt('Motivo da rejeição:') || false;">
-                                                <i class="fas fa-times"></i> Rejeitar
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                @foreach (var validacao in Model)
+                {
+                    <div style="border: 1px solid var(--color-navy); border-radius: 8px; margin-bottom: 1.5rem; overflow: hidden;">
+                        <!-- Cabeçalho da Validação -->
+                        <div style="background-color: var(--color-navy); padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="color: var(--color-white); margin: 0;">
+                                    <i class="fas fa-user"></i> @validacao.Utilizador?.Nome
+                                </h4>
+                                <small style="color: var(--color-gray);">
+                                    @validacao.Utilizador?.Email | @validacao.Utilizador?.TipoUtilizador?.Designacao
+                                </small>
+                            </div>
+                            <span class="badge badge-pending">
+                                <i class="fas fa-clock"></i> Pendente
+                            </span>
+                        </div>
+
+                        <!-- Lista de Documentos -->
+                        <div style="padding: 1rem;">
+                            <h5 style="color: var(--color-blue); margin-bottom: 1rem;">
+                                <i class="fas fa-folder-open"></i> Documentos (@validacao.Documentos.Count)
+                            </h5>
+                            
+                            <div class="table-container" style="margin-bottom: 1rem;">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Nome do Ficheiro</th>
+                                            <th>Data Upload</th>
+                                            <th>Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var doc in validacao.Documentos)
+                                        {
+                                            <tr>
+                                                <td>@doc.Tipo_Documento</td>
+                                                <td>@doc.Nome_Ficheiro</td>
+                                                <td>@doc.Data_Upload.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td>
+                                                    <a href="@doc.Caminho_Ficheiro" target="_blank" class="btn btn-outline btn-sm">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Ações da Validação -->
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end; padding-top: 1rem; border-top: 1px solid var(--color-navy);">
+                                <form method="post" asp-action="AprovarValidacao" style="display: inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@validacao.Id" />
+                                    <button type="submit" class="btn btn-success" onclick="return confirm('Aprovar TODOS os documentos deste utilizador?');">
+                                        <i class="fas fa-check"></i> Aprovar Validação
+                                    </button>
+                                </form>
+                                
+                                <form method="post" asp-action="RejeitarValidacao" style="display: inline;" onsubmit="return confirmarRejeicao(this);">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@validacao.Id" />
+                                    <input type="hidden" name="motivo" class="motivo-rejeicao" value="" />
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-times"></i> Rejeitar Validação
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
             }
             else
             {
                 <p style="color: var(--color-gray); text-align: center; padding: 2rem;">
                     <i class="fas fa-check-circle" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
-                    Não há documentos pendentes de aprovação.
+                    Não há validações pendentes de aprovação.
                 </p>
             }
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function confirmarRejeicao(form) {
+            var motivo = prompt("Por favor, indique o motivo da rejeição:");
+            if (motivo == null || motivo.trim() == "") {
+                alert("É necessário indicar um motivo para rejeitar.");
+                return false;
+            }
+            form.querySelector('.motivo-rejeicao').value = motivo;
+            return confirm('Tem certeza que deseja REJEITAR esta validação? O utilizador terá de submeter novos documentos.');
+        }
+    </script>
+}
