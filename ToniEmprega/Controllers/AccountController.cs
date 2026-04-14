@@ -11,10 +11,12 @@ namespace ToniEmprega.Controllers
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(ApplicationDbContext context)
+        public AccountController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;  // ✅ ADICIONAR
         }
 
         public IActionResult Login()
