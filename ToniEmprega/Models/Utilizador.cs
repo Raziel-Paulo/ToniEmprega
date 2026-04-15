@@ -1,4 +1,6 @@
-﻿// Models/Utilizador.cs (ATUALIZADO)
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+
 namespace ToniEmprega.Models
 {
     public class Utilizador
@@ -10,13 +12,15 @@ namespace ToniEmprega.Models
         public DateTime? Data_Nascimento { get; set; }
         public DateTime Data_Registro { get; set; } = DateTime.Now;
 
+        [Required(ErrorMessage = "Tem de selecionar um tipo de utilizador.")]
         public int Id_Tipo_Utilizador { get; set; }
-        public TipoUtilizador TipoUtilizador { get; set; } = null!;
+
+        [ValidateNever]
+        public TipoUtilizador? TipoUtilizador { get; set; }
 
         public int? Id_Estado_Validacao_Utilizador { get; set; }
         public EstadoValidacaoUtilizador? EstadoValidacao { get; set; }
 
-        // Navegação
         public ICollection<ValidacaoIdentidade> ValidacoesIdentidade { get; set; } = new List<ValidacaoIdentidade>();
     }
 }

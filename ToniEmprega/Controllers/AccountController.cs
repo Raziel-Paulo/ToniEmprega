@@ -42,6 +42,8 @@ namespace ToniEmprega.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string email, string password)
         {
+            email = email?.Trim();
+
             var user = await _context.Utilizadores
                 .Include(u => u.TipoUtilizador)
                 .FirstOrDefaultAsync(u => u.Email == email);
@@ -52,9 +54,11 @@ namespace ToniEmprega.Controllers
                 return View();
             }
 
+            var userType = user.TipoUtilizador?.Designacao ?? string.Empty;
+
             HttpContext.Session.SetInt32("UserId", user.Id);
             HttpContext.Session.SetString("UserName", user.Nome);
-            HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
+            HttpContext.Session.SetString("UserType", userType);
 
             if (user.Id_Estado_Validacao_Utilizador == 1)
             {
@@ -77,7 +81,7 @@ namespace ToniEmprega.Controllers
             });
             await _context.SaveChangesAsync();
 
-            return user.TipoUtilizador.Designacao switch
+            return userType switch
             {
                 "Aluno" => RedirectToAction("Dashboard", "Aluno"),
                 "Professor" => RedirectToAction("Dashboard", "Professor"),
@@ -95,9 +99,17 @@ namespace ToniEmprega.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword, int tipoUtilizadorId)
+        public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword)
         {
             await CarregarTiposUtilizadorAsync();
+
+            utilizador.Nome = utilizador.Nome?.Trim();
+            utilizador.Email = utilizador.Email?.Trim();
+
+            if (utilizador.Id_Tipo_Utilizador <= 0)
+            {
+                ModelState.AddModelError(nameof(utilizador.Id_Tipo_Utilizador), "Tem de selecionar um tipo de utilizador.");
+            }
 
             if (!IsPasswordComplex(utilizador.Palavra_Passe))
             {
@@ -124,7 +136,7 @@ namespace ToniEmprega.Controllers
                 ModelState.AddModelError(string.Empty, "Data de nascimento é obrigatória.");
             }
 
-            var tipo = await _context.TipoUtilizadores.FindAsync(tipoUtilizadorId);
+            var tipo = await _context.TipoUtilizadores.FindAsync(utilizador.Id_Tipo_Utilizador);
             if (tipo == null || tipo.Designacao == "Administrador")
             {
                 ModelState.AddModelError(string.Empty, "Tipo de utilizador inválido.");
@@ -156,7 +168,7 @@ namespace ToniEmprega.Controllers
                 Email = utilizador.Email.Trim(),
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(utilizador.Palavra_Passe),
                 DataNascimento = utilizador.Data_Nascimento!.Value.Date,
-                TipoUtilizadorId = tipoUtilizadorId,
+                TipoUtilizadorId = utilizador.Id_Tipo_Utilizador,
                 TipoDesignacao = tipo!.Designacao
             };
 

@@ -34,7 +34,7 @@
 
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-user-tag"></i> Tipo de Utilizador</label>
-                <select name="tipoUtilizadorId" class="form-control" required>
+                <select asp-for="Id_Tipo_Utilizador" class="form-control" required>
                     <option value="">Selecione...</option>
                     @foreach (var tipo in ViewBag.TiposUtilizador)
                     {
