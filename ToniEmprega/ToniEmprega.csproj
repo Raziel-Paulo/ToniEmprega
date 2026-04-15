@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="BD\" />
     <Folder Include="wwwroot\uploads\candidaturas\" />
     <Folder Include="wwwroot\uploads\documentos\" />
   </ItemGroup>

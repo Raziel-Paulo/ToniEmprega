@@ -1,6 +1,8 @@
 ﻿@model ToniEmprega.Models.Oferta
 @{
     ViewData["Title"] = "Nova Oferta";
+    // ✅ MELHORADO: Ler chave da configuração
+    var googleMapsKey = ViewBag.GoogleMapsKey ?? "";
 }
 
 <div style="max-width: 800px; margin: 0 auto;">
@@ -9,17 +11,20 @@
             <h2 class="card-title"><i class="fas fa-plus-circle"></i> Criar Oferta</h2>
         </div>
 
-        <form method="post" action="/Empresa/CriarOferta">
+        <form method="post" action="/Empresa/CriarOferta" id="formOferta">
             @Html.AntiForgeryToken()
 
             <div class="form-group">
-                <label class="form-label">Título</label>
+                <label class="form-label">Título <span style="color: var(--color-danger);">*</span></label>
                 <input type="text" name="Titulo" class="form-control" required
-                       value="@(Model?.Titulo ?? "")" />
+                       value="@(Model?.Titulo ?? "")"
+                       placeholder="Ex: Estágio em Desenvolvimento Web"
+                       minlength="5" maxlength="200" />
+                <small style="color: var(--color-gray);">Mínimo 5 caracteres</small>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Tipo</label>
+                <label class="form-label">Tipo <span style="color: var(--color-danger);">*</span></label>
                 <select name="Id_Tipo_Oferta" class="form-control" required>
                     <option value="">-- Selecione --</option>
                     @if (ViewBag.TiposOferta != null)
@@ -32,78 +37,138 @@
                 </select>
             </div>
 
-            <!-- ✅ NOVO: Localização com Autocomplete do Google Maps -->
+            <!-- ✅ MELHORADO: Localização com Autocomplete do Google Maps -->
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-map-marker-alt"></i> Localização</label>
+                <label class="form-label"><i class="fas fa-map-marker-alt"></i> Localização <span style="color: var(--color-danger);">*</span></label>
                 <input type="text" id="localizacao" name="Localizacao" class="form-control" required
-                       value="@(Model?.Localizacao ?? "")" placeholder="Comece a escrever a morada..." />
+                       value="@(Model?.Localizacao ?? "")"
+                       placeholder="Comece a escrever a morada..."
+                       autocomplete="off" />
                 <small style="color: var(--color-gray);">
                     <i class="fas fa-info-circle"></i> Comece a escrever e selecione a morada sugerida
                 </small>
                 <!-- Container para o mapa -->
-                <div id="map" style="width: 100%; height: 300px; margin-top: 1rem; border-radius: 8px; display: none;"></div>
+                <div id="map-container" style="margin-top: 1rem; display: none;">
+                    <div id="map" style="width: 100%; height: 300px; border-radius: 8px;"></div>
+                </div>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Descrição</label>
-                <textarea name="Descricao" class="form-control" rows="4" required>@(Model?.Descricao ?? "")</textarea>
+                <label class="form-label">Descrição <span style="color: var(--color-danger);">*</span></label>
+                <textarea name="Descricao" class="form-control" rows="4" required
+                          placeholder="Descreva as funções e responsabilidades..."
+                          minlength="20" maxlength="2000">@(Model?.Descricao ?? "")</textarea>
+                <small style="color: var(--color-gray);">Mínimo 20 caracteres</small>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Requisitos</label>
-                <textarea name="Requisitos" class="form-control" rows="3" required>@(Model?.Requisitos ?? "")</textarea>
+                <label class="form-label">Requisitos <span style="color: var(--color-danger);">*</span></label>
+                <textarea name="Requisitos" class="form-control" rows="3" required
+                          placeholder="Ex: Conhecimentos em C#, SQL, etc."
+                          minlength="10" maxlength="1000">@(Model?.Requisitos ?? "")</textarea>
+                <small style="color: var(--color-gray);">Mínimo 10 caracteres</small>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Data de Expiração (opcional)</label>
                 <input type="date" name="Data_Expiracao" class="form-control"
-                       value="@(Model?.Data_Expiracao?.ToString("yyyy-MM-dd") ?? "")" />
+                       value="@(Model?.Data_Expiracao?.ToString("yyyy-MM-dd") ?? "")"
+                       min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
+                <small style="color: var(--color-gray);">Deixe em branco para não expirar</small>
             </div>
 
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Publicar
-            </button>
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Publicar Oferta
+                </button>
+                <a href="/Empresa/MinhasOfertas" class="btn btn-outline">Cancelar</a>
+            </div>
         </form>
     </div>
 </div>
 
-<!-- ✅ SCRIPTS DO GOOGLE MAPS PLACES API -->
 @section Scripts {
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA SUA_CHAVE_AQUI &libraries=places"></script>
+    @if (!string.IsNullOrEmpty(googleMapsKey) && googleMapsKey != "AIzaSyA SUA_CHAVE_AQUI")
+    {
+        <script src="https://maps.googleapis.com/maps/api/js?key=@googleMapsKey&libraries=places&callback=initAutocomplete" async defer></script>
+    }
+    else
+    {
+        <div class="alert alert-warning" style="margin-top: 1rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Modo de desenvolvimento:</strong> Google Maps não configurado. Adicione a chave em appsettings.json
+        </div>
+    }
+    
     <script>
+        let autocomplete;
+        let map;
+        let marker;
+
         function initAutocomplete() {
         const input = document.getElementById('localizacao');
-        const autocomplete = new google.maps.places.Autocomplete(input, {
+            
+        // ✅ MELHORADO: Configuração mais completa do autocomplete
+        autocomplete = new google.maps.places.Autocomplete(input, {
         types: ['address'],
-        componentRestrictions: { country: 'pt' } // Restringir a Portugal
+        componentRestrictions: { country: 'pt' },
+        fields: ['address_components', 'geometry', 'formatted_address', 'name']
         });
 
         // Quando selecionar uma morada
         autocomplete.addListener('place_changed', function() {
         const place = autocomplete.getPlace();
-        if (place.geometry) {
-        console.log('Morada selecionada:', place.formatted_address);
-                    
-        // Mostrar mapa
-        document.getElementById('map').style.display = 'block';
-                    
-        // Criar mapa
-        const map = new google.maps.Map(document.getElementById('map'), {
+                
+        if (!place.geometry) {
+        console.error('Nenhuma localização encontrada para: ' + place.name);
+        return;
+        }
+
+        // Mostrar container do mapa
+        document.getElementById('map-container').style.display = 'block';
+                
+        // Criar ou atualizar mapa
+        if (!map) {
+        map = new google.maps.Map(document.getElementById('map'), {
         center: place.geometry.location,
-        zoom: 15
+        zoom: 15,
+        mapTypeControl: false,
+        streetViewControl: false
         });
-                    
-        // Adicionar marcador
-        new google.maps.Marker({
+        } else {
+        map.setCenter(place.geometry.location);
+        }
+
+        // Adicionar ou atualizar marcador
+        if (marker) {
+        marker.setMap(null);
+        }
+                
+        marker = new google.maps.Marker({
         map: map,
         position: place.geometry.location,
-        title: place.formatted_address
+        title: place.formatted_address,
+        animation: google.maps.Animation.DROP
         });
-        }
+
+        // Atualizar campo com morada formatada
+        input.value = place.formatted_address;
+                
+        console.log('Localização selecionada:', place.formatted_address);
         });
         }
 
-        // Inicializar quando a página carregar
-        window.onload = initAutocomplete;
+        // ✅ NOVO: Validação do formulário antes de submeter
+        document.getElementById('formOferta').addEventListener('submit', function(e) {
+        const localizacao = document.getElementById('localizacao').value;
+            
+        if (localizacao.length < 5) {
+        e.preventDefault();
+        alert('Por favor, insira uma localização válida (mínimo 5 caracteres).');
+        return false;
+        }
+            
+        return true;
+        });
     </script>
 }
