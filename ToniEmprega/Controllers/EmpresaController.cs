@@ -1,5 +1,6 @@
 ﻿using Humanizer.Configuration;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
@@ -14,7 +15,7 @@ namespace ToniEmprega.Controllers
         public EmpresaController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
-            _configuration = configuration;  
+            _configuration = configuration;
         }
 
         private async Task<Empresa?> GetCurrentEmpresa()
@@ -24,6 +25,36 @@ namespace ToniEmprega.Controllers
             return await _context.Empresas
                 .Include(e => e.Utilizador)
                 .FirstOrDefaultAsync(e => e.Id_Utilizador == userId.Value);
+        }
+
+        private async Task<CarregarOfertaViewDataResult> CarregarOfertaViewDataAsync()
+        {
+            return new CarregarOfertaViewDataResult
+            {
+                TiposOferta = await _context.TipoOfertas.ToListAsync(),
+                GoogleMapsKey = _configuration["GoogleMaps:ApiKey"] ?? string.Empty
+            };
+        }
+
+        private sealed class CarregarOfertaViewDataResult
+        {
+            public List<TipoOferta> TiposOferta { get; set; } = new();
+            public string GoogleMapsKey { get; set; } = string.Empty;
+        }
+
+        private static void ValidarOfertaBasica(Oferta oferta, ModelStateDictionary modelState)
+        {
+            if (string.IsNullOrWhiteSpace(oferta.Titulo) || oferta.Titulo.Length < 5)
+                modelState.AddModelError(string.Empty, "O título deve ter pelo menos 5 caracteres.");
+
+            if (string.IsNullOrWhiteSpace(oferta.Descricao) || oferta.Descricao.Length < 20)
+                modelState.AddModelError(string.Empty, "A descrição deve ter pelo menos 20 caracteres.");
+
+            if (string.IsNullOrWhiteSpace(oferta.Requisitos) || oferta.Requisitos.Length < 10)
+                modelState.AddModelError(string.Empty, "Os requisitos devem ter pelo menos 10 caracteres.");
+
+            if (string.IsNullOrWhiteSpace(oferta.Localizacao) || oferta.Localizacao.Length < 5)
+                modelState.AddModelError(string.Empty, "A localização deve ter pelo menos 5 caracteres.");
         }
 
         public async Task<IActionResult> Dashboard()
@@ -159,12 +190,10 @@ namespace ToniEmprega.Controllers
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
 
-            ViewBag.TiposOferta = await _context.TipoOfertas.ToListAsync();
+            var viewData = await CarregarOfertaViewDataAsync();
+            ViewBag.TiposOferta = viewData.TiposOferta;
+            ViewBag.GoogleMapsKey = viewData.GoogleMapsKey;
 
-            // ✅ NOVO: Passar chave do Google Maps para a view
-            ViewBag.GoogleMapsKey = _configuration["GoogleMaps:ApiKey"] ?? "";
-
-            // Retornar modelo vazio em vez de null
             return View(new Oferta());
         }
 
@@ -175,31 +204,19 @@ namespace ToniEmprega.Controllers
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
 
-            // ✅ NOVO: Validações adicionais
-            if (string.IsNullOrWhiteSpace(oferta.Titulo) || oferta.Titulo.Length < 5)
-            {
-                ModelState.AddModelError("", "O título deve ter pelo menos 5 caracteres.");
-            }
+            ValidarOfertaBasica(oferta, ModelState);
 
-            if (string.IsNullOrWhiteSpace(oferta.Descricao) || oferta.Descricao.Length < 20)
-            {
-                ModelState.AddModelError("", "A descrição deve ter pelo menos 20 caracteres.");
-            }
+            if (oferta.Id_Tipo_Oferta == null || !await _context.TipoOfertas.AnyAsync(t => t.Id == oferta.Id_Tipo_Oferta))
+                ModelState.AddModelError(string.Empty, "Selecione um tipo de oferta válido.");
 
-            if (string.IsNullOrWhiteSpace(oferta.Requisitos) || oferta.Requisitos.Length < 10)
-            {
-                ModelState.AddModelError("", "Os requisitos devem ter pelo menos 10 caracteres.");
-            }
-
-            if (string.IsNullOrWhiteSpace(oferta.Localizacao) || oferta.Localizacao.Length < 5)
-            {
-                ModelState.AddModelError("", "A localização deve ter pelo menos 5 caracteres.");
-            }
+            if (oferta.Data_Expiracao.HasValue && oferta.Data_Expiracao.Value.Date <= DateTime.Today)
+                ModelState.AddModelError(string.Empty, "A data de expiração tem de ser posterior à data atual.");
 
             if (!ModelState.IsValid)
             {
-                ViewBag.TiposOferta = await _context.TipoOfertas.ToListAsync();
-                ViewBag.GoogleMapsKey = _configuration["GoogleMaps:ApiKey"] ?? "";
+                var viewData = await CarregarOfertaViewDataAsync();
+                ViewBag.TiposOferta = viewData.TiposOferta;
+                ViewBag.GoogleMapsKey = viewData.GoogleMapsKey;
                 return View(oferta);
             }
 
@@ -240,6 +257,20 @@ namespace ToniEmprega.Controllers
                 .FirstOrDefaultAsync(o => o.Id == id && o.Id_Empresa == empresa.Id);
 
             if (existing == null) return NotFound();
+
+            ValidarOfertaBasica(oferta, ModelState);
+
+            if (oferta.Id_Tipo_Oferta == null || !await _context.TipoOfertas.AnyAsync(t => t.Id == oferta.Id_Tipo_Oferta))
+                ModelState.AddModelError(string.Empty, "Selecione um tipo de oferta válido.");
+
+            if (oferta.Data_Expiracao.HasValue && oferta.Data_Expiracao.Value.Date <= DateTime.Today)
+                ModelState.AddModelError(string.Empty, "A data de expiração tem de ser posterior à data atual.");
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.TiposOferta = await _context.TipoOfertas.ToListAsync();
+                return View(existing);
+            }
 
             existing.Titulo = oferta.Titulo;
             existing.Descricao = oferta.Descricao;

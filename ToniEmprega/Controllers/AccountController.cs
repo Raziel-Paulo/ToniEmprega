@@ -1,8 +1,8 @@
-﻿// Controllers/AccountController.cs - COMPLETO COM VALIDAÇÃO NO REGISTO
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net;
 using System.Net.Mail;
+using System.Text.Json;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
 
@@ -10,13 +10,27 @@ namespace ToniEmprega.Controllers
 {
     public class AccountController : Controller
     {
+        private const string PendingRegisterKey = "PendingRegisterData";
+        private const string PendingRegisterCodeKey = "PendingRegisterCode";
+        private const string PendingRegisterTimeKey = "PendingRegisterTime";
+
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
 
         public AccountController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
-            _configuration = configuration;  // ✅ ADICIONAR
+            _configuration = configuration;
+        }
+
+        private sealed class PendingRegisterData
+        {
+            public string Nome { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string PasswordHash { get; set; } = string.Empty;
+            public DateTime DataNascimento { get; set; }
+            public int TipoUtilizadorId { get; set; }
+            public string TipoDesignacao { get; set; } = string.Empty;
         }
 
         public IActionResult Login()
@@ -38,25 +52,22 @@ namespace ToniEmprega.Controllers
                 return View();
             }
 
-            // Definir session
             HttpContext.Session.SetInt32("UserId", user.Id);
             HttpContext.Session.SetString("UserName", user.Nome);
             HttpContext.Session.SetString("UserType", user.TipoUtilizador.Designacao);
 
-            // ✅ VERIFICAR ESTADO DA CONTA - se não estiver aprovado, mandar para validação
-            if (user.Id_Estado_Validacao_Utilizador == 1) // Pendente
+            if (user.Id_Estado_Validacao_Utilizador == 1)
             {
                 TempData["Warning"] = "Precisa de completar a validação de identidade.";
                 return RedirectToAction("Index", "Validacao");
             }
 
-            if (user.Id_Estado_Validacao_Utilizador == 3) // Rejeitado
+            if (user.Id_Estado_Validacao_Utilizador == 3)
             {
                 TempData["Error"] = "A sua validação foi rejeitada. Submeta novo documento.";
                 return RedirectToAction("Index", "Validacao");
             }
 
-            // ✅ APROVADO - Login normal
             _context.Notificacoes.Add(new Notificacao
             {
                 Id_Utilizador = user.Id,
@@ -78,9 +89,7 @@ namespace ToniEmprega.Controllers
 
         public async Task<IActionResult> Register()
         {
-            ViewBag.TiposUtilizador = await _context.TipoUtilizadores
-                .Where(t => t.Designacao != "Administrador")
-                .ToListAsync();
+            await CarregarTiposUtilizadorAsync();
             return View();
         }
 
@@ -88,104 +97,157 @@ namespace ToniEmprega.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword, int tipoUtilizadorId)
         {
-            // ✅ 2.3 - Validação de Password Complexa
+            await CarregarTiposUtilizadorAsync();
+
             if (!IsPasswordComplex(utilizador.Palavra_Passe))
             {
-                ModelState.AddModelError("", "A palavra-passe deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais.");
-                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
-                    .Where(t => t.Designacao != "Administrador")
-                    .ToListAsync();
-                return View(utilizador);
+                ModelState.AddModelError(string.Empty, "A palavra-passe deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais.");
             }
 
             if (utilizador.Palavra_Passe != confirmPassword)
             {
-                ModelState.AddModelError("", "As palavras-passe não coincidem.");
-                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
-                    .Where(t => t.Designacao != "Administrador")
-                    .ToListAsync();
-                return View(utilizador);
+                ModelState.AddModelError(string.Empty, "As palavras-passe não coincidem.");
             }
 
-            // ✅ 2.1 - Validação de Email (formato e unicidade)
             if (!IsValidEmail(utilizador.Email))
             {
-                ModelState.AddModelError("", "Email inválido. Use um formato válido (ex: nome@dominio.pt)");
-                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
-                    .Where(t => t.Designacao != "Administrador")
-                    .ToListAsync();
-                return View(utilizador);
+                ModelState.AddModelError(string.Empty, "Email inválido. Use um formato válido (ex: nome@dominio.pt).");
             }
 
             if (await _context.Utilizadores.AnyAsync(u => u.Email == utilizador.Email))
             {
-                ModelState.AddModelError("", "Email já registado.");
-                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
-                    .Where(t => t.Designacao != "Administrador")
-                    .ToListAsync();
-                return View(utilizador);
+                ModelState.AddModelError(string.Empty, "Email já registado.");
             }
 
-            // ✅ 2.2 - Validação de Idade
             if (!utilizador.Data_Nascimento.HasValue)
             {
-                ModelState.AddModelError("", "Data de nascimento é obrigatória.");
-                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
-                    .Where(t => t.Designacao != "Administrador")
-                    .ToListAsync();
-                return View(utilizador);
+                ModelState.AddModelError(string.Empty, "Data de nascimento é obrigatória.");
             }
 
-            var idade = CalcularIdade(utilizador.Data_Nascimento.Value);
             var tipo = await _context.TipoUtilizadores.FindAsync(tipoUtilizadorId);
-
-            // ✅ 2.2.1 - Aluno >= 17 anos
-            if (tipo?.Designacao == "Aluno" && idade < 17)
+            if (tipo == null || tipo.Designacao == "Administrador")
             {
-                ModelState.AddModelError("", "Para se registar como Aluno, deve ter pelo menos 17 anos.");
-                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
-                    .Where(t => t.Designacao != "Administrador")
-                    .ToListAsync();
+                ModelState.AddModelError(string.Empty, "Tipo de utilizador inválido.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                var idade = CalcularIdade(utilizador.Data_Nascimento!.Value);
+
+                if (tipo!.Designacao == "Aluno" && idade < 17)
+                {
+                    ModelState.AddModelError(string.Empty, "Para se registar como Aluno, deve ter pelo menos 17 anos.");
+                }
+                else if (tipo.Designacao == "Utilizador Normal" && idade < 18)
+                {
+                    ModelState.AddModelError(string.Empty, "Para se registar, deve ter pelo menos 18 anos.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
                 return View(utilizador);
             }
 
-            // ✅ 2.2.2 - Utilizador Normal >= 18 anos
-            if (tipo?.Designacao == "Utilizador Normal" && idade < 18)
+            var codigo = Random.Shared.Next(100000, 999999).ToString();
+            var pending = new PendingRegisterData
             {
-                ModelState.AddModelError("", "Para se registar, deve ter pelo menos 18 anos.");
-                ViewBag.TiposUtilizador = await _context.TipoUtilizadores
-                    .Where(t => t.Designacao != "Administrador")
-                    .ToListAsync();
-                return View(utilizador);
+                Nome = utilizador.Nome.Trim(),
+                Email = utilizador.Email.Trim(),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(utilizador.Palavra_Passe),
+                DataNascimento = utilizador.Data_Nascimento!.Value.Date,
+                TipoUtilizadorId = tipoUtilizadorId,
+                TipoDesignacao = tipo!.Designacao
+            };
+
+            HttpContext.Session.SetString(PendingRegisterKey, JsonSerializer.Serialize(pending));
+            HttpContext.Session.SetString(PendingRegisterCodeKey, codigo);
+            HttpContext.Session.SetString(PendingRegisterTimeKey, DateTime.UtcNow.ToString("O"));
+
+            try
+            {
+                await EnviarEmailConfirmacaoRegisto(pending.Email, codigo, pending.Nome);
+                TempData["Success"] = "Enviámos um código de confirmação para o seu email.";
+            }
+            catch
+            {
+                TempData["Warning"] = $"Modo desenvolvimento: o seu código de confirmação é {codigo}";
             }
 
-            // Resto do código de registo mantém-se...
-            utilizador.Id_Tipo_Utilizador = tipoUtilizadorId;
-            utilizador.Id_Estado_Validacao_Utilizador = 1; // Pendente
-            utilizador.Palavra_Passe = BCrypt.Net.BCrypt.HashPassword(utilizador.Palavra_Passe);
-            utilizador.Data_Registro = DateTime.Now;
+            return RedirectToAction(nameof(VerificarEmailRegisto));
+        }
+
+        public IActionResult VerificarEmailRegisto()
+        {
+            if (HttpContext.Session.GetString(PendingRegisterKey) == null || HttpContext.Session.GetString(PendingRegisterCodeKey) == null)
+                return RedirectToAction(nameof(Register));
+
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerificarEmailRegisto(string codigo)
+        {
+            var storedCode = HttpContext.Session.GetString(PendingRegisterCodeKey);
+            var storedTime = HttpContext.Session.GetString(PendingRegisterTimeKey);
+            var pendingJson = HttpContext.Session.GetString(PendingRegisterKey);
+
+            if (string.IsNullOrWhiteSpace(storedCode) || string.IsNullOrWhiteSpace(storedTime) || string.IsNullOrWhiteSpace(pendingJson))
+                return RedirectToAction(nameof(Register));
+
+            if (!DateTime.TryParse(storedTime, out var verificationTime) || DateTime.UtcNow > verificationTime.AddMinutes(15))
+            {
+                LimparSessaoRegistoPendente();
+                TempData["Error"] = "O código expirou. Faça o registo novamente.";
+                return RedirectToAction(nameof(Register));
+            }
+
+            if (!string.Equals(codigo?.Trim(), storedCode, StringComparison.Ordinal))
+            {
+                TempData["Error"] = "Código incorreto.";
+                return View();
+            }
+
+            var pending = JsonSerializer.Deserialize<PendingRegisterData>(pendingJson);
+            if (pending == null)
+            {
+                LimparSessaoRegistoPendente();
+                TempData["Error"] = "Não foi possível recuperar os dados do registo. Faça o registo novamente.";
+                return RedirectToAction(nameof(Register));
+            }
+
+            var utilizador = new Utilizador
+            {
+                Nome = pending.Nome,
+                Email = pending.Email,
+                Palavra_Passe = pending.PasswordHash,
+                Data_Nascimento = pending.DataNascimento,
+                Data_Registro = DateTime.Now,
+                Id_Tipo_Utilizador = pending.TipoUtilizadorId,
+                Id_Estado_Validacao_Utilizador = 1
+            };
 
             _context.Utilizadores.Add(utilizador);
             await _context.SaveChangesAsync();
 
-            // Criar perfil específico...
-            switch (tipo?.Designacao)
+            switch (pending.TipoDesignacao)
             {
                 case "Aluno":
                     _context.Alunos.Add(new Aluno
                     {
                         Id_Utilizador = utilizador.Id,
-                        Curso = "",
-                        Ano_Letivo = "",
-                        Numero_Aluno = ""
+                        Curso = string.Empty,
+                        Ano_Letivo = string.Empty,
+                        Numero_Aluno = string.Empty
                     });
                     break;
                 case "Professor":
                     _context.Professores.Add(new Professor
                     {
                         Id_Utilizador = utilizador.Id,
-                        Departamento = "",
-                        Numero_Professor = ""
+                        Departamento = string.Empty,
+                        Numero_Professor = string.Empty
                     });
                     break;
                 case "Empresa":
@@ -193,23 +255,23 @@ namespace ToniEmprega.Controllers
                     {
                         Id_Utilizador = utilizador.Id,
                         Nome_Empresa = utilizador.Nome,
-                        Nif = "",
-                        Morada = "",
-                        Site_Empresa = "",
-                        Telefone = ""
+                        Nif = string.Empty,
+                        Morada = string.Empty,
+                        Site_Empresa = string.Empty,
+                        Telefone = string.Empty
                     });
                     break;
                 case "Utilizador Normal":
                     _context.UtilizadoresNormais.Add(new UtilizadorNormal
                     {
                         Id_Utilizador = utilizador.Id,
-                        Documentacao_Identificacao = ""
+                        Documentacao_Identificacao = string.Empty
                     });
                     break;
             }
+
             await _context.SaveChangesAsync();
 
-            // Notificar admins...
             var admins = await _context.Admins.Include(a => a.Utilizador).ToListAsync();
             foreach (var admin in admins)
             {
@@ -217,7 +279,7 @@ namespace ToniEmprega.Controllers
                 {
                     Id_Utilizador = admin.Id_Utilizador,
                     Titulo = "Novo registo pendente",
-                    Mensagem = $"{utilizador.Nome} ({tipo?.Designacao}) registou-se e aguarda validação de documento.",
+                    Mensagem = $"{utilizador.Nome} ({pending.TipoDesignacao}) registou-se e aguarda validação de documento.",
                     Tipo = "warning",
                     Link = "/Admin/Validacoes"
                 });
@@ -226,9 +288,11 @@ namespace ToniEmprega.Controllers
 
             HttpContext.Session.SetInt32("UserId", utilizador.Id);
             HttpContext.Session.SetString("UserName", utilizador.Nome);
-            HttpContext.Session.SetString("UserType", tipo?.Designacao ?? "Utilizador");
+            HttpContext.Session.SetString("UserType", pending.TipoDesignacao);
 
-            TempData["Success"] = "Registo efetuado! Agora submeta o seu documento de identificação.";
+            LimparSessaoRegistoPendente();
+
+            TempData["Success"] = "Email confirmado! Agora submeta o seu documento de identificação.";
             return RedirectToAction("Index", "Validacao");
         }
 
@@ -245,39 +309,33 @@ namespace ToniEmprega.Controllers
 
             if (user == null)
             {
-                // Não revelar se email existe ou não (segurança)
                 TempData["Success"] = "Se o email existir no sistema, receberá um código de recuperação.";
-                return RedirectToAction("RecuperarPassword");
+                return RedirectToAction(nameof(RecuperarPassword));
             }
 
-            // Gerar código de 6 dígitos
-            var codigo = new Random().Next(100000, 999999).ToString();
+            var codigo = Random.Shared.Next(100000, 999999).ToString();
 
-            // Guardar código na sessão (temporário)
             HttpContext.Session.SetString("ResetCode", codigo);
             HttpContext.Session.SetString("ResetEmail", email);
-            HttpContext.Session.SetString("ResetTime", DateTime.Now.ToString());
+            HttpContext.Session.SetString("ResetTime", DateTime.Now.ToString("O"));
 
-            // Enviar email (simulação - em produção usar serviço de email real)
-            // TODO: Configurar SMTP no appsettings.json
             try
             {
                 await EnviarEmailRecuperacao(email, codigo, user.Nome);
                 TempData["Success"] = "Código de recuperação enviado para o seu email.";
-                return RedirectToAction("VerificarCodigo");
             }
             catch
             {
-                // Em desenvolvimento, mostrar código na tela
-                TempData["Warning"] = $"Modo desenvolvimento: O seu código é {codigo}";
-                return RedirectToAction("VerificarCodigo");
+                TempData["Warning"] = $"Modo desenvolvimento: o seu código é {codigo}";
             }
+
+            return RedirectToAction(nameof(VerificarCodigo));
         }
 
         public IActionResult VerificarCodigo()
         {
             if (HttpContext.Session.GetString("ResetCode") == null)
-                return RedirectToAction("RecuperarPassword");
+                return RedirectToAction(nameof(RecuperarPassword));
 
             return View();
         }
@@ -287,30 +345,35 @@ namespace ToniEmprega.Controllers
         public IActionResult VerificarCodigo(string codigo)
         {
             var storedCode = HttpContext.Session.GetString("ResetCode");
-            var resetTime = DateTime.Parse(HttpContext.Session.GetString("ResetTime") ?? DateTime.MinValue.ToString());
+            var resetTimeRaw = HttpContext.Session.GetString("ResetTime");
 
-            // Código expira em 15 minutos
-            if (DateTime.Now > resetTime.AddMinutes(15))
+            if (string.IsNullOrWhiteSpace(storedCode) || string.IsNullOrWhiteSpace(resetTimeRaw) || !DateTime.TryParse(resetTimeRaw, out var resetTime))
             {
-                TempData["Error"] = "Código expirado. Solicite novo código.";
-                HttpContext.Session.Remove("ResetCode");
-                return RedirectToAction("RecuperarPassword");
+                LimparSessaoRecuperacaoPassword();
+                TempData["Error"] = "Sessão de recuperação inválida. Solicite um novo código.";
+                return RedirectToAction(nameof(RecuperarPassword));
             }
 
-            if (codigo != storedCode)
+            if (DateTime.Now > resetTime.AddMinutes(15))
+            {
+                LimparSessaoRecuperacaoPassword();
+                TempData["Error"] = "Código expirado. Solicite novo código.";
+                return RedirectToAction(nameof(RecuperarPassword));
+            }
+
+            if (!string.Equals(codigo?.Trim(), storedCode, StringComparison.Ordinal))
             {
                 TempData["Error"] = "Código incorreto.";
                 return View();
             }
 
-            return RedirectToAction("NovaPassword");
+            return RedirectToAction(nameof(NovaPassword));
         }
 
-        // ✅ VIEW NOVA PASSWORD
         public IActionResult NovaPassword()
         {
             if (HttpContext.Session.GetString("ResetCode") == null)
-                return RedirectToAction("RecuperarPassword");
+                return RedirectToAction(nameof(RecuperarPassword));
 
             return View();
         }
@@ -336,28 +399,66 @@ namespace ToniEmprega.Controllers
 
             if (user == null)
             {
-                return RedirectToAction("RecuperarPassword");
+                LimparSessaoRecuperacaoPassword();
+                return RedirectToAction(nameof(RecuperarPassword));
             }
 
             user.Palavra_Passe = BCrypt.Net.BCrypt.HashPassword(novaPassword);
             await _context.SaveChangesAsync();
 
-            // Limpar sessão
-            HttpContext.Session.Remove("ResetCode");
-            HttpContext.Session.Remove("ResetEmail");
-            HttpContext.Session.Remove("ResetTime");
-
+            LimparSessaoRecuperacaoPassword();
             TempData["Success"] = "Password alterada com sucesso! Faça login com a nova password.";
-            return RedirectToAction("Login");
+            return RedirectToAction(nameof(Login));
+        }
+
+        private async Task CarregarTiposUtilizadorAsync()
+        {
+            ViewBag.TiposUtilizador = await _context.TipoUtilizadores
+                .Where(t => t.Designacao != "Administrador")
+                .OrderBy(t => t.Designacao)
+                .ToListAsync();
+        }
+
+        private async Task EnviarEmailConfirmacaoRegisto(string email, string codigo, string nome)
+        {
+            var smtpServer = _configuration["Email:SmtpServer"] ?? "smtp.gmail.com";
+            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+            var smtpUser = _configuration["Email:SmtpUser"] ?? string.Empty;
+            var smtpPass = _configuration["Email:SmtpPass"] ?? string.Empty;
+            var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@toniemprega.pt";
+
+            using var client = new SmtpClient(smtpServer, smtpPort)
+            {
+                EnableSsl = true,
+                Credentials = new NetworkCredential(smtpUser, smtpPass)
+            };
+
+            var message = new MailMessage
+            {
+                From = new MailAddress(fromEmail, "ToniEmprega"),
+                Subject = "Confirmação de Email",
+                Body = $@"
+<h2>Confirmação de Email - ToniEmprega</h2>
+<p>Olá {nome},</p>
+<p>Use este código para confirmar o seu registo:</p>
+<h1 style='color: #1E90FF; font-size: 32px; letter-spacing: 5px;'>{codigo}</h1>
+<p>Este código é válido por 15 minutos.</p>
+<p>Se não iniciou este registo, ignore este email.</p>
+<br>
+<p>Atenciosamente,<br>Equipa ToniEmprega</p>",
+                IsBodyHtml = true
+            };
+
+            message.To.Add(email);
+            await client.SendMailAsync(message);
         }
 
         private async Task EnviarEmailRecuperacao(string email, string codigo, string nome)
         {
-            // Configuração SMTP - deve ser colocada no appsettings.json
             var smtpServer = _configuration["Email:SmtpServer"] ?? "smtp.gmail.com";
             var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-            var smtpUser = _configuration["Email:SmtpUser"] ?? "";
-            var smtpPass = _configuration["Email:SmtpPass"] ?? "";
+            var smtpUser = _configuration["Email:SmtpUser"] ?? string.Empty;
+            var smtpPass = _configuration["Email:SmtpPass"] ?? string.Empty;
             var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@toniemprega.pt";
 
             using var client = new SmtpClient(smtpServer, smtpPort)
@@ -371,16 +472,15 @@ namespace ToniEmprega.Controllers
                 From = new MailAddress(fromEmail, "ToniEmprega"),
                 Subject = "Recuperação de Password",
                 Body = $@"
-            <h2>Recuperação de Password - ToniEmprega</h2>
-            <p>Olá {nome},</p>
-            <p>Recebemos um pedido para recuperar a password da sua conta.</p>
-            <p>O seu código de verificação é:</p>
-            <h1 style='color: #1E90FF; font-size: 32px; letter-spacing: 5px;'>{codigo}</h1>
-            <p>Este código é válido por 15 minutos.</p>
-            <p>Se não solicitou esta recuperação, ignore este email.</p>
-            <br>
-            <p>Atenciosamente,<br>Equipa ToniEmprega</p>
-        ",
+<h2>Recuperação de Password - ToniEmprega</h2>
+<p>Olá {nome},</p>
+<p>Recebemos um pedido para recuperar a password da sua conta.</p>
+<p>O seu código de verificação é:</p>
+<h1 style='color: #1E90FF; font-size: 32px; letter-spacing: 5px;'>{codigo}</h1>
+<p>Este código é válido por 15 minutos.</p>
+<p>Se não solicitou esta recuperação, ignore este email.</p>
+<br>
+<p>Atenciosamente,<br>Equipa ToniEmprega</p>",
                 IsBodyHtml = true
             };
 
@@ -388,16 +488,15 @@ namespace ToniEmprega.Controllers
             await client.SendMailAsync(message);
         }
 
-
         private bool IsPasswordComplex(string password)
         {
-            if (string.IsNullOrEmpty(password) || password.Length < 8)
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 8)
                 return false;
 
-            bool hasUpper = password.Any(char.IsUpper);
-            bool hasLower = password.Any(char.IsLower);
-            bool hasDigit = password.Any(char.IsDigit);
-            bool hasSpecial = password.Any(c => !char.IsLetterOrDigit(c));
+            var hasUpper = password.Any(char.IsUpper);
+            var hasLower = password.Any(char.IsLower);
+            var hasDigit = password.Any(char.IsDigit);
+            var hasSpecial = password.Any(c => !char.IsLetterOrDigit(c));
 
             return hasUpper && hasLower && hasDigit && hasSpecial;
         }
@@ -406,8 +505,8 @@ namespace ToniEmprega.Controllers
         {
             try
             {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email && email.Contains(".");
+                var addr = new MailAddress(email);
+                return addr.Address == email && email.Contains('.');
             }
             catch
             {
@@ -423,6 +522,19 @@ namespace ToniEmprega.Controllers
             return idade;
         }
 
+        private void LimparSessaoRegistoPendente()
+        {
+            HttpContext.Session.Remove(PendingRegisterKey);
+            HttpContext.Session.Remove(PendingRegisterCodeKey);
+            HttpContext.Session.Remove(PendingRegisterTimeKey);
+        }
+
+        private void LimparSessaoRecuperacaoPassword()
+        {
+            HttpContext.Session.Remove("ResetCode");
+            HttpContext.Session.Remove("ResetEmail");
+            HttpContext.Session.Remove("ResetTime");
+        }
 
         public IActionResult Logout()
         {
@@ -433,7 +545,7 @@ namespace ToniEmprega.Controllers
         public async Task<IActionResult> Perfil()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue) return RedirectToAction("Login");
+            if (!userId.HasValue) return RedirectToAction(nameof(Login));
 
             var user = await _context.Utilizadores
                 .Include(u => u.TipoUtilizador)
@@ -453,7 +565,7 @@ namespace ToniEmprega.Controllers
         public async Task<IActionResult> AtualizarPerfil(string nome, DateTime? dataNascimento)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue) return RedirectToAction("Login");
+            if (!userId.HasValue) return RedirectToAction(nameof(Login));
 
             var user = await _context.Utilizadores.FindAsync(userId.Value);
             if (user == null) return NotFound();
@@ -464,7 +576,7 @@ namespace ToniEmprega.Controllers
 
             HttpContext.Session.SetString("UserName", user.Nome);
             TempData["Success"] = "Perfil atualizado com sucesso!";
-            return RedirectToAction("Perfil");
+            return RedirectToAction(nameof(Perfil));
         }
 
         [HttpPost]
@@ -472,7 +584,7 @@ namespace ToniEmprega.Controllers
         public async Task<IActionResult> AlterarPassword(string passwordAtual, string novaPassword, string confirmarPassword)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
-            if (!userId.HasValue) return RedirectToAction("Login");
+            if (!userId.HasValue) return RedirectToAction(nameof(Login));
 
             var user = await _context.Utilizadores.FindAsync(userId.Value);
             if (user == null) return NotFound();
@@ -480,20 +592,20 @@ namespace ToniEmprega.Controllers
             if (!BCrypt.Net.BCrypt.Verify(passwordAtual, user.Palavra_Passe))
             {
                 TempData["Error"] = "Password atual incorreta.";
-                return RedirectToAction("Perfil");
+                return RedirectToAction(nameof(Perfil));
             }
 
             if (novaPassword != confirmarPassword)
             {
                 TempData["Error"] = "As novas passwords não coincidem.";
-                return RedirectToAction("Perfil");
+                return RedirectToAction(nameof(Perfil));
             }
 
             user.Palavra_Passe = BCrypt.Net.BCrypt.HashPassword(novaPassword);
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Password alterada com sucesso!";
-            return RedirectToAction("Perfil");
+            return RedirectToAction(nameof(Perfil));
         }
     }
 }

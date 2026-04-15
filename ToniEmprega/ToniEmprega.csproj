@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="BD\**" />
+    <Content Remove="BD\**" />
+    <EmbeddedResource Remove="BD\**" />
+    <None Remove="BD\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.20" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.20" />
@@ -17,7 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="BD\" />
     <Folder Include="wwwroot\uploads\candidaturas\" />
     <Folder Include="wwwroot\uploads\documentos\" />
   </ItemGroup>

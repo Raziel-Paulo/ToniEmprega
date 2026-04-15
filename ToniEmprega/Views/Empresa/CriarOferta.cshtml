@@ -11,6 +11,8 @@
             <h2 class="card-title"><i class="fas fa-plus-circle"></i> Criar Oferta</h2>
         </div>
 
+        <div asp-validation-summary="All" class="alert alert-error" style="margin: 1rem 0; display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
         <form method="post" action="/Empresa/CriarOferta" id="formOferta">
             @Html.AntiForgeryToken()
 
@@ -99,7 +101,7 @@
             <strong>Modo de desenvolvimento:</strong> Google Maps não configurado. Adicione a chave em appsettings.json
         </div>
     }
-    
+
     <script>
         let autocomplete;
         let map;
@@ -107,7 +109,7 @@
 
         function initAutocomplete() {
         const input = document.getElementById('localizacao');
-            
+
         // ✅ MELHORADO: Configuração mais completa do autocomplete
         autocomplete = new google.maps.places.Autocomplete(input, {
         types: ['address'],
@@ -118,7 +120,7 @@
         // Quando selecionar uma morada
         autocomplete.addListener('place_changed', function() {
         const place = autocomplete.getPlace();
-                
+
         if (!place.geometry) {
         console.error('Nenhuma localização encontrada para: ' + place.name);
         return;
@@ -126,7 +128,7 @@
 
         // Mostrar container do mapa
         document.getElementById('map-container').style.display = 'block';
-                
+
         // Criar ou atualizar mapa
         if (!map) {
         map = new google.maps.Map(document.getElementById('map'), {
@@ -143,7 +145,7 @@
         if (marker) {
         marker.setMap(null);
         }
-                
+
         marker = new google.maps.Marker({
         map: map,
         position: place.geometry.location,
@@ -153,7 +155,7 @@
 
         // Atualizar campo com morada formatada
         input.value = place.formatted_address;
-                
+
         console.log('Localização selecionada:', place.formatted_address);
         });
         }
@@ -161,13 +163,13 @@
         // ✅ NOVO: Validação do formulário antes de submeter
         document.getElementById('formOferta').addEventListener('submit', function(e) {
         const localizacao = document.getElementById('localizacao').value;
-            
+
         if (localizacao.length < 5) {
         e.preventDefault();
         alert('Por favor, insira uma localização válida (mínimo 5 caracteres).');
         return false;
         }
-            
+
         return true;
         });
     </script>

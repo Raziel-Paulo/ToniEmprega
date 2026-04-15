@@ -1,0 +1,48 @@
+﻿@* Views/Account/VerificarEmailRegisto.cshtml *@
+@{
+    ViewData["Title"] = "Confirmar Email";
+}
+
+<div style="max-width: 450px; margin: 2rem auto;">
+    <div class="card">
+        <div class="card-header" style="text-align: center;">
+            <h2 class="card-title"><i class="fas fa-envelope-open-text"></i> Confirmar Email</h2>
+        </div>
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
+        }
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+        }
+        @if (TempData["Warning"] != null)
+        {
+            <div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> @TempData["Warning"]</div>
+        }
+
+        <p style="color: var(--color-gray); margin-bottom: 1.5rem; text-align: center;">
+            Introduza o código de 6 dígitos enviado para o seu email para finalizar o registo.
+        </p>
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-hashtag"></i> Código de Verificação</label>
+                <input type="text" name="codigo" class="form-control" required
+                       placeholder="000000" maxlength="6" pattern="\d{6}"
+                       style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;" />
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-check"></i> Confirmar Email
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <a href="/Account/Register" class="btn btn-outline btn-sm">
+                <i class="fas fa-redo"></i> Voltar ao registo
+            </a>
+        </div>
+    </div>
+</div>

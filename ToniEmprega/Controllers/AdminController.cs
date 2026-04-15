@@ -21,7 +21,10 @@ namespace ToniEmprega.Controllers
             ViewBag.TotalOfertas = await _context.Ofertas.CountAsync();
             ViewBag.TotalCandidaturas = await _context.Candidaturas.CountAsync();
             ViewBag.ValidacoesPendentes = await _context.ValidacoesIdentidade
-                .CountAsync(v => v.Id_Estado_Validacao_Documento == 1);
+                .Where(v => v.Id_Estado_Validacao_Documento == 1)
+                .Select(v => v.Id_Utilizador)
+                .Distinct()
+                .CountAsync();
             ViewBag.NotificacoesPendentes = await _context.Notificacoes
                 .CountAsync(n => !n.Lida);
 
@@ -97,21 +100,26 @@ namespace ToniEmprega.Controllers
         // AdminController.cs - MÉTODO VALIDACOES CORRIGIDO
         public async Task<IActionResult> Validacoes()
         {
-            // Buscar todas as validações pendentes com documentos
-            var validacoesPendentes = await _context.ValidacoesIdentidade
+            var validacoesPendentesRaw = await _context.ValidacoesIdentidade
                 .Include(v => v.Utilizador)
                 .ThenInclude(u => u.TipoUtilizador)
                 .Include(v => v.Documentos)
                 .Include(v => v.EstadoValidacaoDocumento)
-                .Where(v => v.Id_Estado_Validacao_Documento == 1) // Pendente
-                .Where(v => v.Utilizador.Id_Tipo_Utilizador != 5) // Excluir admins
-                .OrderBy(v => v.Data_Criacao)
+                .Where(v => v.Id_Estado_Validacao_Documento == 1)
+                .Where(v => v.Utilizador.Id_Tipo_Utilizador != 5)
+                .OrderByDescending(v => v.Data_Criacao)
+                .ThenByDescending(v => v.Id)
                 .ToListAsync();
 
-            // Buscar utilizadores sem validação (nunca submeteram)
+            var validacoesPendentes = validacoesPendentesRaw
+                .GroupBy(v => v.Id_Utilizador)
+                .Select(g => g.First())
+                .OrderBy(v => v.Data_Criacao)
+                .ToList();
+
             var utilizadoresSemValidacao = await _context.Utilizadores
                 .Include(u => u.TipoUtilizador)
-                .Where(u => u.Id_Estado_Validacao_Utilizador == 1) // Pendente
+                .Where(u => u.Id_Estado_Validacao_Utilizador == 1)
                 .Where(u => u.Id_Tipo_Utilizador != 5)
                 .Where(u => !_context.ValidacoesIdentidade.Any(v => v.Id_Utilizador == u.Id))
                 .ToListAsync();
