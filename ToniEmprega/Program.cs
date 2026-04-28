@@ -1,4 +1,5 @@
-﻿// Program.cs - MODIFICADO
+﻿// Program.cs - FINAL SUPABASE READY
+
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Filters;
@@ -9,14 +10,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 builder.Services.AddControllersWithViews();
 
-// DbContext - MODIFICADO: agora usa PostgreSQL / Supabase
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// 🔵 LIGAÇÃO À BASE DE DADOS SUPABASE
+var connectionString = builder.Configuration
+    .GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString)
+);
 
-// Session
+// 🔵 SESSION
 builder.Services.AddDistributedMemoryCache();
+
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -24,6 +28,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+// 🔵 FILTER GLOBAL
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<RequireValidationFilter>();
@@ -31,7 +36,7 @@ builder.Services.AddControllersWithViews(options =>
 
 var app = builder.Build();
 
-// Pipeline
+// 🔵 PIPELINE
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -40,68 +45,106 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
+
 app.UseSession();
+
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
 
-// ✅ CRIAR BASE DE DADOS E ADMIN DEFAULT (APENAS SE NÃO EXISTIR)
+// 🔵 CRIAR ADMIN AUTOMATICAMENTE
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var context =
+        scope.ServiceProvider
+        .GetRequiredService<ApplicationDbContext>();
 
-    // ✅ MODIFICADO: Apenas cria se não existir (não apaga mais)
-    if (!context.Database.CanConnect())
+    try
     {
+        // ⚠️ IMPORTANTE:
+        // NÃO usamos CanConnect()
+        // Apenas tenta garantir que existe
+
         context.Database.EnsureCreated();
-        Console.WriteLine("✅ Base de dados criada!");
-    }
-    else
-    {
-        Console.WriteLine("✅ Base de dados já existe.");
-    }
 
-    Console.WriteLine("✅ Base de dados verificada!");
+        Console.WriteLine("✅ Base de dados verificada!");
 
-    // Verifica se admin já existe
-    var adminExiste = context.Utilizadores.Any(u => u.Email == "admin@toniemprega.pt");
+        // 🔎 Verifica se admin existe
 
-    if (!adminExiste)
-    {
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword("123");
+        var adminExiste =
+            context.Utilizadores
+            .Any(u =>
+                u.Email == "toniemprega@gmail.com"
+            );
 
-        var adminUser = new Utilizador
+        if (!adminExiste)
         {
-            Nome = "Administrador",
-            Email = "admin@toniemprega.pt",
-            Palavra_Passe = passwordHash,
-            Data_Nascimento = new DateTime(1990, 1, 1),
-            Data_Registro = DateTime.Now,
-            Id_Tipo_Utilizador = 5, // Administrador
-            Id_Estado_Validacao_Utilizador = 2 // Aprovado
-        };
+            Console.WriteLine("⚙️ Criando admin...");
 
-        context.Utilizadores.Add(adminUser);
-        context.SaveChanges();
+            var passwordHash =
+                BCrypt.Net.BCrypt
+                .HashPassword("123");
 
-        var adminRecord = new Admin
+            var adminUser = new Utilizador
+            {
+                Nome = "Administrador ToniEmprega",
+
+                Email = "toniemprega@gmail.com",
+
+                Palavra_Passe = passwordHash,
+
+                Data_Nascimento =
+                    new DateTime(1990, 1, 1),
+
+                Data_Registro =
+                    DateTime.Now,
+
+                Id_Tipo_Utilizador = 5,
+
+                Id_Estado_Validacao_Utilizador = 2
+            };
+
+            context.Utilizadores.Add(adminUser);
+
+            context.SaveChanges();
+
+            var adminRecord = new Admin
+            {
+                Id_Utilizador =
+                    adminUser.Id
+            };
+
+            context.Admins.Add(adminRecord);
+
+            context.SaveChanges();
+
+            Console.WriteLine("✅ ADMIN CRIADO!");
+            Console.WriteLine(
+                "Email: toniemprega@gmail.com"
+            );
+            Console.WriteLine(
+                "Password: 123"
+            );
+        }
+        else
         {
-            Id_Utilizador = adminUser.Id
-        };
-
-        context.Admins.Add(adminRecord);
-        context.SaveChanges();
-
-        Console.WriteLine("✅✅✅ ADMIN CRIADO COM SUCESSO! ✅✅✅");
-        Console.WriteLine("   Email: admin@toniemprega.pt");
-        Console.WriteLine("   Password: 123");
+            Console.WriteLine(
+                "ℹ️ Admin já existe."
+            );
+        }
     }
-    else
+    catch (Exception ex)
     {
-        Console.WriteLine("ℹ️ Admin já existe.");
+        Console.WriteLine(
+            "❌ ERRO AO LIGAR À BASE DE DADOS:"
+        );
+
+        Console.WriteLine(ex.Message);
     }
 }
 

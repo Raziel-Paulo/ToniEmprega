@@ -45,6 +45,7 @@ namespace ToniEmprega.Controllers
             email = email?.Trim();
 
             var user = await _context.Utilizadores
+                .AsNoTracking() // 🔴 evita lentidão no Supabase
                 .Include(u => u.TipoUtilizador)
                 .FirstOrDefaultAsync(u => u.Email == email);
 
