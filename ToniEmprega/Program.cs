@@ -9,15 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 builder.Services.AddControllersWithViews();
 
-// DbContext - MODIFICADO: Caminho relativo para pasta BaseDados
-var baseDadosPath = Path.Combine(Directory.GetCurrentDirectory(), "BaseDados");
-Directory.CreateDirectory(baseDadosPath); // Cria pasta se não existir
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")?
-    .Replace("|DataDirectory|", baseDadosPath);
+// DbContext - MODIFICADO: agora usa PostgreSQL / Supabase
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
 
 // Session
 builder.Services.AddDistributedMemoryCache();
@@ -52,7 +48,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// ✅ CRIAR BASE DE DADES E ADMIN DEFAULT (APENAS SE NÃO EXISTIR)
+// ✅ CRIAR BASE DE DADOS E ADMIN DEFAULT (APENAS SE NÃO EXISTIR)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
