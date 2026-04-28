@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Net;
 using System.Net.Mail;
 using System.Text.Json;
@@ -46,52 +47,52 @@ namespace ToniEmprega.Controllers
             {
                 email = email?.Trim();
 
-            var user = await _context.Utilizadores
-                .AsNoTracking() // 🔴 evita lentidão no Supabase
-                .Include(u => u.TipoUtilizador)
-                .FirstOrDefaultAsync(u => u.Email == email);
+                var user = await _context.Utilizadores
+                    .AsNoTracking() // 🔴 evita lentidão no Supabase
+                    .Include(u => u.TipoUtilizador)
+                    .FirstOrDefaultAsync(u => u.Email == email);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Palavra_Passe))
-            {
-                ViewBag.Error = "Email ou palavra-passe incorretos.";
-                return View();
-            }
+                if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Palavra_Passe))
+                {
+                    ViewBag.Error = "Email ou palavra-passe incorretos.";
+                    return View();
+                }
 
-            var userType = user.TipoUtilizador?.Designacao ?? string.Empty;
+                var userType = user.TipoUtilizador?.Designacao ?? string.Empty;
 
-            HttpContext.Session.SetInt32("UserId", user.Id);
-            HttpContext.Session.SetString("UserName", user.Nome);
-            HttpContext.Session.SetString("UserType", userType);
+                HttpContext.Session.SetInt32("UserId", user.Id);
+                HttpContext.Session.SetString("UserName", user.Nome);
+                HttpContext.Session.SetString("UserType", userType);
 
-            if (user.Id_Estado_Validacao_Utilizador == 1)
-            {
-                TempData["Warning"] = "Precisa de completar a validação de identidade.";
-                return RedirectToAction("Index", "Validacao");
-            }
+                if (user.Id_Estado_Validacao_Utilizador == 1)
+                {
+                    TempData["Warning"] = "Precisa de completar a validação de identidade.";
+                    return RedirectToAction("Index", "Validacao");
+                }
 
-            if (user.Id_Estado_Validacao_Utilizador == 3)
-            {
-                TempData["Error"] = "A sua validação foi rejeitada. Submeta novo documento.";
-                return RedirectToAction("Index", "Validacao");
-            }
+                if (user.Id_Estado_Validacao_Utilizador == 3)
+                {
+                    TempData["Error"] = "A sua validação foi rejeitada. Submeta novo documento.";
+                    return RedirectToAction("Index", "Validacao");
+                }
 
-            _context.Notificacoes.Add(new Notificacao
-            {
-                Id_Utilizador = user.Id,
-                Titulo = "Novo login",
-                Mensagem = $"Login realizado em {DateTime.Now:dd/MM/yyyy HH:mm}",
-                Tipo = "info"
-            });
-            await _context.SaveChangesAsync();
+                _context.Notificacoes.Add(new Notificacao
+                {
+                    Id_Utilizador = user.Id,
+                    Titulo = "Novo login",
+                    Mensagem = $"Login realizado em {DateTime.UtcNow:dd/MM/yyyy HH:mm}",
+                    Tipo = "info"
+                });
+                await _context.SaveChangesAsync();
 
-            return userType switch
-            {
-                "Aluno" => RedirectToAction("Dashboard", "Aluno"),
-                "Professor" => RedirectToAction("Dashboard", "Professor"),
-                "Empresa" => RedirectToAction("Dashboard", "Empresa"),
-                "Administrador" => RedirectToAction("Dashboard", "Admin"),
-                _ => RedirectToAction("Index", "Home")
-            };
+                return userType switch
+                {
+                    "Aluno" => RedirectToAction("Dashboard", "Aluno"),
+                    "Professor" => RedirectToAction("Dashboard", "Professor"),
+                    "Empresa" => RedirectToAction("Dashboard", "Empresa"),
+                    "Administrador" => RedirectToAction("Dashboard", "Admin"),
+                    _ => RedirectToAction("Index", "Home")
+                };
 
             }
             catch (Exception ex)
@@ -218,7 +219,7 @@ namespace ToniEmprega.Controllers
             if (string.IsNullOrWhiteSpace(storedCode) || string.IsNullOrWhiteSpace(storedTime) || string.IsNullOrWhiteSpace(pendingJson))
                 return RedirectToAction(nameof(Register));
 
-            if (!DateTime.TryParse(storedTime, out var verificationTime) || DateTime.UtcNow > verificationTime.AddMinutes(15))
+            if (!DateTime.TryParse(storedTime, null, DateTimeStyles.RoundtripKind, out var verificationTime) || DateTime.UtcNow > verificationTime.AddMinutes(15))
             {
                 LimparSessaoRegistoPendente();
                 TempData["Error"] = "O código expirou. Faça o registo novamente.";
@@ -244,8 +245,8 @@ namespace ToniEmprega.Controllers
                 Nome = pending.Nome,
                 Email = pending.Email,
                 Palavra_Passe = pending.PasswordHash,
-                Data_Nascimento = pending.DataNascimento,
-                Data_Registro = DateTime.Now,
+                Data_Nascimento = DateTime.SpecifyKind(pending.DataNascimento.Date, DateTimeKind.Utc),
+                Data_Registro = DateTime.UtcNow,
                 Id_Tipo_Utilizador = pending.TipoUtilizadorId,
                 Id_Estado_Validacao_Utilizador = 1
             };
@@ -342,7 +343,7 @@ namespace ToniEmprega.Controllers
 
                 HttpContext.Session.SetString("ResetCode", codigo);
                 HttpContext.Session.SetString("ResetEmail", email);
-                HttpContext.Session.SetString("ResetTime", DateTime.Now.ToString("O"));
+                HttpContext.Session.SetString("ResetTime", DateTime.UtcNow.ToString("O"));
 
                 try
                 {
@@ -378,14 +379,14 @@ namespace ToniEmprega.Controllers
             var storedCode = HttpContext.Session.GetString("ResetCode");
             var resetTimeRaw = HttpContext.Session.GetString("ResetTime");
 
-            if (string.IsNullOrWhiteSpace(storedCode) || string.IsNullOrWhiteSpace(resetTimeRaw) || !DateTime.TryParse(resetTimeRaw, out var resetTime))
+            if (string.IsNullOrWhiteSpace(storedCode) || string.IsNullOrWhiteSpace(resetTimeRaw) || !DateTime.TryParse(resetTimeRaw, null, DateTimeStyles.RoundtripKind, out var resetTime))
             {
                 LimparSessaoRecuperacaoPassword();
                 TempData["Error"] = "Sessão de recuperação inválida. Solicite um novo código.";
                 return RedirectToAction(nameof(RecuperarPassword));
             }
 
-            if (DateTime.Now > resetTime.AddMinutes(15))
+            if (DateTime.UtcNow > resetTime.AddMinutes(15))
             {
                 LimparSessaoRecuperacaoPassword();
                 TempData["Error"] = "Código expirado. Solicite novo código.";
@@ -602,7 +603,7 @@ namespace ToniEmprega.Controllers
             if (user == null) return NotFound();
 
             user.Nome = nome;
-            user.Data_Nascimento = dataNascimento;
+            user.Data_Nascimento = dataNascimento.HasValue ? DateTime.SpecifyKind(dataNascimento.Value.Date, DateTimeKind.Utc) : null;
             await _context.SaveChangesAsync();
 
             HttpContext.Session.SetString("UserName", user.Nome);

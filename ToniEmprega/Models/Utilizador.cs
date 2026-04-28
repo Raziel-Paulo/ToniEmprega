@@ -10,7 +10,7 @@ namespace ToniEmprega.Models
         public string Email { get; set; } = string.Empty;
         public string Palavra_Passe { get; set; } = string.Empty;
         public DateTime? Data_Nascimento { get; set; }
-        public DateTime Data_Registro { get; set; } = DateTime.Now;
+        public DateTime Data_Registro { get; set; } = DateTime.UtcNow;
 
         [Required(ErrorMessage = "Tem de selecionar um tipo de utilizador.")]
         public int Id_Tipo_Utilizador { get; set; }

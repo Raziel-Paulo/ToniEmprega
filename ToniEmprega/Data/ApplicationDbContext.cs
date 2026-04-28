@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ToniEmprega.Models;
 
 namespace ToniEmprega.Data
@@ -33,6 +34,18 @@ namespace ToniEmprega.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Converte todas as datas para UTC para evitar erros com PostgreSQL/Npgsql
+            var utcDateTimeConverter = new ValueConverter<DateTime, DateTime>(
+                v => v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc),
+                v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+            var utcNullableDateTimeConverter = new ValueConverter<DateTime?, DateTime?>(
+                v => v.HasValue
+                    ? (v.Value.Kind == DateTimeKind.Utc ? v.Value : DateTime.SpecifyKind(v.Value, DateTimeKind.Utc))
+                    : v,
+                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+
 
             // Nomes de tabelas
             modelBuilder.Entity<Utilizador>().ToTable("Utilizadores");
@@ -202,6 +215,21 @@ namespace ToniEmprega.Data
             modelBuilder.Entity<ValidacaoIdentidade>()
                 .HasIndex(v => v.Id_Utilizador)
                 .IsUnique();
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(DateTime))
+                    {
+                        property.SetValueConverter(utcDateTimeConverter);
+                    }
+                    else if (property.ClrType == typeof(DateTime?))
+                    {
+                        property.SetValueConverter(utcNullableDateTimeConverter);
+                    }
+                }
+            }
 
             // ============================================
             // SEED DATA

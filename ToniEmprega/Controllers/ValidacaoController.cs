@@ -1,5 +1,4 @@
-﻿// Controllers/ValidacaoController.cs - AJUSTADO
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
@@ -117,6 +116,13 @@ namespace ToniEmprega.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var idTipoValidacao = await ObterIdTipoValidacaoAsync(tipoDocumento);
+            if (idTipoValidacao == null)
+            {
+                TempData["Error"] = "Não foi possível determinar o tipo de validação.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var validacao = await _context.ValidacoesIdentidade
                 .Include(v => v.Documentos)
                 .Where(v => v.Id_Utilizador == userId.Value)
@@ -135,21 +141,27 @@ namespace ToniEmprega.Controllers
                 validacao = new ValidacaoIdentidade
                 {
                     Id_Utilizador = userId.Value,
+                    Id_Tipo_Validacao = idTipoValidacao.Value,
                     Id_Estado_Validacao_Documento = 1,
-                    Data_Criacao = DateTime.Now
+                    Data_Criacao = DateTime.UtcNow
                 };
 
                 _context.ValidacoesIdentidade.Add(validacao);
                 await _context.SaveChangesAsync();
             }
-            else if (validacao.Id_Estado_Validacao_Documento == 3)
+            else
             {
-                validacao.Id_Estado_Validacao_Documento = 1;
-                validacao.Motivo_Rejeicao = null;
-            }
-            else if (validacao.Id_Estado_Validacao_Documento == null)
-            {
-                validacao.Id_Estado_Validacao_Documento = 1;
+                validacao.Id_Tipo_Validacao = idTipoValidacao.Value;
+
+                if (validacao.Id_Estado_Validacao_Documento == 3)
+                {
+                    validacao.Id_Estado_Validacao_Documento = 1;
+                    validacao.Motivo_Rejeicao = null;
+                }
+                else if (validacao.Id_Estado_Validacao_Documento == null)
+                {
+                    validacao.Id_Estado_Validacao_Documento = 1;
+                }
             }
 
             var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "documentos");
@@ -169,7 +181,7 @@ namespace ToniEmprega.Controllers
                 Tipo_Documento = tipoDocumento.Trim(),
                 Nome_Ficheiro = documento.FileName,
                 Caminho_Ficheiro = $"/uploads/documentos/{uniqueFileName}",
-                Data_Upload = DateTime.Now
+                Data_Upload = DateTime.UtcNow
             };
 
             _context.DocumentosValidacao.Add(docValidacao);
@@ -192,6 +204,7 @@ namespace ToniEmprega.Controllers
                     Link = "/Admin/Validacoes"
                 });
             }
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Documento adicionado com sucesso! Aguarde aprovação.";
@@ -225,9 +238,11 @@ namespace ToniEmprega.Controllers
                 System.IO.File.Delete(filePath);
             }
 
-            var totalDocumentos = await _context.DocumentosValidacao.CountAsync(d => d.Id_Validacao_Identidade == documento.Id_Validacao_Identidade);
+            var totalDocumentos = await _context.DocumentosValidacao
+                .CountAsync(d => d.Id_Validacao_Identidade == documento.Id_Validacao_Identidade);
 
             _context.DocumentosValidacao.Remove(documento);
+
             if (totalDocumentos <= 1)
             {
                 _context.ValidacoesIdentidade.Remove(documento.ValidacaoIdentidade);
@@ -237,6 +252,22 @@ namespace ToniEmprega.Controllers
 
             TempData["Success"] = "Documento removido com sucesso.";
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<int?> ObterIdTipoValidacaoAsync(string tipoDocumento)
+        {
+            var tipoNormalizado = tipoDocumento.Trim().ToLowerInvariant();
+
+            var tipo = await _context.TipoValidacoes
+                .FirstOrDefaultAsync(t => t.Designacao.ToLower() == tipoNormalizado);
+
+            if (tipo != null)
+                return tipo.Id;
+
+            return await _context.TipoValidacoes
+                .OrderBy(t => t.Id)
+                .Select(t => (int?)t.Id)
+                .FirstOrDefaultAsync();
         }
     }
 }
