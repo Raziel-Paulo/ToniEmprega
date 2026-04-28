@@ -42,7 +42,9 @@ namespace ToniEmprega.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string email, string password)
         {
-            email = email?.Trim();
+            try
+            {
+                email = email?.Trim();
 
             var user = await _context.Utilizadores
                 .AsNoTracking() // 🔴 evita lentidão no Supabase
@@ -90,6 +92,13 @@ namespace ToniEmprega.Controllers
                 "Administrador" => RedirectToAction("Dashboard", "Admin"),
                 _ => RedirectToAction("Index", "Home")
             };
+
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = ex.Message;
+                return View();
+            }
         }
 
         public async Task<IActionResult> Register()
@@ -318,28 +327,37 @@ namespace ToniEmprega.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RecuperarPassword(string email)
         {
-            var user = await _context.Utilizadores.FirstOrDefaultAsync(u => u.Email == email);
-
-            if (user == null)
-            {
-                TempData["Success"] = "Se o email existir no sistema, receberá um código de recuperação.";
-                return RedirectToAction(nameof(RecuperarPassword));
-            }
-
-            var codigo = Random.Shared.Next(100000, 999999).ToString();
-
-            HttpContext.Session.SetString("ResetCode", codigo);
-            HttpContext.Session.SetString("ResetEmail", email);
-            HttpContext.Session.SetString("ResetTime", DateTime.Now.ToString("O"));
-
             try
             {
-                await EnviarEmailRecuperacao(email, codigo, user.Nome);
-                TempData["Success"] = "Código de recuperação enviado para o seu email.";
+                var user = await _context.Utilizadores
+                    .FirstOrDefaultAsync(u => u.Email == email);
+
+                if (user == null)
+                {
+                    TempData["Success"] = "Se o email existir no sistema, receberá um código de recuperação.";
+                    return RedirectToAction(nameof(RecuperarPassword));
+                }
+
+                var codigo = Random.Shared.Next(100000, 999999).ToString();
+
+                HttpContext.Session.SetString("ResetCode", codigo);
+                HttpContext.Session.SetString("ResetEmail", email);
+                HttpContext.Session.SetString("ResetTime", DateTime.Now.ToString("O"));
+
+                try
+                {
+                    await EnviarEmailRecuperacao(email, codigo, user.Nome);
+                    TempData["Success"] = "Código de recuperação enviado para o seu email.";
+                }
+                catch
+                {
+                    TempData["Warning"] = $"Modo desenvolvimento: o seu código é {codigo}";
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                TempData["Warning"] = $"Modo desenvolvimento: o seu código é {codigo}";
+                ViewBag.Error = ex.Message;
+                return View();
             }
 
             return RedirectToAction(nameof(VerificarCodigo));
