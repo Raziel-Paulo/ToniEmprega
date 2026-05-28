@@ -1,4 +1,4 @@
-﻿// Program.cs - FINAL SUPABASE READY
+﻿// Program.cs - BASE DE DADOS LOCAL
 
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
@@ -10,12 +10,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 builder.Services.AddControllersWithViews();
 
-// 🔵 LIGAÇÃO À BASE DE DADOS SUPABASE
+// 🔵 LIGAÇÃO À BASE DE DADOS LOCAL (MDF)
+var baseDadosPath = Path.Combine(builder.Environment.ContentRootPath, "BaseDeDados");
+Directory.CreateDirectory(baseDadosPath);
+AppDomain.CurrentDomain.SetData("DataDirectory", baseDadosPath);
+
 var connectionString = builder.Configuration
-    .GetConnectionString("DefaultConnection");
+    .GetConnectionString("DefaultConnection")
+    ?? "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\\ToniEmpregaDB.mdf;Integrated Security=True;Connect Timeout=30;MultipleActiveResultSets=True;Trust Server Certificate=true";
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString)
+    options.UseSqlServer(connectionString)
 );
 
 // 🔵 SESSION
@@ -66,16 +71,12 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        // ⚠️ IMPORTANTE:
-        // NÃO usamos CanConnect()
-        // Apenas tenta garantir que existe
-
+        // Garante que a base de dados local existe
         context.Database.EnsureCreated();
 
-        Console.WriteLine("✅ Base de dados verificada!");
+        Console.WriteLine("✅ Base de dados local verificada!");
 
         // 🔎 Verifica se admin existe
-
         var adminExiste =
             context.Utilizadores
             .Any(u =>

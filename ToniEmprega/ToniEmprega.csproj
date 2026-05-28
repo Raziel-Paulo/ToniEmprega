@@ -21,13 +21,23 @@
 		<PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.20" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.20" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.20" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.8" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="BaseDados\" />
+		<Folder Include="BaseDeDados\" />
 		<Folder Include="wwwroot\uploads\candidaturas\" />
 		<Folder Include="wwwroot\uploads\documentos\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="BaseDeDados\**\*.mdf">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+		<Content Include="BaseDeDados\**\*.ldf">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
 	</ItemGroup>
 
 </Project>

@@ -35,7 +35,7 @@ namespace ToniEmprega.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Converte todas as datas para UTC para evitar erros com PostgreSQL/Npgsql
+            // Converte todas as datas para UTC para manter consistência no armazenamento
             var utcDateTimeConverter = new ValueConverter<DateTime, DateTime>(
                 v => v.Kind == DateTimeKind.Utc ? v : DateTime.SpecifyKind(v, DateTimeKind.Utc),
                 v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
