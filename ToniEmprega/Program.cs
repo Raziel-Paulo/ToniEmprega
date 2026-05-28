@@ -1,4 +1,4 @@
-﻿// Program.cs - BASE DE DADOS LOCAL
+﻿// Program.cs - LOCAL MDF
 
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
@@ -10,20 +10,19 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 builder.Services.AddControllersWithViews();
 
-// 🔵 LIGAÇÃO À BASE DE DADOS LOCAL (MDF)
-var baseDadosPath = Path.Combine(builder.Environment.ContentRootPath, "BaseDeDados");
-Directory.CreateDirectory(baseDadosPath);
-AppDomain.CurrentDomain.SetData("DataDirectory", baseDadosPath);
+// Base de dados local (.mdf) dentro da pasta BaseDeDados
+AppDomain.CurrentDomain.SetData(
+    "DataDirectory",
+    builder.Environment.ContentRootPath
+);
 
-var connectionString = builder.Configuration
-    .GetConnectionString("DefaultConnection")
-    ?? "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\\ToniEmpregaDB.mdf;Integrated Security=True;Connect Timeout=30;MultipleActiveResultSets=True;Trust Server Certificate=true";
+var connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\BaseDeDados\ToniEmpregaDB.mdf;Integrated Security=True;Connect Timeout=30;TrustServerCertificate=True;MultipleActiveResultSets=True;Encrypt=False";
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString)
 );
 
-// 🔵 SESSION
+// SESSION
 builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
@@ -33,7 +32,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// 🔵 FILTER GLOBAL
+// FILTER GLOBAL
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<RequireValidationFilter>();
@@ -41,7 +40,7 @@ builder.Services.AddControllersWithViews(options =>
 
 var app = builder.Build();
 
-// 🔵 PIPELINE
+// PIPELINE
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -62,7 +61,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}"
 );
 
-// 🔵 CRIAR ADMIN AUTOMATICAMENTE
+// CRIAR ADMIN AUTOMATICAMENTE
 using (var scope = app.Services.CreateScope())
 {
     var context =
@@ -71,12 +70,13 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        // Garante que a base de dados local existe
+        // Garante que a base existe no arranque
         context.Database.EnsureCreated();
 
         Console.WriteLine("✅ Base de dados local verificada!");
 
-        // 🔎 Verifica se admin existe
+        // Verifica se admin existe
+
         var adminExiste =
             context.Utilizadores
             .Any(u =>
