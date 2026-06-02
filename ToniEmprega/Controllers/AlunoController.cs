@@ -32,9 +32,10 @@ namespace ToniEmprega.Controllers
                 .Include(c => c.Oferta)
                 .ThenInclude(o => o.Empresa)
                 .Include(c => c.EstadoCandidatura)
+                .Include(c => c.Avaliacoes)
+                .ThenInclude(a => a.DecisaoAvaliacao)
                 .Where(c => c.Id_Aluno == aluno.Id)
                 .OrderByDescending(c => c.Data_Candidatura)
-                .Take(5)
                 .ToListAsync();
 
             ViewBag.TotalCandidaturas = await _context.Candidaturas.CountAsync(c => c.Id_Aluno == aluno.Id);
@@ -93,7 +94,7 @@ namespace ToniEmprega.Controllers
                 {
                     Id_Utilizador = oferta.Empresa.Id_Utilizador,
                     Titulo = "Candidatura cancelada",
-                    Mensagem = $"Um aluno cancelou a candidatura à oferta '{oferta.Titulo}'",
+                    Mensagem = $"Um aluno cancelou a candidatura \u00e0 oferta '{oferta.Titulo}'",
                     Tipo = "warning"
                 });
                 await _context.SaveChangesAsync();
@@ -102,7 +103,7 @@ namespace ToniEmprega.Controllers
             }
             else
             {
-                TempData["Error"] = "Não é possível cancelar esta candidatura (já foi processada).";
+                TempData["Error"] = "N\u00e3o \u00e9 poss\u00edvel cancelar esta candidatura (j\u00e1 foi processada).";
             }
 
             return RedirectToAction("MinhasCandidaturas");
@@ -132,7 +133,7 @@ namespace ToniEmprega.Controllers
 
             if (jaCandidatou)
             {
-                TempData["Error"] = "Já te candidataste a esta oferta.";
+                TempData["Error"] = "J\u00e1 te candidataste a esta oferta.";
                 return RedirectToAction("Details", "Ofertas", new { id });
             }
 
@@ -147,7 +148,7 @@ namespace ToniEmprega.Controllers
             var aluno = await GetCurrentAluno();
             if (aluno == null) return RedirectToAction("Login", "Account");
 
-            // VALIDAÇÃO DE FICHEIROS - CORRIGIDO
+            // VALIDA\u00c7\u00c3O DE FICHEIROS - CORRIGIDO
             if (ficheiros != null && ficheiros.Count > 0)
             {
                 var allowedExtensions = new[] { ".pdf", ".doc", ".docx" };
@@ -157,17 +158,17 @@ namespace ToniEmprega.Controllers
 
                 foreach (var ficheiro in ficheiros)
                 {
-                    // CORREÇÃO: Declarar ext fora do if para usar depois
+                    // CORRE\u00c7\u00c3O: Declarar ext fora do if para usar depois
                     var ext = Path.GetExtension(ficheiro.FileName).ToLower();
 
                     if (!allowedExtensions.Contains(ext) || !allowedTypes.Contains(ficheiro.ContentType))
                     {
-                        TempData["Error"] = "Tipo de ficheiro não permitido. Use apenas PDF, DOC ou DOCX.";
+                        TempData["Error"] = "Tipo de ficheiro n\u00e3o permitido. Use apenas PDF, DOC ou DOCX.";
                         return RedirectToAction("Candidatar", new { id = ofertaId });
                     }
                     if (ficheiro.Length > maxSize)
                     {
-                        TempData["Error"] = "Ficheiro demasiado grande (máximo 5MB).";
+                        TempData["Error"] = "Ficheiro demasiado grande (m\u00e1ximo 5MB).";
                         return RedirectToAction("Candidatar", new { id = ofertaId });
                     }
                 }
@@ -195,7 +196,7 @@ namespace ToniEmprega.Controllers
                 {
                     if (ficheiro.Length > 0)
                     {
-                        var ext = Path.GetExtension(ficheiro.FileName).ToLower(); // CORREÇÃO: declarar novamente aqui
+                        var ext = Path.GetExtension(ficheiro.FileName).ToLower(); // CORRE\u00c7\u00c3O: declarar novamente aqui
                         var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(ficheiro.FileName)}";
                         var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
@@ -240,7 +241,7 @@ namespace ToniEmprega.Controllers
             var aluno = await GetCurrentAluno();
             if (aluno == null) return RedirectToAction("Login", "Account");
 
-            ViewBag.Cursos = new[] { "Informática", "Mecatrónica", "Eletrónica", "Gestão", "Turismo" };
+            ViewBag.Cursos = new[] { "Inform\u00e1tica", "Mecatr\u00f3nica", "Eletr\u00f3nica", "Gest\u00e3o", "Turismo" };
             return View(aluno);
         }
 
@@ -256,7 +257,7 @@ namespace ToniEmprega.Controllers
             aluno.Numero_Aluno = numeroAluno;
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Perfil académico atualizado!";
+            TempData["Success"] = "Perfil acad\u00e9mico atualizado!";
             return RedirectToAction("Perfil");
         }
     }
