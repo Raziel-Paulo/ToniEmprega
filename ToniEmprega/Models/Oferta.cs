@@ -6,6 +6,8 @@ namespace ToniEmprega.Models
         public int Id { get; set; }
 
         public int Id_Empresa { get; set; }
+
+        [Microsoft.AspNetCore.Mvc.ModelBinding.Validation.ValidateNever]
         public Empresa Empresa { get; set; } = null!;
 
         public int? Id_Tipo_Oferta { get; set; }
