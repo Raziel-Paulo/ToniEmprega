@@ -31,6 +31,7 @@
                                 <th>Decisão</th>
                                 <th>Data</th>
                                 <th>Comentários</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -41,14 +42,19 @@
                                     <td>@av.Candidatura?.Oferta?.Titulo</td>
                                     <td>
                                         <span class="badge @(av.Id_Decisao_Avaliacao == 1 ? "badge-approved" :
-                                                                                                          av.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
-                                    @av.DecisaoAvaliacao?.Designacao
-                                </span>
-                            </td>
-                            <td>@av.Data_Avaliacao.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>@(av.Comentarios?.Length > 50 ? av.Comentarios.Substring(0, 50) + "..." : av.Comentarios)</td>
-                        </tr>
-                                                }
+                                                                                                                                                        av.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
+                                            @av.DecisaoAvaliacao?.Designacao
+                                        </span>
+                                    </td>
+                                    <td>@av.Data_Avaliacao.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@(av.Comentarios?.Length > 50 ? av.Comentarios.Substring(0, 50) + "..." : av.Comentarios)</td>
+                                    <td>
+                                        <a href="/Professor/EditarAvaliacao/@av.Id" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -63,3 +69,4 @@
         </div>
     </div>
 </div>
+

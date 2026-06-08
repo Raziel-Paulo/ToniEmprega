@@ -45,25 +45,26 @@
                                 <tr>
                                     <td>
                                         <strong>@cand.Aluno?.Utilizador?.Nome</strong><br />
-                                        <small style="color: var(--color-gray);">@cand.Aluno?.Curso</small>
+                                        <small style="color: var(--color-gray);"><i class="fas fa-envelope"></i> @cand.Aluno?.Utilizador?.Email</small><br />
+                                        <small style="color: var(--color-gray);"><i class="fas fa-graduation-cap"></i> @cand.Aluno?.Curso</small>
                                     </td>
                                     <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
                                     <td>
                                         <span class="badge @(cand.Id_Estado_Candidatura == 1 ? "badge-pending" :
-                                                                                                           cand.Id_Estado_Candidatura == 3 ? "badge-approved" :
-                                                                                                           cand.Id_Estado_Candidatura == 4 ? "badge-rejected" : "badge-pending")">
-                                    @cand.EstadoCandidatura?.Designacao
-                                </span>
-                            </td>
-                            <td>
-                                @if (cand.Avaliacoes?.Any() == true)
+                                                                                                                                                         cand.Id_Estado_Candidatura == 3 ? "badge-approved" :
+                                                                                                                                                         cand.Id_Estado_Candidatura == 4 ? "badge-rejected" : "badge-pending")">
+                                            @cand.EstadoCandidatura?.Designacao
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (cand.Avaliacoes?.Any() == true)
                                         {
                                             var av = cand.Avaliacoes.First();
                                             <span class="badge @(av.Id_Decisao_Avaliacao == 1 ? "badge-approved" :
-                                                                                                                   av.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
-                                    @av.DecisaoAvaliacao?.Designacao
-                                </span>
-                                                                }
+                                                                                                                                                                     av.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
+                                                @av.DecisaoAvaliacao?.Designacao
+                                            </span>
+                                        }
                                         else
                                         {
                                             <span class="badge badge-pending">Sem Avaliação</span>
@@ -145,3 +146,4 @@
         }
     </script>
 }
+

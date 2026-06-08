@@ -333,8 +333,14 @@ namespace ToniEmprega.Controllers
                 .Where(c => c.Id_Oferta == id)
                 .ToListAsync();
 
+            // ✅ SÓ MOSTRA se professor aprovou (decisão 1 = Aprovado)
+            // Se não tem avaliação ou foi recusada/revisão → empresa NÃO vê
+            var candidaturasVisiveis = candidaturas
+                .Where(c => c.Avaliacoes?.Any(a => a.Id_Decisao_Avaliacao == 1) == true)
+                .ToList();
+
             ViewBag.Oferta = oferta;
-            return View(candidaturas);
+            return View(candidaturasVisiveis);
         }
 
         // PERFIL DA EMPRESA
