@@ -10,7 +10,8 @@
         <h3 style="color: #1E90FF;"><i class="fas fa-chalkboard-teacher"></i> Menu</h3>
         <ul class="sidebar-menu">
             <li><a href="/Professor/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="/Professor/Candidaturas" class="sidebar-link active"><i class="fas fa-clipboard-check"></i> Avaliar</a></li>
+            <li><a href="/Professor/Candidaturas" class="sidebar-link active"><i class="fas fa-clipboard-check"></i> Avaliar Candidaturas</a></li>
+            <li><a href="/Professor/MinhasAvaliacoes" class="sidebar-link"><i class="fas fa-history"></i> Minhas Avaliações</a></li>
         </ul>
     </aside>
 
@@ -30,13 +31,15 @@
                                 <th>Oferta</th>
                                 <th>Empresa</th>
                                 <th>Data</th>
+                                <th>Estado</th>
                                 <th>Ação</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var cand in Model)
                             {
-                                <tr>
+                                var minhaAvaliacao = cand.Avaliacoes?.FirstOrDefault(a => a.Id_Professor == professorId);
+                                <tr style="@(minhaAvaliacao != null ? "background-color: rgba(30, 144, 255, 0.05);" : "")">
                                     <td>
                                         <strong>@cand.Aluno?.Utilizador?.Nome</strong><br />
                                         <small>@cand.Aluno?.Curso - @cand.Aluno?.Ano_Letivo</small>
@@ -45,9 +48,20 @@
                                     <td>@cand.Oferta?.Empresa?.Nome_Empresa</td>
                                     <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
                                     <td>
-                                        @{
-                                            var minhaAvaliacao = cand.Avaliacoes?.FirstOrDefault(a => a.Id_Professor == professorId);
+                                        @if (minhaAvaliacao != null)
+                                        {
+                                            <span class="badge @(minhaAvaliacao.Id_Decisao_Avaliacao == 1 ? "badge-approved" : minhaAvaliacao.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
+                                                <i class="fas fa-check-circle"></i> @minhaAvaliacao.DecisaoAvaliacao?.Designacao
+                                            </span>
                                         }
+                                        else
+                                        {
+                                            <span class="badge badge-pending">
+                                                <i class="fas fa-clock"></i> Pendente
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
                                         @if (minhaAvaliacao != null)
                                         {
                                             <a href="/Professor/EditarAvaliacao/@minhaAvaliacao.Id" class="btn btn-primary btn-sm">

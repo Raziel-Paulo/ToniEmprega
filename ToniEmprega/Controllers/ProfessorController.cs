@@ -52,6 +52,13 @@ namespace ToniEmprega.Controllers
             var professor = await GetCurrentProfessor();
             if (professor == null) return RedirectToAction("Login", "Account");
 
+            // Obter IDs das candidaturas já avaliadas por este professor
+            var candidaturasAvaliadasIds = await _context.AvaliacoesProfessores
+                .Where(a => a.Id_Professor == professor.Id)
+                .Select(a => a.Id_Candidatura)
+                .ToListAsync();
+
+            // Mostrar candidaturas pendentes (estado 1 ou 2) E candidaturas já avaliadas por este professor
             var candidaturas = await _context.Candidaturas
                 .Include(c => c.Aluno)
                 .ThenInclude(a => a.Utilizador)
@@ -61,7 +68,8 @@ namespace ToniEmprega.Controllers
                 .Include(c => c.Ficheiros)
                 .Include(c => c.Avaliacoes)
                     .ThenInclude(a => a.DecisaoAvaliacao)
-                .Where(c => c.Id_Estado_Candidatura == 1 || c.Id_Estado_Candidatura == 2)
+                .Where(c => c.Id_Estado_Candidatura == 1 || c.Id_Estado_Candidatura == 2
+                    || candidaturasAvaliadasIds.Contains(c.Id))
                 .OrderByDescending(c => c.Data_Candidatura)
                 .ToListAsync();
 
@@ -269,4 +277,3 @@ namespace ToniEmprega.Controllers
         }
     }
 }
-

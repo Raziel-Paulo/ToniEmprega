@@ -15,7 +15,7 @@
             <p style="color: var(--color-gray); margin: 0;"><i class="fas fa-building"></i> @oferta?.Empresa?.Nome_Empresa</p>
         </div>
 
-        <form method="post" asp-action="Candidatar" enctype="multipart/form-data">
+        <form method="post" asp-action="Candidatar" enctype="multipart/form-data" id="formCandidatura">
             <input type="hidden" name="ofertaId" value="@oferta?.Id" />
 
             <div class="form-group">
@@ -25,8 +25,25 @@
 
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-paperclip"></i> Anexar Ficheiros (CV, Carta de Apresentação)</label>
-                <input type="file" name="ficheiros" class="form-control" multiple accept=".pdf,.doc,.docx" />
-                <small style="color: var(--color-gray);">Podes selecionar vários ficheiros ao mesmo tempo. Se precisares de mais anexos, volta a escolher ficheiros e envia-os todos nesta candidatura.</small>
+
+                <div id="ficheirosContainer">
+                    <div class="ficheiro-input" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                        <input type="file" name="ficheiros" class="form-control" accept=".pdf,.doc,.docx" style="flex: 1;" />
+                        <button type="button" class="btn btn-outline btn-sm btn-remover" onclick="removerFicheiro(this)" style="display: none; padding: 0.5rem 0.75rem;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-outline btn-sm" onclick="adicionarFicheiro()" style="margin-top: 0.5rem;">
+                    <i class="fas fa-plus"></i> Adicionar outro ficheiro
+                </button>
+
+                <div id="listaFicheiros" style="margin-top: 1rem;"></div>
+
+                <small style="color: var(--color-gray); display: block; margin-top: 0.5rem;">
+                    <i class="fas fa-info-circle"></i> Formatos aceites: PDF, DOC, DOCX. Tamanho máximo: 5MB por ficheiro. Podes adicionar quantos ficheiros quiseres.
+                </small>
             </div>
 
             <div style="display: flex; gap: 1rem; margin-top: 2rem;">
@@ -38,3 +55,102 @@
         </form>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        let contadorFicheiros = 1;
+
+        function adicionarFicheiro() {
+            const container = document.getElementById('ficheirosContainer');
+            const novoInput = document.createElement('div');
+            novoInput.className = 'ficheiro-input';
+            novoInput.style.cssText = 'display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;';
+            novoInput.innerHTML = `
+                        <input type="file" name="ficheiros" class="form-control" accept=".pdf,.doc,.docx" style="flex: 1;" onchange="atualizarListaFicheiros()" />
+                        <button type="button" class="btn btn-outline btn-sm" onclick="removerFicheiro(this)" style="padding: 0.5rem 0.75rem; color: #ff4444; border-color: #ff4444;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+            container.appendChild(novoInput);
+            contadorFicheiros++;
+
+            // Mostrar botão de remover no primeiro input se houver mais que um
+            const inputs = container.querySelectorAll('.ficheiro-input');
+            if (inputs.length > 1) {
+                inputs[0].querySelector('.btn-remover').style.display = 'inline-block';
+            }
+        }
+
+        function removerFicheiro(btn) {
+            const container = document.getElementById('ficheirosContainer');
+            const inputDiv = btn.closest('.ficheiro-input');
+            inputDiv.remove();
+
+            // Se só restar um input, esconder o botão de remover desse
+            const inputs = container.querySelectorAll('.ficheiro-input');
+            if (inputs.length === 1) {
+                inputs[0].querySelector('.btn-remover').style.display = 'none';
+            }
+
+            atualizarListaFicheiros();
+        }
+
+        function atualizarListaFicheiros() {
+            const container = document.getElementById('ficheirosContainer');
+            const lista = document.getElementById('listaFicheiros');
+            const inputs = container.querySelectorAll('input[type="file"]');
+
+            let html = '';
+            let totalFicheiros = 0;
+
+            inputs.forEach((input, index) => {
+                if (input.files && input.files.length > 0) {
+                    const file = input.files[0];
+                    const tamanho = (file.size / 1024 / 1024).toFixed(2);
+                    const cor = tamanho > 5 ? '#ff4444' : 'var(--color-green)';
+                    const icone = tamanho > 5 ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-check-circle"></i>';
+
+                    html += `<div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0; color: var(--color-gray); font-size: 0.9rem;">
+                                ${icone} <strong>${file.name}</strong> <span style="color: ${cor};">(${tamanho} MB)</span>
+                            </div>`;
+                    totalFicheiros++;
+                }
+            });
+
+            if (totalFicheiros > 0) {
+                lista.innerHTML = '<strong style="color: var(--color-blue); font-size: 0.9rem;"><i class="fas fa-list"></i> Ficheiros selecionados:</strong>' + html;
+            } else {
+                lista.innerHTML = '';
+            }
+        }
+
+        // Validar tamanho dos ficheiros antes de submeter
+        document.getElementById('formCandidatura').addEventListener('submit', function (e) {
+            const inputs = document.querySelectorAll('#ficheirosContainer input[type="file"]');
+            const allowedExtensions = ['.pdf', '.doc', '.docx'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            for (let input of inputs) {
+                if (input.files && input.files.length > 0) {
+                    const file = input.files[0];
+                    const ext = '.' + file.name.split('.').pop().toLowerCase();
+
+                    if (!allowedExtensions.includes(ext)) {
+                        e.preventDefault();
+                        alert('Tipo de ficheiro não permitido: ' + file.name + '. Use apenas PDF, DOC ou DOCX.');
+                        return false;
+                    }
+
+                    if (file.size > maxSize) {
+                        e.preventDefault();
+                        alert('Ficheiro demasiado grande: ' + file.name + ' (máximo 5MB).');
+                        return false;
+                    }
+                }
+            }
+        });
+
+        // Adicionar listener para o primeiro input também
+        document.querySelector('#ficheirosContainer input[type="file"]').addEventListener('change', atualizarListaFicheiros);
+    </script>
+}
