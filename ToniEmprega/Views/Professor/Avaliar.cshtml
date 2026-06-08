@@ -23,6 +23,23 @@
                     <p style="color: var(--color-gray); margin: 0.5rem 0 0 0;">@Model.Mensagem</p>
                 </div>
             }
+
+            @if (Model.Ficheiros != null && Model.Ficheiros.Any())
+            {
+                <div style="margin-top: 1rem; padding: 1rem; background-color: var(--color-dark-gray); border-radius: 6px;">
+                    <strong style="color: var(--color-blue); display: block; margin-bottom: 0.75rem;">Ficheiros anexados:</strong>
+                    <ul style="margin: 0; padding-left: 1.2rem; color: var(--color-gray);">
+                        @foreach (var ficheiro in Model.Ficheiros)
+                        {
+                            <li style="margin-bottom: 0.5rem;">
+                                <a href="@ficheiro.Caminho_Ficheiro" target="_blank" style="color: var(--color-blue);">
+                                    <i class="fas fa-paperclip"></i> @ficheiro.Nome_Ficheiro
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
         </div>
 
         <form method="post" asp-action="Avaliar">

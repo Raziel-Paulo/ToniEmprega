@@ -16,6 +16,23 @@
                 <i class="fas fa-user"></i> @Model.Candidatura?.Aluno?.Utilizador?.Nome |
                 <i class="fas fa-graduation-cap"></i> @Model.Candidatura?.Aluno?.Curso
             </p>
+
+            @if (Model.Candidatura?.Ficheiros != null && Model.Candidatura.Ficheiros.Any())
+            {
+                <div style="margin-top: 1rem; padding: 1rem; background-color: var(--color-dark-gray); border-radius: 6px;">
+                    <strong style="color: var(--color-blue); display: block; margin-bottom: 0.75rem;">Ficheiros anexados:</strong>
+                    <ul style="margin: 0; padding-left: 1.2rem; color: var(--color-gray);">
+                        @foreach (var ficheiro in Model.Candidatura.Ficheiros)
+                        {
+                            <li style="margin-bottom: 0.5rem;">
+                                <a href="@ficheiro.Caminho_Ficheiro" target="_blank" style="color: var(--color-blue);">
+                                    <i class="fas fa-paperclip"></i> @ficheiro.Nome_Ficheiro
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
         </div>
 
         <form method="post" asp-action="EditarAvaliacao">
@@ -26,7 +43,14 @@
                 <select name="decisaoId" class="form-control" required>
                     @foreach (var decisao in ViewBag.Decisoes)
                     {
-                        <option value="@decisao.Id" selected="@(Model.Id_Decisao_Avaliacao == decisao.Id)">@decisao.Designacao</option>
+                        if (Model.Id_Decisao_Avaliacao == decisao.Id)
+                        {
+                            <option value="@decisao.Id" selected>@decisao.Designacao</option>
+                        }
+                        else
+                        {
+                            <option value="@decisao.Id">@decisao.Designacao</option>
+                        }
                     }
                 </select>
             </div>

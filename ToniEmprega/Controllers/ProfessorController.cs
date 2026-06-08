@@ -58,10 +58,14 @@ namespace ToniEmprega.Controllers
                 .Include(c => c.Oferta)
                 .ThenInclude(o => o.Empresa)
                 .Include(c => c.EstadoCandidatura)
+                .Include(c => c.Ficheiros)
                 .Include(c => c.Avaliacoes)
+                    .ThenInclude(a => a.DecisaoAvaliacao)
                 .Where(c => c.Id_Estado_Candidatura == 1 || c.Id_Estado_Candidatura == 2)
+                .OrderByDescending(c => c.Data_Candidatura)
                 .ToListAsync();
 
+            ViewBag.ProfessorId = professor.Id;
             return View(candidaturas);
         }
 
@@ -117,6 +121,7 @@ namespace ToniEmprega.Controllers
             var candidatura = await _context.Candidaturas
                 .Include(c => c.Aluno)
                 .ThenInclude(a => a.Utilizador)
+                .Include(c => c.Oferta)
                 .FirstAsync(c => c.Id == candidaturaId);
 
             // Atualizar estado da candidatura
@@ -178,6 +183,8 @@ namespace ToniEmprega.Controllers
                 .ThenInclude(a => a.Utilizador)
                 .Include(a => a.Candidatura)
                 .ThenInclude(c => c.Oferta)
+                .Include(a => a.Candidatura)
+                .ThenInclude(c => c.Ficheiros)
                 .Include(a => a.DecisaoAvaliacao)
                 .FirstOrDefaultAsync(a => a.Id == id && a.Id_Professor == professor.Id);
 
@@ -199,6 +206,8 @@ namespace ToniEmprega.Controllers
                 .Include(a => a.Candidatura)
                 .ThenInclude(c => c.Aluno)
                 .ThenInclude(a => a.Utilizador)
+                .Include(a => a.Candidatura)
+                .ThenInclude(c => c.Oferta)
                 .FirstOrDefaultAsync(a => a.Id == id && a.Id_Professor == professor.Id);
 
             if (avaliacao == null) return NotFound();

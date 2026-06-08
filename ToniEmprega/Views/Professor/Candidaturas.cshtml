@@ -2,6 +2,7 @@
 @model IEnumerable<ToniEmprega.Models.Candidatura>
 @{
     ViewData["Title"] = "Avaliar Candidaturas";
+    var professorId = (int)(ViewBag.ProfessorId ?? 0);
 }
 
 <div class="dashboard-grid">
@@ -44,9 +45,21 @@
                                     <td>@cand.Oferta?.Empresa?.Nome_Empresa</td>
                                     <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
                                     <td>
-                                        <a href="/Professor/Avaliar/@cand.Id" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-gavel"></i> Avaliar
-                                        </a>
+                                        @{
+                                            var minhaAvaliacao = cand.Avaliacoes?.FirstOrDefault(a => a.Id_Professor == professorId);
+                                        }
+                                        @if (minhaAvaliacao != null)
+                                        {
+                                            <a href="/Professor/EditarAvaliacao/@minhaAvaliacao.Id" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-edit"></i> Editar avaliação
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a href="/Professor/Avaliar/@cand.Id" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-gavel"></i> Avaliar
+                                            </a>
+                                        }
                                     </td>
                                 </tr>
                             }
