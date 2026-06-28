@@ -22,8 +22,8 @@ namespace ToniEmprega.Models
         public string Localizacao { get; set; } = string.Empty;
 
         // 🗺️ NOVO: Coordenadas GPS para o mapa
-        public double? Latitude { get; set; }
-        public double? Longitude { get; set; }
+        public string? Latitude { get; set; }
+        public string? Longitude { get; set; }
 
         public DateTime Data_Publicacao { get; set; } = DateTime.Now;
         public DateTime? Data_Expiracao { get; set; }
