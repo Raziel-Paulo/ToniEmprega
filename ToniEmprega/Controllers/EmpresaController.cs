@@ -10,12 +10,10 @@ namespace ToniEmprega.Controllers
     public class EmpresaController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IConfiguration _configuration;
 
-        public EmpresaController(ApplicationDbContext context, IConfiguration configuration)
+        public EmpresaController(ApplicationDbContext context)
         {
             _context = context;
-            _configuration = configuration;
         }
 
         private async Task<Empresa?> GetCurrentEmpresa()
@@ -25,21 +23,6 @@ namespace ToniEmprega.Controllers
             return await _context.Empresas
                 .Include(e => e.Utilizador)
                 .FirstOrDefaultAsync(e => e.Id_Utilizador == userId.Value);
-        }
-
-        private async Task<CarregarOfertaViewDataResult> CarregarOfertaViewDataAsync()
-        {
-            return new CarregarOfertaViewDataResult
-            {
-                TiposOferta = await _context.TipoOfertas.ToListAsync(),
-                GoogleMapsKey = _configuration["GoogleMaps:ApiKey"] ?? string.Empty
-            };
-        }
-
-        private sealed class CarregarOfertaViewDataResult
-        {
-            public List<TipoOferta> TiposOferta { get; set; } = new();
-            public string GoogleMapsKey { get; set; } = string.Empty;
         }
 
         private static void ValidarOfertaBasica(Oferta oferta, ModelStateDictionary modelState)
@@ -62,25 +45,22 @@ namespace ToniEmprega.Controllers
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
 
-            // ✅ CORREÇÃO: Buscar ofertas com candidaturas incluídas
             var ofertas = await _context.Ofertas
                 .Include(o => o.TipoOferta)
                 .Include(o => o.EstadoOferta)
-                .Include(o => o.Candidaturas)  // ✅ Garantir que candidaturas são carregadas
-                .ThenInclude(c => c.Aluno)      // ✅ Incluir aluno para mostrar nome se necessário
+                .Include(o => o.Candidaturas)
+                .ThenInclude(c => c.Aluno)
                 .Where(o => o.Id_Empresa == empresa.Id)
                 .OrderByDescending(o => o.Data_Publicacao)
                 .Take(5)
                 .ToListAsync();
 
-            // ✅ CORREÇÃO: Contagem correta de candidaturas
             ViewBag.TotalOfertas = await _context.Ofertas
                 .CountAsync(o => o.Id_Empresa == empresa.Id);
 
             ViewBag.OfertasAtivas = await _context.Ofertas
                 .CountAsync(o => o.Id_Empresa == empresa.Id && o.Id_Estado_Oferta == 1);
 
-            // ✅ CORREÇÃO: Contar candidaturas diretamente da tabela Candidaturas
             ViewBag.TotalCandidaturas = await _context.Candidaturas
                 .Where(c => c.Oferta.Id_Empresa == empresa.Id)
                 .CountAsync();
@@ -89,7 +69,6 @@ namespace ToniEmprega.Controllers
                 .Where(c => c.Oferta.Id_Empresa == empresa.Id && c.Id_Estado_Candidatura == 1)
                 .CountAsync();
 
-            // Notificações
             ViewBag.Notificacoes = await _context.Notificacoes
                 .Where(n => n.Id_Utilizador == empresa.Id_Utilizador && !n.Lida)
                 .OrderByDescending(n => n.Data_Criacao)
@@ -115,7 +94,6 @@ namespace ToniEmprega.Controllers
             return View(ofertas);
         }
 
-        // APROVAR CANDIDATURA
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AprovarCandidatura(int id)
@@ -131,11 +109,9 @@ namespace ToniEmprega.Controllers
 
             if (candidatura == null) return NotFound();
 
-            // Atualizar estado para Aprovada (3)
             candidatura.Id_Estado_Candidatura = 3;
             await _context.SaveChangesAsync();
 
-            // Notificar aluno
             _context.Notificacoes.Add(new Notificacao
             {
                 Id_Utilizador = candidatura.Aluno.Id_Utilizador,
@@ -150,7 +126,6 @@ namespace ToniEmprega.Controllers
             return RedirectToAction("Candidatos", new { id = candidatura.Id_Oferta });
         }
 
-        // REJEITAR CANDIDATURA
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejeitarCandidatura(int id, string motivo)
@@ -166,11 +141,9 @@ namespace ToniEmprega.Controllers
 
             if (candidatura == null) return NotFound();
 
-            // Atualizar estado para Rejeitada (4)
             candidatura.Id_Estado_Candidatura = 4;
             await _context.SaveChangesAsync();
 
-            // Notificar aluno
             _context.Notificacoes.Add(new Notificacao
             {
                 Id_Utilizador = candidatura.Aluno.Id_Utilizador,
@@ -185,15 +158,14 @@ namespace ToniEmprega.Controllers
             return RedirectToAction("Candidatos", new { id = candidatura.Id_Oferta });
         }
 
+        // ==================== CRIAR OFERTA ====================
+
         public async Task<IActionResult> CriarOferta()
         {
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
 
-            var viewData = await CarregarOfertaViewDataAsync();
-            ViewBag.TiposOferta = viewData.TiposOferta;
-            ViewBag.GoogleMapsKey = viewData.GoogleMapsKey;
-
+            ViewBag.TiposOferta = await _context.TipoOfertas.ToListAsync();
             return View(new Oferta());
         }
 
@@ -214,9 +186,7 @@ namespace ToniEmprega.Controllers
 
             if (!ModelState.IsValid)
             {
-                var viewData = await CarregarOfertaViewDataAsync();
-                ViewBag.TiposOferta = viewData.TiposOferta;
-                ViewBag.GoogleMapsKey = viewData.GoogleMapsKey;
+                ViewBag.TiposOferta = await _context.TipoOfertas.ToListAsync();
                 return View(oferta);
             }
 
@@ -231,6 +201,8 @@ namespace ToniEmprega.Controllers
             TempData["Success"] = "Oferta criada com sucesso!";
             return RedirectToAction("MinhasOfertas");
         }
+
+        // ==================== EDITAR OFERTA ====================
 
         public async Task<IActionResult> EditarOferta(int? id)
         {
@@ -278,6 +250,10 @@ namespace ToniEmprega.Controllers
             existing.Localizacao = oferta.Localizacao;
             existing.Id_Tipo_Oferta = oferta.Id_Tipo_Oferta;
             existing.Data_Expiracao = oferta.Data_Expiracao;
+
+            // 🗺️ NOVO: Atualizar coordenadas
+            existing.Latitude = oferta.Latitude;
+            existing.Longitude = oferta.Longitude;
 
             await _context.SaveChangesAsync();
             TempData["Success"] = "Oferta atualizada com sucesso!";
@@ -333,8 +309,6 @@ namespace ToniEmprega.Controllers
                 .Where(c => c.Id_Oferta == id)
                 .ToListAsync();
 
-            // ✅ SÓ MOSTRA se professor aprovou (decisão 1 = Aprovado)
-            // Se não tem avaliação ou foi recusada/revisão → empresa NÃO vê
             var candidaturasVisiveis = candidaturas
                 .Where(c => c.Avaliacoes?.Any(a => a.Id_Decisao_Avaliacao == 1) == true)
                 .ToList();
@@ -343,7 +317,8 @@ namespace ToniEmprega.Controllers
             return View(candidaturasVisiveis);
         }
 
-        // PERFIL DA EMPRESA
+        // ==================== PERFIL ====================
+
         public async Task<IActionResult> Perfil()
         {
             var empresa = await GetCurrentEmpresa();
@@ -365,7 +340,6 @@ namespace ToniEmprega.Controllers
             empresa.Telefone = telefone;
             empresa.Site_Empresa = site;
 
-            // Atualizar também o nome do utilizador
             empresa.Utilizador.Nome = nomeEmpresa;
 
             await _context.SaveChangesAsync();

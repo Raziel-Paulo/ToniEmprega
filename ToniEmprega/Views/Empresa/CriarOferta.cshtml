@@ -1,11 +1,9 @@
 ﻿@model ToniEmprega.Models.Oferta
 @{
     ViewData["Title"] = "Nova Oferta";
-    // ✅ MELHORADO: Ler chave da configuração
-    var googleMapsKey = ViewBag.GoogleMapsKey ?? "";
 }
 
-<div style="max-width: 800px; margin: 0 auto;">
+<div style="max-width: 900px; margin: 0 auto;">
     <div class="card">
         <div class="card-header">
             <h2 class="card-title"><i class="fas fa-plus-circle"></i> Criar Oferta</h2>
@@ -39,20 +37,40 @@
                 </select>
             </div>
 
-            <!-- ✅ MELHORADO: Localização com Autocomplete do Google Maps -->
+            <!-- 🗺️ NOVO: Localização com Mapa Interativo Leaflet -->
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-map-marker-alt"></i> Localização <span style="color: var(--color-danger);">*</span></label>
+                
+                <!-- Campo de pesquisa -->
+                <div class="input-group" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <input type="text" id="pesquisa-morada" class="form-control" 
+                           placeholder="Digite a morada e clique em Pesquisar..."
+                           style="flex: 1;" autocomplete="off" />
+                    <button type="button" class="btn btn-primary" onclick="pesquisarMorada()">
+                        <i class="fas fa-search"></i> Pesquisar
+                    </button>
+                </div>
+                <small style="color: var(--color-gray); display: block; margin-bottom: 0.5rem;">
+                    <i class="fas fa-info-circle"></i> Pesquise uma morada ou clique diretamente no mapa para selecionar
+                </small>
+
+                <!-- Mapa -->
+                <div id="mapa-localizacao" style="width: 100%; height: 350px; border-radius: 8px; border: 2px solid var(--color-navy);"></div>
+                
+                <!-- Info das coordenadas -->
+                <div id="coordenadas-info" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--color-gray);">
+                    <i class="fas fa-hand-pointer"></i> Clique no mapa para selecionar a localização
+                </div>
+
+                <!-- Campo da morada (preenchido automaticamente) -->
                 <input type="text" id="localizacao" name="Localizacao" class="form-control" required
                        value="@(Model?.Localizacao ?? "")"
-                       placeholder="Comece a escrever a morada..."
-                       autocomplete="off" />
-                <small style="color: var(--color-gray);">
-                    <i class="fas fa-info-circle"></i> Comece a escrever e selecione a morada sugerida
-                </small>
-                <!-- Container para o mapa -->
-                <div id="map-container" style="margin-top: 1rem; display: none;">
-                    <div id="map" style="width: 100%; height: 300px; border-radius: 8px;"></div>
-                </div>
+                       placeholder="Morada selecionada..."
+                       style="margin-top: 0.75rem;" readonly />
+                
+                <!-- Campos ocultos para coordenadas -->
+                <input type="hidden" name="Latitude" id="latitude" value="@(Model?.Latitude?.ToString().Replace(",",".") ?? "")" />
+                <input type="hidden" name="Longitude" id="longitude" value="@(Model?.Longitude?.ToString().Replace(",",".") ?? "")" />
             </div>
 
             <div class="form-group">
@@ -89,88 +107,171 @@
     </div>
 </div>
 
-@section Scripts {
-    @if (!string.IsNullOrEmpty(googleMapsKey) && googleMapsKey != "AIzaSyA SUA_CHAVE_AQUI")
-    {
-        <script src="https://maps.googleapis.com/maps/api/js?key=@googleMapsKey&libraries=places&callback=initAutocomplete" async defer></script>
+<!-- 🗺️ CSS do Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="" />
+
+<!-- 🗺️ JavaScript do Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+<script>
+    let mapa;
+    let marcador;
+    
+    // Coordenadas padrão (Portugal - Lisboa)
+    const LAT_PADRAO = 38.7223;
+    const LNG_PADRAO = -9.1393;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        inicializarMapa();
+    });
+
+    function inicializarMapa() {
+        // Criar o mapa centrado em Portugal
+        mapa = L.map('mapa-localizacao').setView([LAT_PADRAO, LNG_PADRAO], 7);
+
+        // Adicionar camada do OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(mapa);
+
+        // Evento de clique no mapa
+        mapa.on('click', function(e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            atualizarMarcador(lat, lng);
+            obterMoradaPorCoordenadas(lat, lng);
+        });
     }
-    else
-    {
-        <div class="alert alert-warning" style="margin-top: 1rem;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <strong>Modo de desenvolvimento:</strong> Google Maps não configurado. Adicione a chave em appsettings.json
-        </div>
+
+    function atualizarMarcador(lat, lng) {
+        // Remover marcador anterior se existir
+        if (marcador) {
+            mapa.removeLayer(marcador);
+        }
+
+        // Criar novo marcador
+        marcador = L.marker([lat, lng]).addTo(mapa);
+        
+        // Animar o marcador
+        marcador.bindPopup('<b>Local selecionado!</b><br>Lat: ' + lat.toFixed(5) + '<br>Lng: ' + lng.toFixed(5)).openPopup();
+
+        // Atualizar campos ocultos
+        document.getElementById('latitude').value = lat;
+        document.getElementById('longitude').value = lng;
+
+        // Mostrar coordenadas
+        document.getElementById('coordenadas-info').innerHTML = 
+            '<i class="fas fa-check-circle" style="color: #28a745;"></i> <strong>Coordenadas:</strong> ' + 
+            lat.toFixed(6) + ', ' + lng.toFixed(6);
     }
 
-    <script>
-        let autocomplete;
-        let map;
-        let marker;
+    // Pesquisar morada usando Nominatim (OpenStreetMap - GRÁTIS)
+    async function pesquisarMorada() {
+        const morada = document.getElementById('pesquisa-morada').value.trim();
 
-        function initAutocomplete() {
-        const input = document.getElementById('localizacao');
-
-        // ✅ MELHORADO: Configuração mais completa do autocomplete
-        autocomplete = new google.maps.places.Autocomplete(input, {
-        types: ['address'],
-        componentRestrictions: { country: 'pt' },
-        fields: ['address_components', 'geometry', 'formatted_address', 'name']
-        });
-
-        // Quando selecionar uma morada
-        autocomplete.addListener('place_changed', function() {
-        const place = autocomplete.getPlace();
-
-        if (!place.geometry) {
-        console.error('Nenhuma localização encontrada para: ' + place.name);
-        return;
+        if (!morada) {
+            alert('Por favor, digite uma morada para pesquisar.');
+            return;
         }
 
-        // Mostrar container do mapa
-        document.getElementById('map-container').style.display = 'block';
+        // Mostrar loading
+        const btn = document.querySelector('button[onclick="pesquisarMorada()"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> A pesquisar...';
+        btn.disabled = true;
 
-        // Criar ou atualizar mapa
-        if (!map) {
-        map = new google.maps.Map(document.getElementById('map'), {
-        center: place.geometry.location,
-        zoom: 15,
-        mapTypeControl: false,
-        streetViewControl: false
-        });
-        } else {
-        map.setCenter(place.geometry.location);
+        try {
+            const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + 
+                       encodeURIComponent(morada + ', Portugal') + '&limit=1';
+
+            const response = await fetch(url, {
+                headers: { 'User-Agent': 'ToniEmprega/1.0' }
+            });
+
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                const resultado = data[0];
+                const lat = parseFloat(resultado.lat);
+                const lng = parseFloat(resultado.lon);
+
+                // Centrar mapa e adicionar marcador
+                mapa.setView([lat, lng], 16);
+                atualizarMarcador(lat, lng);
+
+                // Preencher morada
+                document.getElementById('localizacao').value = resultado.display_name;
+                
+                // Mostrar sucesso
+                document.getElementById('coordenadas-info').innerHTML = 
+                    '<i class="fas fa-check-circle" style="color: #28a745;"></i> <strong>Morada encontrada!</strong> ' +
+                    lat.toFixed(6) + ', ' + lng.toFixed(6);
+            } else {
+                alert('Morada não encontrada. Tente ser mais específico ou clique no mapa.');
+            }
+        } catch (error) {
+            console.error('Erro na pesquisa:', error);
+            alert('Erro ao pesquisar morada. Verifique a ligação à internet.');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
+    }
 
-        // Adicionar ou atualizar marcador
-        if (marker) {
-        marker.setMap(null);
+    // Reverse Geocoding: obter morada a partir de coordenadas
+    async function obterMoradaPorCoordenadas(lat, lng) {
+        try {
+            const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + 
+                       lat + '&lon=' + lng + '&zoom=18&addressdetails=1';
+
+            const response = await fetch(url, {
+                headers: { 'User-Agent': 'ToniEmprega/1.0' }
+            });
+
+            const data = await response.json();
+
+            if (data && data.display_name) {
+                document.getElementById('localizacao').value = data.display_name;
+            } else {
+                document.getElementById('localizacao').value = 'Lat: ' + lat.toFixed(5) + ', Lng: ' + lng.toFixed(5);
+            }
+        } catch (error) {
+            console.error('Erro no reverse geocoding:', error);
+            document.getElementById('localizacao').value = 'Lat: ' + lat.toFixed(5) + ', Lng: ' + lng.toFixed(5);
         }
+    }
 
-        marker = new google.maps.Marker({
-        map: map,
-        position: place.geometry.location,
-        title: place.formatted_address,
-        animation: google.maps.Animation.DROP
-        });
-
-        // Atualizar campo com morada formatada
-        input.value = place.formatted_address;
-
-        console.log('Localização selecionada:', place.formatted_address);
-        });
+    // Permitir pesquisa ao pressionar Enter
+    document.getElementById('pesquisa-morada').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            pesquisarMorada();
         }
+    });
 
-        // ✅ NOVO: Validação do formulário antes de submeter
-        document.getElementById('formOferta').addEventListener('submit', function(e) {
+    // Validação do formulário antes de submeter
+    document.getElementById('formOferta').addEventListener('submit', function(e) {
         const localizacao = document.getElementById('localizacao').value;
+        const lat = document.getElementById('latitude').value;
+        const lng = document.getElementById('longitude').value;
 
         if (localizacao.length < 5) {
-        e.preventDefault();
-        alert('Por favor, insira uma localização válida (mínimo 5 caracteres).');
-        return false;
+            e.preventDefault();
+            alert('Por favor, selecione uma localização válida no mapa.');
+            return false;
+        }
+
+        if (!lat || !lng) {
+            e.preventDefault();
+            alert('Por favor, clique no mapa para selecionar a localização exata.');
+            return false;
         }
 
         return true;
-        });
-    </script>
-}
+    });
+</script>

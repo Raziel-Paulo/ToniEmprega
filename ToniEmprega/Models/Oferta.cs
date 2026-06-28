@@ -1,4 +1,4 @@
-﻿// Models/Oferta.cs (ATUALIZADO)
+﻿// Models/Oferta.cs
 namespace ToniEmprega.Models
 {
     public class Oferta
@@ -20,6 +20,11 @@ namespace ToniEmprega.Models
         public string Descricao { get; set; } = string.Empty;
         public string Requisitos { get; set; } = string.Empty;
         public string Localizacao { get; set; } = string.Empty;
+
+        // 🗺️ NOVO: Coordenadas GPS para o mapa
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+
         public DateTime Data_Publicacao { get; set; } = DateTime.Now;
         public DateTime? Data_Expiracao { get; set; }
 
