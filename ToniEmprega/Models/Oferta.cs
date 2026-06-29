@@ -30,9 +30,9 @@ namespace ToniEmprega.Models
 
         // Navegação
         public ICollection<Candidatura> Candidaturas { get; set; } = new List<Candidatura>();
-    
 
-            // 🗺️ NOVO: Helper para resumir a morada (País, Distrito, Concelho, Rua)
+
+        // 🗺️ NOVO: Helper para resumir a morada (País, Distrito, Concelho)
         public string LocalizacaoResumida
         {
             get
@@ -47,47 +47,55 @@ namespace ToniEmprega.Models
 
                 if (partes.Count == 0) return Localizacao;
 
-                // Pegar as partes mais importantes (geralmente as primeiras e últimas)
-                // Formato típico: Rua, Número, Código Postal Cidade, Concelho, Distrito, País
+                // Formato típico: Rua/Número, Código Postal Cidade, Concelho, Distrito, País
+                // Queremos: País, Distrito, Concelho (ordem invertida, das partes do fim)
 
                 var resultado = new List<string>();
 
-                // Rua (primeira parte)
-                if (partes.Count >= 1)
-                    resultado.Add(partes[0]);
+                // Pegar as últimas 3 partes úteis (de trás para frente)
+                var partesRelevantes = new List<string>();
 
-                // Concelho/Cidade (procurar na parte do meio)
-                for (int i = 1; i < partes.Count - 1; i++)
+                foreach (var parte in partes)
                 {
-                    var parte = partes[i];
-                    // Ignorar números e códigos postais
-                    if (!parte.All(char.IsDigit) && !parte.Contains('-') && parte.Length > 2)
-                    {
-                        if (!resultado.Contains(parte))
-                            resultado.Add(parte);
-                        break; // Só pegar o primeiro concelho/cidade
-                    }
+                    // Ignorar números de porta, códigos postais, etc.
+                    var parteLimpa = parte.Trim();
+
+                    // Se for só números ou código postal (ex: "7240-229", "100"), ignorar
+                    if (parteLimpa.All(char.IsDigit)) continue;
+                    if (parteLimpa.Contains('-') && parteLimpa.Length <= 10 && parteLimpa.Any(char.IsDigit)) continue;
+
+                    // Adicionar se não for duplicado
+                    if (!partesRelevantes.Contains(parteLimpa, StringComparer.OrdinalIgnoreCase))
+                        partesRelevantes.Add(parteLimpa);
                 }
 
-                // Distrito (penúltima parte, se não for Portugal)
-                if (partes.Count >= 2)
+                // Pegar as últimas 3 partes (País, Distrito, Concelho/Cidade)
+                // Ordem no array: [Rua, Cidade, Concelho, Distrito, País]
+                // Queremos: País, Distrito, Concelho
+
+                if (partesRelevantes.Count >= 1)
+                    resultado.Add(partesRelevantes.Last()); // País
+
+                if (partesRelevantes.Count >= 2)
+                    resultado.Add(partesRelevantes[partesRelevantes.Count - 2]); // Distrito
+
+                if (partesRelevantes.Count >= 3)
                 {
-                    var possivelDistrito = partes[partes.Count - 2];
-                    if (!possivelDistrito.Contains("Portugal") && !resultado.Contains(possivelDistrito))
-                        resultado.Add(possivelDistrito);
+                    // Concelho/Cidade — pegar a parte antes do distrito
+                    var concelho = partesRelevantes[partesRelevantes.Count - 3];
+                    // Se for igual ao distrito, tentar a anterior
+                    if (concelho.Equals(resultado[1], StringComparison.OrdinalIgnoreCase) && partesRelevantes.Count >= 4)
+                        concelho = partesRelevantes[partesRelevantes.Count - 4];
+                    resultado.Add(concelho);
                 }
 
-                // País (última parte)
-                var pais = partes.Last();
-                if (!resultado.Contains(pais))
-                    resultado.Add(pais);
-
-                // Se ficou muito curto, mostrar as 3 primeiras partes
-                if (resultado.Count < 2 && partes.Count >= 3)
+                // Se não conseguimos extrair nada útil, mostrar as últimas 2 partes
+                if (resultado.Count == 0 && partes.Count >= 2)
                 {
-                    return string.Join(", ", partes.Take(3));
+                    return string.Join(", ", partes.TakeLast(2));
                 }
 
+                // Resultado: País, Distrito, Concelho
                 return string.Join(", ", resultado);
             }
         }
