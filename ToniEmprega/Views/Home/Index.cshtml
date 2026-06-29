@@ -1,4 +1,4 @@
-﻿@* Views/Home/Index.cshtml *@
+﻿﻿@* Views/Home/Index.cshtml *@
 @model IEnumerable<ToniEmprega.Models.Oferta>
 @{
     ViewData["Title"] = "Início";
@@ -56,12 +56,15 @@
             <div class="oferta-empresa">
                 <i class="fas fa-building"></i> @oferta.Empresa?.Nome_Empresa
             </div>
-            <p class="oferta-descricao">
+
+            <!-- ✅ CORRIGIDO: word-wrap para quebrar texto longo -->
+            <p class="oferta-descricao" style="word-wrap: break-word; overflow-wrap: break-word; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
                 @(oferta.Descricao?.Length > 150 ? oferta.Descricao.Substring(0, 150) + "..." : oferta.Descricao)
             </p>
+
             <div class="oferta-footer">
-                <span class="oferta-localizacao">
-                    <i class="fas fa-map-marker-alt"></i> @oferta.Localizacao
+                <span class="oferta-localizacao" style="word-wrap: break-word; overflow-wrap: break-word; max-width: 60%;">
+                    <i class="fas fa-map-marker-alt"></i> @oferta.LocalizacaoResumida
                 </span>
                 <a href="/Ofertas/Details/@oferta.Id" class="btn btn-primary">
                     Ver Detalhes <i class="fas fa-arrow-right"></i>
