@@ -131,19 +131,25 @@
         font-weight: 500;
     }
 
-    .badge-approved {
+    .badge-prof-aproved {
         background: rgba(40, 167, 69, 0.2);
         color: #28a745;
         border: 1px solid rgba(40, 167, 69, 0.3);
     }
 
-    .badge-pending {
+    .badge-empresa-pendente {
         background: rgba(255, 193, 7, 0.2);
         color: #ffc107;
         border: 1px solid rgba(255, 193, 7, 0.3);
     }
 
-    .badge-rejected {
+    .badge-empresa-aproved {
+        background: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .badge-empresa-rejected {
         background: rgba(220, 53, 69, 0.2);
         color: #dc3545;
         border: 1px solid rgba(220, 53, 69, 0.3);
@@ -159,6 +165,7 @@
         align-items: center;
         gap: 0.3rem;
         margin-right: 0.3rem;
+        margin-bottom: 0.3rem;
     }
 
     .btn-aprovar {
@@ -194,7 +201,6 @@
 </style>
 
 <div class="candidatos-wrapper">
-    <!-- Sidebar -->
     <div class="candidatos-sidebar">
         <div class="menu-card">
             <h3 class="menu-title"><i class="fas fa-th-large"></i> Menu</h3>
@@ -210,7 +216,6 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="candidatos-main">
         <div class="candidatos-header">
             <h2 style="color: var(--color-blue); margin: 0;">
@@ -226,7 +231,7 @@
             <div class="sem-candidatos">
                 <i class="fas fa-inbox" style="font-size: 3rem; color: var(--color-gray); margin-bottom: 1rem;"></i>
                 <h3 style="color: var(--color-gray);">Nenhum candidato</h3>
-                <p style="color: var(--color-gray);">Ainda não existem candidatos para esta oferta.</p>
+                <p style="color: var(--color-gray);">Ainda não existem candidatos aprovados pelo professor para esta oferta.</p>
             </div>
         }
         else
@@ -237,8 +242,8 @@
                         <tr>
                             <th>Aluno</th>
                             <th>Data</th>
-                            <th>Estado</th>
                             <th>Avaliação Professor</th>
+                            <th>Decisão Empresa</th>
                             <th>CV / Ficheiros</th>
                             <th>Ações</th>
                         </tr>
@@ -246,6 +251,10 @@
                     <tbody>
                         @foreach (var cand in Model)
                         {
+                            var empresaDecidiu = cand.Id_Estado_Candidatura == 3 || cand.Id_Estado_Candidatura == 4;
+                            var empresaAprovou = cand.Id_Estado_Candidatura == 3;
+                            var empresaRejeitou = cand.Id_Estado_Candidatura == 4;
+
                             <tr>
                                 <td class="info-aluno">
                                     <strong style="color: var(--color-white);">@cand.Aluno?.Utilizador?.Nome</strong>
@@ -258,16 +267,11 @@
                                 </td>
                                 <td style="white-space: nowrap;">@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
                                 <td>
-                                    <span class="badge @(cand.Id_Estado_Candidatura == 1 ? "badge-pending" : cand.Id_Estado_Candidatura == 3 ? "badge-approved" : "badge-rejected")">
-                                        @cand.EstadoCandidatura?.Designacao
-                                    </span>
-                                </td>
-                                <td>
                                     @if (cand.Avaliacoes?.Any() == true)
                                     {
                                         var aval = cand.Avaliacoes.First();
-                                        <span class="badge @(aval.Id_Decisao_Avaliacao == 1 ? "badge-approved" : aval.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
-                                            @aval.DecisaoAvaliacao?.Designacao
+                                        <span class="badge badge-prof-aproved">
+                                            <i class="fas fa-check"></i> @aval.DecisaoAvaliacao?.Designacao
                                         </span>
                                         @if (!string.IsNullOrEmpty(aval.Comentarios))
                                         {
@@ -276,7 +280,27 @@
                                     }
                                     else
                                     {
-                                        <span style="color: var(--color-gray);">Pendente</span>
+                                        <span style="color: var(--color-gray);">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (empresaAprovou)
+                                    {
+                                        <span class="badge badge-empresa-aproved">
+                                            <i class="fas fa-check-circle"></i> Aprovada pela Empresa
+                                        </span>
+                                    }
+                                    else if (empresaRejeitou)
+                                    {
+                                        <span class="badge badge-empresa-rejected">
+                                            <i class="fas fa-times-circle"></i> Rejeitada pela Empresa
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-empresa-pendente">
+                                            <i class="fas fa-clock"></i> Pendente (Empresa)
+                                        </span>
                                     }
                                 </td>
                                 <td>
@@ -297,26 +321,29 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (cand.Id_Estado_Candidatura == 1)
+                                    @if (!empresaDecidiu)
                                     {
-                                        <form method="post" asp-action="AprovarCandidatura" style="display: inline;">
+                                        <form method="post" asp-action="AprovarCandidatoEmpresa" style="display: inline;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@cand.Id" />
                                             <button type="submit" class="btn-acao btn-aprovar">
-                                                <i class="fas fa-check"></i> Aprovar
+                                                <i class="fas fa-check"></i> Aprovar Candidato
                                             </button>
                                         </form>
-                                        <form method="post" asp-action="RejeitarCandidatura" style="display: inline;">
+                                        <form method="post" asp-action="RejeitarCandidatoEmpresa" style="display: inline;" onsubmit="var motivo = prompt('Motivo da rejeição:'); if(!motivo) return false; this.querySelector('input[name=motivo]').value = motivo;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@cand.Id" />
+                                            <input type="hidden" name="motivo" value="" />
                                             <button type="submit" class="btn-acao btn-rejeitar">
-                                                <i class="fas fa-times"></i> Rejeitar
+                                                <i class="fas fa-times"></i> Rejeitar Candidato
                                             </button>
                                         </form>
                                     }
                                     else
                                     {
-                                        <span style="color: var(--color-gray); font-size: 0.85rem;">Processada</span>
+                                        <span style="color: var(--color-gray); font-size: 0.85rem;">
+                                            <i class="fas fa-lock"></i> Decisão finalizada
+                                        </span>
                                     }
                                 </td>
                             </tr>

@@ -210,6 +210,19 @@ namespace ToniEmprega.Controllers
             var professor = await GetCurrentProfessor();
             if (professor == null) return RedirectToAction("Login", "Account");
 
+            // ✅ VALIDAÇÃO: Comentários entre 50 e 200 caracteres
+            if (string.IsNullOrWhiteSpace(comentarios) || comentarios.Length < 50)
+            {
+                TempData["Error"] = "Os comentários devem ter no mínimo 50 caracteres.";
+                return RedirectToAction("EditarAvaliacao", new { id });
+            }
+
+            if (comentarios.Length > 200)
+            {
+                TempData["Error"] = "Os comentários devem ter no máximo 200 caracteres.";
+                return RedirectToAction("EditarAvaliacao", new { id });
+            }
+
             var avaliacao = await _context.AvaliacoesProfessores
                 .Include(a => a.Candidatura)
                 .ThenInclude(c => c.Aluno)

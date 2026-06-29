@@ -190,9 +190,8 @@ namespace ToniEmprega.Controllers
                 return View(oferta);
             }
 
-            // Preencher campos automáticos
             oferta.Id_Empresa = empresa.Id;
-            oferta.Id_Estado_Oferta = 1; // Ativa
+            oferta.Id_Estado_Oferta = 1;
             oferta.Data_Publicacao = DateTime.Now;
 
             _context.Ofertas.Add(oferta);
@@ -250,8 +249,6 @@ namespace ToniEmprega.Controllers
             existing.Localizacao = oferta.Localizacao;
             existing.Id_Tipo_Oferta = oferta.Id_Tipo_Oferta;
             existing.Data_Expiracao = oferta.Data_Expiracao;
-
-            // 🗺️ NOVO: Atualizar coordenadas
             existing.Latitude = oferta.Latitude;
             existing.Longitude = oferta.Longitude;
 
@@ -274,7 +271,7 @@ namespace ToniEmprega.Controllers
 
             if (temCandidaturas)
             {
-                oferta.Id_Estado_Oferta = 4; // Desativada
+                oferta.Id_Estado_Oferta = 4;
                 TempData["Success"] = "Oferta desativada (tinha candidaturas associadas).";
             }
             else
@@ -315,6 +312,74 @@ namespace ToniEmprega.Controllers
 
             ViewBag.Oferta = oferta;
             return View(candidaturasVisiveis);
+        }
+
+        // ==================== EMPRESA APROVA/REJEITA CANDIDATO ====================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AprovarCandidatoEmpresa(int id)
+        {
+            var empresa = await GetCurrentEmpresa();
+            if (empresa == null) return RedirectToAction("Login", "Account");
+
+            var candidatura = await _context.Candidaturas
+                .Include(c => c.Oferta)
+                .Include(c => c.Aluno)
+                .ThenInclude(a => a.Utilizador)
+                .FirstOrDefaultAsync(c => c.Id == id && c.Oferta.Id_Empresa == empresa.Id);
+
+            if (candidatura == null) return NotFound();
+
+            candidatura.Id_Estado_Candidatura = 3;
+
+            await _context.SaveChangesAsync();
+
+            _context.Notificacoes.Add(new Notificacao
+            {
+                Id_Utilizador = candidatura.Aluno.Id_Utilizador,
+                Titulo = "Candidatura Aprovada pela Empresa!",
+                Mensagem = $"A empresa '{empresa.Nome_Empresa}' aprovou a sua candidatura para '{candidatura.Oferta.Titulo}'.",
+                Tipo = "success",
+                Link = "/Aluno/MinhasCandidaturas"
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Candidato aprovado com sucesso!";
+            return RedirectToAction("Candidatos", new { id = candidatura.Id_Oferta });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejeitarCandidatoEmpresa(int id, string motivo)
+        {
+            var empresa = await GetCurrentEmpresa();
+            if (empresa == null) return RedirectToAction("Login", "Account");
+
+            var candidatura = await _context.Candidaturas
+                .Include(c => c.Oferta)
+                .Include(c => c.Aluno)
+                .ThenInclude(a => a.Utilizador)
+                .FirstOrDefaultAsync(c => c.Id == id && c.Oferta.Id_Empresa == empresa.Id);
+
+            if (candidatura == null) return NotFound();
+
+            candidatura.Id_Estado_Candidatura = 4;
+
+            await _context.SaveChangesAsync();
+
+            _context.Notificacoes.Add(new Notificacao
+            {
+                Id_Utilizador = candidatura.Aluno.Id_Utilizador,
+                Titulo = "Candidatura Rejeitada pela Empresa",
+                Mensagem = $"A empresa '{empresa.Nome_Empresa}' rejeitou a sua candidatura para '{candidatura.Oferta.Titulo}'. Motivo: {motivo}",
+                Tipo = "error",
+                Link = "/Aluno/MinhasCandidaturas"
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Candidato rejeitado.";
+            return RedirectToAction("Candidatos", new { id = candidatura.Id_Oferta });
         }
 
         // ==================== PERFIL ====================
