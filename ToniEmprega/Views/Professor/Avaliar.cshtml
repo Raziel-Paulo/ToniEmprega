@@ -1,4 +1,4 @@
-﻿@* Views/Professor/Avaliar.cshtml *@
+﻿﻿@* Views/Professor/Avaliar.cshtml *@
 @model ToniEmprega.Models.Candidatura
 @{
     ViewData["Title"] = "Avaliar Candidatura";
@@ -16,11 +16,13 @@
                 <i class="fas fa-user"></i> @Model.Aluno?.Utilizador?.Nome |
                 <i class="fas fa-graduation-cap"></i> @Model.Aluno?.Curso
             </p>
+
             @if (!string.IsNullOrEmpty(Model.Mensagem))
             {
                 <div style="margin-top: 1rem; padding: 1rem; background-color: var(--color-dark-gray); border-radius: 6px;">
                     <strong style="color: var(--color-blue);">Mensagem do Candidato:</strong>
-                    <p style="color: var(--color-gray); margin: 0.5rem 0 0 0;">@Model.Mensagem</p>
+                    <!-- ✅ CORRIGIDO: word-wrap para quebrar texto longo -->
+                    <p style="color: var(--color-gray); margin: 0.5rem 0 0 0; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-line;">@Model.Mensagem</p>
                 </div>
             }
 

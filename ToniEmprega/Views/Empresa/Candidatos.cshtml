@@ -1,22 +1,219 @@
-﻿@model IEnumerable<ToniEmprega.Models.Candidatura>
+﻿﻿@* Views/Empresa/Candidatos.cshtml *@
+@model IEnumerable<ToniEmprega.Models.Candidatura>
 @{
     ViewData["Title"] = "Candidatos";
-    var oferta = ViewBag.Oferta as ToniEmprega.Models.Oferta;
+    var oferta = ViewBag.Oferta as Oferta;
 }
 
-<div class="dashboard-grid">
-    <aside class="sidebar">
-        <h3 style="color: #1E90FF;"><i class="fas fa-building"></i> Menu</h3>
-        <ul class="sidebar-menu">
-            <li><a href="/Empresa/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="/Empresa/MinhasOfertas" class="sidebar-link active"><i class="fas fa-briefcase"></i> Minhas Ofertas</a></li>
-            <li><a href="/Empresa/CriarOferta" class="sidebar-link"><i class="fas fa-plus-circle"></i> Nova Oferta</a></li>
-        </ul>
-    </aside>
+<style>
+    .candidatos-wrapper {
+        display: flex;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
 
-    <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 style="color: #1E90FF;">
+    .candidatos-sidebar {
+        width: 250px;
+        flex-shrink: 0;
+    }
+
+        .candidatos-sidebar .menu-card {
+            background: var(--color-card-bg);
+            border: 1px solid var(--color-navy);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .candidatos-sidebar .menu-title {
+            color: var(--color-blue);
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        .candidatos-sidebar .menu-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            color: var(--color-gray);
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+        }
+
+            .candidatos-sidebar .menu-link:hover {
+                background: var(--color-navy);
+                color: var(--color-blue);
+            }
+
+            .candidatos-sidebar .menu-link.active {
+                background: var(--color-navy);
+                color: var(--color-blue);
+            }
+
+    .candidatos-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .candidatos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .candidatos-table-card {
+        background: var(--color-card-bg);
+        border: 1px solid var(--color-navy);
+        border-radius: 12px;
+        padding: 1.5rem;
+        overflow-x: auto;
+    }
+
+    .candidatos-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .candidatos-table th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--color-blue);
+            border-bottom: 2px solid var(--color-navy);
+            white-space: nowrap;
+        }
+
+        .candidatos-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--color-navy);
+            vertical-align: top;
+        }
+
+        .candidatos-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .ficheiros-lista {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .ficheiro-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.8rem;
+        background: transparent;
+        border: 1px solid var(--color-blue);
+        color: var(--color-blue);
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+
+        .ficheiro-btn:hover {
+            background: var(--color-blue);
+            color: var(--color-white);
+        }
+
+    .badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .badge-approved {
+        background: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .badge-pending {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+
+    .badge-rejected {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
+    .btn-acao {
+        padding: 0.4rem 0.8rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-right: 0.3rem;
+    }
+
+    .btn-aprovar {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-rejeitar {
+        background: #dc3545;
+        color: white;
+    }
+
+    .avaliacao-texto {
+        color: var(--color-gray);
+        font-size: 0.85rem;
+        max-width: 200px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .sem-candidatos {
+        text-align: center;
+        padding: 3rem;
+        background: var(--color-card-bg);
+        border: 1px solid var(--color-navy);
+        border-radius: 12px;
+    }
+
+    .info-aluno small {
+        display: block;
+        margin-top: 0.3rem;
+    }
+</style>
+
+<div class="candidatos-wrapper">
+    <!-- Sidebar -->
+    <div class="candidatos-sidebar">
+        <div class="menu-card">
+            <h3 class="menu-title"><i class="fas fa-th-large"></i> Menu</h3>
+            <a href="/Empresa/Dashboard" class="menu-link">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="/Empresa/MinhasOfertas" class="menu-link active">
+                <i class="fas fa-briefcase"></i> Minhas Ofertas
+            </a>
+            <a href="/Empresa/CriarOferta" class="menu-link">
+                <i class="fas fa-plus-circle"></i> Nova Oferta
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="candidatos-main">
+        <div class="candidatos-header">
+            <h2 style="color: var(--color-blue); margin: 0;">
                 <i class="fas fa-users"></i> Candidatos: @oferta?.Titulo
             </h2>
             <a href="/Empresa/MinhasOfertas" class="btn btn-outline">
@@ -24,126 +221,109 @@
             </a>
         </div>
 
-        <div class="card">
-            @if (Model.Any())
-            {
-                <div class="table-container">
-                    <table>
-                        <thead>
+        @if (!Model.Any())
+        {
+            <div class="sem-candidatos">
+                <i class="fas fa-inbox" style="font-size: 3rem; color: var(--color-gray); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--color-gray);">Nenhum candidato</h3>
+                <p style="color: var(--color-gray);">Ainda não existem candidatos para esta oferta.</p>
+            </div>
+        }
+        else
+        {
+            <div class="candidatos-table-card">
+                <table class="candidatos-table">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Data</th>
+                            <th>Estado</th>
+                            <th>Avaliação Professor</th>
+                            <th>CV / Ficheiros</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cand in Model)
+                        {
                             <tr>
-                                <th>Aluno</th>
-                                <th>Data</th>
-                                <th>Estado</th>
-                                <th>Avaliação Professor</th>
-                                <th>CV</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var cand in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <strong>@cand.Aluno?.Utilizador?.Nome</strong><br />
-                                        <small style="color: var(--color-gray);"><i class="fas fa-envelope"></i> @cand.Aluno?.Utilizador?.Email</small><br />
-                                        <small style="color: var(--color-gray);"><i class="fas fa-graduation-cap"></i> @cand.Aluno?.Curso</small>
-                                    </td>
-                                    <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
-                                    <td>
-                                        <span class="badge @(cand.Id_Estado_Candidatura == 1 ? "badge-pending" :
-                                                                                                                                                         cand.Id_Estado_Candidatura == 3 ? "badge-approved" :
-                                                                                                                                                         cand.Id_Estado_Candidatura == 4 ? "badge-rejected" : "badge-pending")">
-                                            @cand.EstadoCandidatura?.Designacao
+                                <td class="info-aluno">
+                                    <strong style="color: var(--color-white);">@cand.Aluno?.Utilizador?.Nome</strong>
+                                    <small style="color: var(--color-gray);">
+                                        <i class="fas fa-envelope"></i> @cand.Aluno?.Utilizador?.Email
+                                    </small>
+                                    <small style="color: var(--color-gray);">
+                                        <i class="fas fa-graduation-cap"></i> @cand.Aluno?.Curso
+                                    </small>
+                                </td>
+                                <td style="white-space: nowrap;">@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    <span class="badge @(cand.Id_Estado_Candidatura == 1 ? "badge-pending" : cand.Id_Estado_Candidatura == 3 ? "badge-approved" : "badge-rejected")">
+                                        @cand.EstadoCandidatura?.Designacao
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (cand.Avaliacoes?.Any() == true)
+                                    {
+                                        var aval = cand.Avaliacoes.First();
+                                        <span class="badge @(aval.Id_Decisao_Avaliacao == 1 ? "badge-approved" : aval.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
+                                            @aval.DecisaoAvaliacao?.Designacao
                                         </span>
-                                    </td>
-                                    <td>
-                                        @if (cand.Avaliacoes?.Any() == true)
+                                        @if (!string.IsNullOrEmpty(aval.Comentarios))
                                         {
-                                            var av = cand.Avaliacoes.First();
-                                            <span class="badge @(av.Id_Decisao_Avaliacao == 1 ? "badge-approved" :
-                                                                                                                                                                     av.Id_Decisao_Avaliacao == 2 ? "badge-rejected" : "badge-pending")">
-                                                @av.DecisaoAvaliacao?.Designacao
-                                            </span>
+                                            <div class="avaliacao-texto">@aval.Comentarios</div>
                                         }
-                                        else
-                                        {
-                                            <span class="badge badge-pending">Sem Avaliação</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (cand.Ficheiros?.Any() == true)
-                                        {
-                                            <a href="@cand.Ficheiros.First().Caminho_Ficheiro" target="_blank" class="btn btn-outline btn-sm">
-                                                <i class="fas fa-download"></i> CV
-                                            </a>
-                                        }
-                                        else
-                                        {
-                                            <span style="color: var(--color-gray);">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (cand.Id_Estado_Candidatura == 1 || cand.Id_Estado_Candidatura == 2)
-                                        {
-                                            <!-- ✅ BOTÕES DE AÇÃO -->
-                                            <div style="display: flex; gap: 0.5rem;">
-                                                <form method="post" asp-action="AprovarCandidatura" style="display: inline;">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@cand.Id" />
-                                                    <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Tem certeza que deseja APROVAR esta candidatura?');">
-                                                        <i class="fas fa-check"></i> Aprovar
-                                                    </button>
-                                                </form>
-
-                                                <form method="post" asp-action="RejeitarCandidatura" style="display: inline;" onsubmit="return confirmarRejeicao(this);">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="id" value="@cand.Id" />
-                                                    <input type="hidden" name="motivo" class="motivo-rejeicao" value="" />
-                                                    <button type="submit" class="btn btn-danger btn-sm">
-                                                        <i class="fas fa-times"></i> Rejeitar
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <span style="color: var(--color-gray); font-size: 0.9rem;">
-                                                <i class="fas fa-lock"></i> Processada
-                                            </span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div style="text-align: center; padding: 3rem; color: var(--color-gray);">
-                    <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                    <h3>Ainda não há candidaturas para esta oferta</h3>
-                    <p>Os candidatos aparecerão aqui quando se candidatarem.</p>
-                    <a href="/Empresa/MinhasOfertas" class="btn btn-outline" style="margin-top: 1rem;">
-                        <i class="fas fa-arrow-left"></i> Voltar às Ofertas
-                    </a>
-                </div>
-            }
-        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: var(--color-gray);">Pendente</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (cand.Ficheiros?.Any() == true)
+                                    {
+                                        <div class="ficheiros-lista">
+                                            @foreach (var ficheiro in cand.Ficheiros)
+                                            {
+                                                <a href="@ficheiro.Caminho_Ficheiro" target="_blank" class="ficheiro-btn">
+                                                    <i class="fas fa-file"></i> @ficheiro.Nome_Ficheiro
+                                                </a>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: var(--color-gray);">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (cand.Id_Estado_Candidatura == 1)
+                                    {
+                                        <form method="post" asp-action="AprovarCandidatura" style="display: inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@cand.Id" />
+                                            <button type="submit" class="btn-acao btn-aprovar">
+                                                <i class="fas fa-check"></i> Aprovar
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-action="RejeitarCandidatura" style="display: inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@cand.Id" />
+                                            <button type="submit" class="btn-acao btn-rejeitar">
+                                                <i class="fas fa-times"></i> Rejeitar
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: var(--color-gray); font-size: 0.85rem;">Processada</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        function confirmarRejeicao(form) {
-            var motivo = prompt("Por favor, indique o motivo da rejeição:");
-            if (motivo == null || motivo.trim() == "") {
-                alert("É necessário indicar um motivo para rejeitar.");
-                return false;
-            }
-            form.querySelector('.motivo-rejeicao').value = motivo;
-            return confirm('Tem certeza que deseja REJEITAR esta candidatura?');
-        }
-    </script>
-}
-
