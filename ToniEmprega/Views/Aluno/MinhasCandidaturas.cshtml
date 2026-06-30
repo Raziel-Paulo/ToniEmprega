@@ -4,72 +4,299 @@
     ViewData["Title"] = "Minhas Candidaturas";
 }
 
-<div class="dashboard-grid">
-    <aside class="sidebar">
-        <h3 style="color: #1E90FF;"><i class="fas fa-user-graduate"></i> Menu</h3>
-        <ul class="sidebar-menu">
-            <li><a href="/Aluno/Dashboard" class="sidebar-link"><i class="fas fa-home"></i> Dashboard</a></li>
-            <li><a href="/Aluno/MinhasCandidaturas" class="sidebar-link active"><i class="fas fa-file-signature"></i> Minhas Candidaturas</a></li>
-        </ul>
-    </aside>
+<style>
+    .aluno-dashboard {
+        display: flex;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
 
-    <div>
-        <h2 style="color: #1E90FF; margin-bottom: 1.5rem;">
-            <i class="fas fa-file-signature"></i> Minhas Candidaturas
-        </h2>
+    .aluno-sidebar {
+        width: 260px;
+        flex-shrink: 0;
+    }
 
-        <div class="card">
+        .aluno-sidebar .menu-card {
+            background: var(--color-dark-gray);
+            border: 1px solid var(--color-navy);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .aluno-sidebar .menu-title {
+            color: var(--color-blue);
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .aluno-sidebar .menu-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            color: var(--color-gray);
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+        }
+
+            .aluno-sidebar .menu-link:hover,
+            .aluno-sidebar .menu-link.active {
+                background: var(--color-navy);
+                color: var(--color-blue);
+            }
+
+    .aluno-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .aluno-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+        .aluno-header h2 {
+            color: var(--color-blue);
+            margin: 0;
+        }
+
+    .candidaturas-card {
+        background: var(--color-dark-gray);
+        border: 1px solid var(--color-navy);
+        border-radius: 12px;
+        padding: 1.5rem;
+        overflow-x: auto;
+    }
+
+    .candidaturas-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .candidaturas-table th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--color-blue);
+            border-bottom: 2px solid var(--color-navy);
+            white-space: nowrap;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .candidaturas-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--color-navy);
+            vertical-align: middle;
+        }
+
+        .candidaturas-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .badge {
+        display: inline-block;
+        padding: 0.35rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .badge-pendente {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+
+    .badge-prof-aprovado {
+        background: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .badge-prof-rejeitado {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
+    .badge-emp-aprovada {
+        background: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .badge-emp-rejeitada {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
+    .badge-emp-pendente {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffc107;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+
+    .badge-analise {
+        background: rgba(30, 144, 255, 0.2);
+        color: var(--color-blue);
+        border: 1px solid rgba(30, 144, 255, 0.3);
+    }
+
+    .badge-cancelada {
+        background: rgba(128, 128, 128, 0.2);
+        color: #888;
+        border: 1px solid rgba(128, 128, 128, 0.3);
+    }
+
+    .sem-candidaturas {
+        text-align: center;
+        padding: 3rem;
+        color: var(--color-gray);
+    }
+
+        .sem-candidaturas i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+    .btn-ver-ofertas {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        background: var(--color-blue);
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        margin-top: 1rem;
+        transition: all 0.2s;
+    }
+
+        .btn-ver-ofertas:hover {
+            background: #1873cc;
+            transform: translateY(-2px);
+        }
+
+    @@media (max-width: 768px) {
+        .aluno-dashboard {
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .aluno-sidebar {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="aluno-dashboard">
+    <div class="aluno-sidebar">
+        <div class="menu-card">
+            <h3 class="menu-title"><i class="fas fa-user-graduate"></i> Menu</h3>
+            <a href="/Aluno/Dashboard" class="menu-link">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="/Aluno/MinhasCandidaturas" class="menu-link active">
+                <i class="fas fa-file-signature"></i> Minhas Candidaturas
+            </a>
+        </div>
+    </div>
+
+    <div class="aluno-main">
+        <div class="aluno-header">
+            <h2><i class="fas fa-file-signature"></i> Minhas Candidaturas</h2>
+        </div>
+
+        <div class="candidaturas-card">
             @if (Model.Any())
             {
-                <div class="table-container">
-                    <table>
-                        <thead>
+                <table class="candidaturas-table">
+                    <thead>
+                        <tr>
+                            <th>Oferta</th>
+                            <th>Empresa</th>
+                            <th>Data</th>
+                            <th>Estado Professor</th>
+                            <th>Decisão Empresa</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cand in Model)
+                        {
                             <tr>
-                                <th>Oferta</th>
-                                <th>Empresa</th>
-                                <th>Data</th>
-                                <th>Estado</th>
-                                <th>Avaliação</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var cand in Model)
-                            {
-                                <tr>
-                                    <td><strong>@cand.Oferta?.Titulo</strong></td>
-                                    <td>@cand.Oferta?.Empresa?.Nome_Empresa</td>
-                                    <td>@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
-                                    <td>
-                                        <span class="badge @(cand.Id_Estado_Candidatura == 1 ? "badge-pending" :
-                                                                                                         cand.Id_Estado_Candidatura == 3 ? "badge-approved" : "badge-rejected")">
-                                    @cand.EstadoCandidatura?.Designacao
-                                </span>
-                            </td>
-                            <td>
-                                @if (cand.Avaliacoes?.Any() == true)
+                                <td><strong style="color: var(--color-white);">@cand.Oferta?.Titulo</strong></td>
+                                <td style="color: var(--color-gray);">@cand.Oferta?.Empresa?.Nome_Empresa</td>
+                                <td style="white-space: nowrap; color: var(--color-gray);">@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @{
+                                        var estadoClasse = cand.Id_Estado_Candidatura switch
                                         {
-                                            var av = cand.Avaliacoes.First();
-                                            <span class="badge @(av.Id_Decisao_Avaliacao == 1 ? "badge-approved" : "badge-rejected")">
-                                                @av.DecisaoAvaliacao?.Designacao
-                                            </span>
+                                            1 => "badge-pendente",
+                                            2 => "badge-analise",
+                                            5 => "badge-cancelada",
+                                            6 => "badge-prof-aprovado",
+                                            7 => "badge-prof-rejeitado",
+                                            _ => "badge-pendente"
+                                        };
+                                        var estadoTexto = cand.Id_Estado_Candidatura switch
+                                        {
+                                            1 => "Pendente",
+                                            2 => "Em Análise",
+                                            5 => "Cancelada",
+                                            6 => "Aprovada pelo Professor",
+                                            7 => "Rejeitada pelo Professor",
+                                            _ => "Pendente"
+                                        };
+                                    }
+                                    <span class="badge @estadoClasse">@estadoTexto</span>
+                                </td>
+                                <td>
+                                    @if (cand.Id_Estado_Candidatura == 6)
+                                    {
+                                        @if (cand.Id_Estado_Candidatura_Empresa == 3)
+                                        {
+                                            <span class="badge badge-emp-aprovada"><i class="fas fa-check-circle"></i> Aprovada pela Empresa</span>
+                                        }
+                                        else if (cand.Id_Estado_Candidatura_Empresa == 4)
+                                        {
+                                            <span class="badge badge-emp-rejeitada"><i class="fas fa-times-circle"></i> Rejeitada pela Empresa</span>
                                         }
                                         else
                                         {
-                                            <span class="badge badge-pending">Pendente</span>
+                                            <span class="badge badge-emp-pendente"><i class="fas fa-clock"></i> Aguarda decisão da Empresa</span>
                                         }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                                    }
+                                    else if (cand.Id_Estado_Candidatura == 7)
+                                    {
+                                        <span class="badge badge-emp-rejeitada"><i class="fas fa-ban"></i> Não avançou para a Empresa</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: var(--color-gray);">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             }
             else
             {
-                <div style="text-align: center; padding: 3rem; color: var(--color-gray);">
-                    <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <div class="sem-candidaturas">
+                    <i class="fas fa-inbox"></i>
                     <h3>Ainda não realizou nenhuma candidatura</h3>
-                    <a href="/Ofertas" class="btn btn-primary" style="margin-top: 1rem;">
+                    <a href="/Ofertas" class="btn-ver-ofertas">
                         <i class="fas fa-briefcase"></i> Ver Ofertas
                     </a>
                 </div>

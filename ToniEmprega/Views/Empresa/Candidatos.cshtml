@@ -251,9 +251,10 @@
                     <tbody>
                         @foreach (var cand in Model)
                         {
-                            var empresaDecidiu = cand.Id_Estado_Candidatura == 3 || cand.Id_Estado_Candidatura == 4;
-                            var empresaAprovou = cand.Id_Estado_Candidatura == 3;
-                            var empresaRejeitou = cand.Id_Estado_Candidatura == 4;
+                            // ✅ CORRIGIDO: Usar Id_Estado_Candidatura_Empresa
+                            var empresaDecidiu = cand.Id_Estado_Candidatura_Empresa == 3 || cand.Id_Estado_Candidatura_Empresa == 4;
+                            var empresaAprovou = cand.Id_Estado_Candidatura_Empresa == 3;
+                            var empresaRejeitou = cand.Id_Estado_Candidatura_Empresa == 4;
 
                             <tr>
                                 <td class="info-aluno">

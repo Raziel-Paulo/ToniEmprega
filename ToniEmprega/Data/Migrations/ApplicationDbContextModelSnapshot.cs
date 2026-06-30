@@ -124,6 +124,9 @@ namespace ToniEmprega.Migrations
                     b.Property<int?>("Id_Estado_Candidatura")
                         .HasColumnType("int");
 
+                    b.Property<int?>("Id_Estado_Candidatura_Empresa")
+                        .HasColumnType("int");
+
                     b.Property<int>("Id_Oferta")
                         .HasColumnType("int");
 
@@ -135,6 +138,8 @@ namespace ToniEmprega.Migrations
                     b.HasIndex("Id_Aluno");
 
                     b.HasIndex("Id_Estado_Candidatura");
+
+                    b.HasIndex("Id_Estado_Candidatura_Empresa");
 
                     b.HasIndex("Id_Oferta");
 
@@ -206,6 +211,39 @@ namespace ToniEmprega.Migrations
                             Id = 3,
                             Designacao = "Necessita de Revisão"
                         });
+                });
+
+            modelBuilder.Entity("ToniEmprega.Models.DocumentoValidacao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Caminho_Ficheiro")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Data_Upload")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Id_Validacao_Identidade")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nome_Ficheiro")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tipo_Documento")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Id_Validacao_Identidade");
+
+                    b.ToTable("DocumentosValidacao", (string)null);
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.Empresa", b =>
@@ -463,8 +501,14 @@ namespace ToniEmprega.Migrations
                     b.Property<int?>("Id_Tipo_Oferta")
                         .HasColumnType("int");
 
+                    b.Property<string>("Latitude")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Localizacao")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Longitude")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Requisitos")
@@ -704,21 +748,23 @@ namespace ToniEmprega.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("Data_Validacao")
+                    b.Property<DateTime>("Data_Criacao")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Ficheiro_Prova")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime?>("Data_Validacao")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("Id_Estado_Validacao_Documento")
                         .HasColumnType("int");
 
-                    b.Property<int>("Id_Tipo_Validacao")
+                    b.Property<int?>("Id_Tipo_Validacao")
                         .HasColumnType("int");
 
                     b.Property<int>("Id_Utilizador")
                         .HasColumnType("int");
+
+                    b.Property<string>("Motivo_Rejeicao")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -726,7 +772,8 @@ namespace ToniEmprega.Migrations
 
                     b.HasIndex("Id_Tipo_Validacao");
 
-                    b.HasIndex("Id_Utilizador");
+                    b.HasIndex("Id_Utilizador")
+                        .IsUnique();
 
                     b.ToTable("ValidacoesIdentidade", (string)null);
                 });
@@ -792,6 +839,11 @@ namespace ToniEmprega.Migrations
                         .HasForeignKey("Id_Estado_Candidatura")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("ToniEmprega.Models.EstadoCandidatura", "EstadoCandidaturaEmpresa")
+                        .WithMany()
+                        .HasForeignKey("Id_Estado_Candidatura_Empresa")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("ToniEmprega.Models.Oferta", "Oferta")
                         .WithMany("Candidaturas")
                         .HasForeignKey("Id_Oferta")
@@ -801,6 +853,8 @@ namespace ToniEmprega.Migrations
                     b.Navigation("Aluno");
 
                     b.Navigation("EstadoCandidatura");
+
+                    b.Navigation("EstadoCandidaturaEmpresa");
 
                     b.Navigation("Oferta");
                 });
@@ -814,6 +868,17 @@ namespace ToniEmprega.Migrations
                         .IsRequired();
 
                     b.Navigation("Candidatura");
+                });
+
+            modelBuilder.Entity("ToniEmprega.Models.DocumentoValidacao", b =>
+                {
+                    b.HasOne("ToniEmprega.Models.ValidacaoIdentidade", "ValidacaoIdentidade")
+                        .WithMany("Documentos")
+                        .HasForeignKey("Id_Validacao_Identidade")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ValidacaoIdentidade");
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.Empresa", b =>
@@ -913,8 +978,7 @@ namespace ToniEmprega.Migrations
                     b.HasOne("ToniEmprega.Models.TipoValidacao", "TipoValidacao")
                         .WithMany("Validacoes")
                         .HasForeignKey("Id_Tipo_Validacao")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ToniEmprega.Models.Utilizador", "Utilizador")
                         .WithMany("ValidacoesIdentidade")
@@ -999,6 +1063,11 @@ namespace ToniEmprega.Migrations
             modelBuilder.Entity("ToniEmprega.Models.Utilizador", b =>
                 {
                     b.Navigation("ValidacoesIdentidade");
+                });
+
+            modelBuilder.Entity("ToniEmprega.Models.ValidacaoIdentidade", b =>
+                {
+                    b.Navigation("Documentos");
                 });
 #pragma warning restore 612, 618
         }

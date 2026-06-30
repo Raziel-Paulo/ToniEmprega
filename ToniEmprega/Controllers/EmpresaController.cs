@@ -66,7 +66,9 @@ namespace ToniEmprega.Controllers
                 .CountAsync();
 
             ViewBag.CandidaturasPendentes = await _context.Candidaturas
-                .Where(c => c.Oferta.Id_Empresa == empresa.Id && c.Id_Estado_Candidatura == 1)
+                .Where(c => c.Oferta.Id_Empresa == empresa.Id
+                         && c.Id_Estado_Candidatura == 6  // Aprovada pelo Professor
+                         && c.Id_Estado_Candidatura_Empresa == null) // Empresa ainda não decidiu
                 .CountAsync();
 
             ViewBag.Notificacoes = await _context.Notificacoes
@@ -300,14 +302,19 @@ namespace ToniEmprega.Controllers
                 .Include(c => c.Aluno)
                 .ThenInclude(a => a.Utilizador)
                 .Include(c => c.EstadoCandidatura)
+                .Include(c => c.EstadoCandidaturaEmpresa)
                 .Include(c => c.Ficheiros)
                 .Include(c => c.Avaliacoes)
                 .ThenInclude(a => a.DecisaoAvaliacao)
                 .Where(c => c.Id_Oferta == id)
                 .ToListAsync();
 
+            // ✅ CORRIGIDO: Mostrar apenas candidaturas APROVADAS PELO PROFESSOR (estado 6)
+            // E também as que a empresa já decidiu (para histórico)
             var candidaturasVisiveis = candidaturas
-                .Where(c => c.Avaliacoes?.Any(a => a.Id_Decisao_Avaliacao == 1) == true)
+                .Where(c => c.Id_Estado_Candidatura == 6   // Aprovada pelo Professor
+                         || c.Id_Estado_Candidatura_Empresa == 3  // Aprovada pela Empresa
+                         || c.Id_Estado_Candidatura_Empresa == 4)  // Rejeitada pela Empresa
                 .ToList();
 
             ViewBag.Oferta = oferta;
@@ -331,7 +338,9 @@ namespace ToniEmprega.Controllers
 
             if (candidatura == null) return NotFound();
 
-            candidatura.Id_Estado_Candidatura = 3;
+            // ✅ CORRIGIDO: Usar o campo SEPARADO da empresa
+            candidatura.Id_Estado_Candidatura_Empresa = 3; // Aprovada pela Empresa
+            // NÃO alterar Id_Estado_Candidatura (mantém o estado do professor = 6)
 
             await _context.SaveChangesAsync();
 
@@ -345,7 +354,7 @@ namespace ToniEmprega.Controllers
             });
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Candidato aprovado com sucesso!";
+            TempData["Success"] = "Candidatura aprovada com sucesso!";
             return RedirectToAction("Candidatos", new { id = candidatura.Id_Oferta });
         }
 
@@ -364,7 +373,9 @@ namespace ToniEmprega.Controllers
 
             if (candidatura == null) return NotFound();
 
-            candidatura.Id_Estado_Candidatura = 4;
+            // ✅ CORRIGIDO: Usar o campo SEPARADO da empresa
+            candidatura.Id_Estado_Candidatura_Empresa = 4; // Rejeitada pela Empresa
+            // NÃO alterar Id_Estado_Candidatura (mantém o estado do professor = 6)
 
             await _context.SaveChangesAsync();
 
@@ -378,7 +389,7 @@ namespace ToniEmprega.Controllers
             });
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Candidato rejeitado.";
+            TempData["Success"] = "Candidatura rejeitada.";
             return RedirectToAction("Candidatos", new { id = candidatura.Id_Oferta });
         }
 

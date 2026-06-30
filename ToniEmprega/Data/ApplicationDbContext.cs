@@ -152,6 +152,12 @@ namespace ToniEmprega.Data
                 .HasForeignKey(c => c.Id_Estado_Candidatura)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<Candidatura>()
+                .HasOne(c => c.EstadoCandidaturaEmpresa)
+                .WithMany()
+                .HasForeignKey(c => c.Id_Estado_Candidatura_Empresa)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Ficheiros
             modelBuilder.Entity<CandidaturaFicheiro>()
                 .HasOne(cf => cf.Candidatura)
@@ -285,7 +291,9 @@ namespace ToniEmprega.Data
                 new EstadoCandidatura { Id = 2, Designacao = "Em Análise" },
                 new EstadoCandidatura { Id = 3, Designacao = "Aprovada" },
                 new EstadoCandidatura { Id = 4, Designacao = "Rejeitada" },
-                new EstadoCandidatura { Id = 5, Designacao = "Cancelada" }
+                new EstadoCandidatura { Id = 5, Designacao = "Cancelada" },
+                new EstadoCandidatura { Id = 6, Designacao = "Aprovada pelo Professor" },
+                new EstadoCandidatura { Id = 7, Designacao = "Rejeitada pelo Professor" }
             );
 
             // Decisões de Avaliação

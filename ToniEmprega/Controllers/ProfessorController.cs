@@ -132,13 +132,16 @@ namespace ToniEmprega.Controllers
                 .Include(c => c.Oferta)
                 .FirstAsync(c => c.Id == candidaturaId);
 
-            // Atualizar estado da candidatura
+            // ✅ CORRIGIDO: Estados do Professor SEPARADOS (6 e 7)
             candidatura.Id_Estado_Candidatura = decisaoId switch
             {
-                1 => 3, // Aprovado -> Candidatura Aprovada
-                2 => 4, // Rejeitado -> Candidatura Rejeitada
-                _ => 2  // Necessita Revisão -> Em Análise
+                1 => 6, // Aprovado pelo Professor -> estado 6
+                2 => 7, // Rejeitado pelo Professor -> estado 7
+                3 => 2, // Necessita Revisão -> Em Análise (2)
+                _ => 2
             };
+
+            // NÃO TOCAR no Id_Estado_Candidatura_Empresa - deixa null (Pendente para a empresa)
 
             await _context.SaveChangesAsync();
 
@@ -147,7 +150,7 @@ namespace ToniEmprega.Controllers
             {
                 Id_Utilizador = candidatura.Aluno.Id_Utilizador,
                 Titulo = "Candidatura avaliada!",
-                Mensagem = $"A sua candidatura para '{candidatura.Oferta?.Titulo}' foi avaliada.",
+                Mensagem = $"A sua candidatura para '{candidatura.Oferta?.Titulo}' foi avaliada pelo professor.",
                 Tipo = decisaoId == 1 ? "success" : "warning",
                 Link = "/Aluno/MinhasCandidaturas"
             });
@@ -238,15 +241,16 @@ namespace ToniEmprega.Controllers
             avaliacao.Comentarios = comentarios;
             avaliacao.Data_Avaliacao = DateTime.Now;
 
-            // Atualizar estado da candidatura conforme nova decisão
+            // ✅ CORRIGIDO: Atualizar estado da candidatura (6 e 7 para professor)
             var candidatura = avaliacao.Candidatura;
             candidatura.Id_Estado_Candidatura = decisaoId switch
             {
-                1 => 3, // Aprovado → Candidatura Aprovada
-                2 => 4, // Rejeitado → Candidatura Rejeitada
-                3 => 2, // Necessita Revisão → Em Análise
+                1 => 6, // Aprovado pelo Professor
+                2 => 7, // Rejeitado pelo Professor
+                3 => 2, // Necessita Revisão -> Em Análise
                 _ => 2
             };
+            // NÃO alterar Id_Estado_Candidatura_Empresa aqui
 
             await _context.SaveChangesAsync();
 
@@ -255,8 +259,8 @@ namespace ToniEmprega.Controllers
             {
                 Id_Utilizador = candidatura.Aluno.Id_Utilizador,
                 Titulo = "Avaliação atualizada!",
-                Mensagem = $"A sua candidatura para '{candidatura.Oferta?.Titulo}' teve a avaliação atualizada.",
-                Tipo = decisaoId == 1 ? "success" : "warning",
+                Mensagem = $"A avaliação da sua candidatura para '{candidatura.Oferta.Titulo}' foi atualizada.",
+                Tipo = "info",
                 Link = "/Aluno/MinhasCandidaturas"
             });
             await _context.SaveChangesAsync();

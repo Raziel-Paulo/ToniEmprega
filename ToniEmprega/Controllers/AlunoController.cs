@@ -32,17 +32,22 @@ namespace ToniEmprega.Controllers
                 .Include(c => c.Oferta)
                 .ThenInclude(o => o.Empresa)
                 .Include(c => c.EstadoCandidatura)
+                .Include(c => c.EstadoCandidaturaEmpresa)
                 .Include(c => c.Avaliacoes)
                 .ThenInclude(a => a.DecisaoAvaliacao)
                 .Where(c => c.Id_Aluno == aluno.Id)
                 .OrderByDescending(c => c.Data_Candidatura)
+                .Take(5)
                 .ToListAsync();
 
+            // ✅ CORRIGIDO: Contagens com os novos estados
             ViewBag.TotalCandidaturas = await _context.Candidaturas.CountAsync(c => c.Id_Aluno == aluno.Id);
+
             ViewBag.CandidaturasPendentes = await _context.Candidaturas
                 .CountAsync(c => c.Id_Aluno == aluno.Id && c.Id_Estado_Candidatura == 1);
+
             ViewBag.CandidaturasAprovadas = await _context.Candidaturas
-                .CountAsync(c => c.Id_Aluno == aluno.Id && c.Id_Estado_Candidatura == 3);
+                .CountAsync(c => c.Id_Aluno == aluno.Id && c.Id_Estado_Candidatura_Empresa == 3);
 
             ViewBag.Notificacoes = await _context.Notificacoes
                 .Where(n => n.Id_Utilizador == aluno.Id_Utilizador && !n.Lida)
