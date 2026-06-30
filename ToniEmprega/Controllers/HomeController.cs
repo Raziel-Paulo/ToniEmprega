@@ -26,7 +26,12 @@ namespace ToniEmprega.Controllers
                 .Take(6)
                 .ToListAsync();
 
-            // 🎓 NOVO: Contar alunos registados na base de dados
+            // ✅ ESTATÍSTICAS CORRETAS - contagens diretas da base de dados
+            ViewBag.TotalOfertasAtivas = await _context.Ofertas
+                .CountAsync(o => o.Id_Estado_Oferta == 1);
+
+            ViewBag.TotalEmpresas = await _context.Empresas.CountAsync();
+
             ViewBag.TotalAlunos = await _context.Alunos.CountAsync();
 
             return View(ofertas);

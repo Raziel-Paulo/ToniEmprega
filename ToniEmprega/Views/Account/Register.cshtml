@@ -34,13 +34,29 @@
 
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-user-tag"></i> Tipo de Utilizador</label>
-                <select asp-for="Id_Tipo_Utilizador" class="form-control" required>
+                <select asp-for="Id_Tipo_Utilizador" class="form-control" required id="tipoUtilizador" onchange="mostrarTurmas()">
                     <option value="">Selecione...</option>
                     @foreach (var tipo in ViewBag.TiposUtilizador)
                     {
                         <option value="@tipo.Id">@tipo.Designacao</option>
                     }
                 </select>
+            </div>
+
+            <!-- ✅ COMBO DE TURMAS - SÓ APARECE PARA ALUNOS -->
+            <div class="form-group" id="turmaGroup" style="display: none;">
+                <label class="form-label"><i class="fas fa-users"></i> Turma <span style="color: var(--color-danger);">*</span></label>
+                <select name="idTurma" id="idTurma" class="form-control">
+                    <option value="">Selecione a turma...</option>
+                    @if (ViewBag.Turmas != null)
+                    {
+                        @foreach (var turma in ViewBag.Turmas)
+                        {
+                            <option value="@turma.Id">@turma.Designacao</option>
+                        }
+                    }
+                </select>
+                <small style="color: var(--color-gray);">Obrigatório para alunos</small>
             </div>
 
             <div class="form-group">
@@ -66,3 +82,26 @@
         </div>
     </div>
 </div>
+
+<script>
+    function mostrarTurmas() {
+        var tipoSelect = document.getElementById('tipoUtilizador');
+        var turmaGroup = document.getElementById('turmaGroup');
+        var turmaSelect = document.getElementById('idTurma');
+
+        // ID 1 = Aluno (verifica o teu seed data)
+        if (tipoSelect.value == '1') {
+            turmaGroup.style.display = 'block';
+            turmaSelect.required = true;
+        } else {
+            turmaGroup.style.display = 'none';
+            turmaSelect.required = false;
+            turmaSelect.value = '';
+        }
+    }
+
+    // Verificar no carregamento da página (se houver erro de validação e o tipo já estiver selecionado)
+    document.addEventListener('DOMContentLoaded', function () {
+        mostrarTurmas();
+    });
+</script>

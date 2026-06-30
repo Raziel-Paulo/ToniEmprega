@@ -32,6 +32,7 @@ namespace ToniEmprega.Controllers
             public DateTime DataNascimento { get; set; }
             public int TipoUtilizadorId { get; set; }
             public string TipoDesignacao { get; set; } = string.Empty;
+            public int? IdTurma { get; set; } // ✅ NOVO: Guarda a turma selecionada
         }
 
         public IActionResult Login()
@@ -48,7 +49,7 @@ namespace ToniEmprega.Controllers
                 email = email?.Trim();
 
                 var user = await _context.Utilizadores
-                    .AsNoTracking() // evita tracking desnecessário
+                    .AsNoTracking()
                     .Include(u => u.TipoUtilizador)
                     .FirstOrDefaultAsync(u => u.Email == email);
 
@@ -93,7 +94,6 @@ namespace ToniEmprega.Controllers
                     "Administrador" => RedirectToAction("Dashboard", "Admin"),
                     _ => RedirectToAction("Index", "Home")
                 };
-
             }
             catch (Exception ex)
             {
@@ -105,14 +105,16 @@ namespace ToniEmprega.Controllers
         public async Task<IActionResult> Register()
         {
             await CarregarTiposUtilizadorAsync();
+            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync(); // ✅ CARREGA TURMAS
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword)
+        public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword, int? idTurma = null)
         {
             await CarregarTiposUtilizadorAsync();
+            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync(); // ✅ RECARREGA TURMAS EM CASO DE ERRO
 
             utilizador.Nome = utilizador.Nome?.Trim();
             utilizador.Email = utilizador.Email?.Trim();
@@ -153,6 +155,12 @@ namespace ToniEmprega.Controllers
                 ModelState.AddModelError(string.Empty, "Tipo de utilizador inválido.");
             }
 
+            // ✅ VALIDAÇÃO: Se for Aluno, turma é obrigatória
+            if (tipo != null && tipo.Designacao == "Aluno" && (!idTurma.HasValue || idTurma.Value <= 0))
+            {
+                ModelState.AddModelError(string.Empty, "Tem de selecionar uma turma.");
+            }
+
             if (ModelState.IsValid)
             {
                 var idade = CalcularIdade(utilizador.Data_Nascimento!.Value);
@@ -180,7 +188,8 @@ namespace ToniEmprega.Controllers
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(utilizador.Palavra_Passe),
                 DataNascimento = utilizador.Data_Nascimento!.Value.Date,
                 TipoUtilizadorId = utilizador.Id_Tipo_Utilizador,
-                TipoDesignacao = tipo!.Designacao
+                TipoDesignacao = tipo!.Designacao,
+                IdTurma = idTurma // ✅ GUARDA A TURMA NA SESSÃO
             };
 
             HttpContext.Session.SetString(PendingRegisterKey, JsonSerializer.Serialize(pending));
@@ -262,7 +271,8 @@ namespace ToniEmprega.Controllers
                         Id_Utilizador = utilizador.Id,
                         Curso = string.Empty,
                         Ano_Letivo = string.Empty,
-                        Numero_Aluno = string.Empty
+                        Numero_Aluno = string.Empty,
+                        Id_Turma = pending.IdTurma > 0 ? pending.IdTurma : null // ✅ USA A TURMA DA SESSÃO
                     });
                     break;
                 case "Professor":

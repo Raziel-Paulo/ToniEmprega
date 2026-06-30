@@ -23,12 +23,12 @@
 <div class="stats-grid">
     <div class="stat-card">
         <i class="fas fa-briefcase stat-icon"></i>
-        <span class="stat-number">@Model.Count()</span>
+        <span class="stat-number">@(ViewBag.TotalOfertasAtivas ?? 0)</span>
         <span class="stat-label">Ofertas Ativas</span>
     </div>
     <div class="stat-card">
         <i class="fas fa-building stat-icon"></i>
-        <span class="stat-number">@Model.Select(o => o.Id_Empresa).Distinct().Count()</span>
+        <span class="stat-number">@(ViewBag.TotalEmpresas ?? 0)</span>
         <span class="stat-label">Empresas Parceiras</span>
     </div>
     <div class="stat-card">
