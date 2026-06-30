@@ -1,4 +1,4 @@
-﻿// Models/Aluno.cs (ATUALIZADO)
+﻿// Models/Aluno.cs
 namespace ToniEmprega.Models
 {
     public class Aluno
@@ -6,6 +6,10 @@ namespace ToniEmprega.Models
         public int Id { get; set; }
         public int Id_Utilizador { get; set; }
         public Utilizador Utilizador { get; set; } = null!;
+
+        // NOVO: Ligação à Turma
+        public int? Id_Turma { get; set; }
+        public Turma? Turma { get; set; }
 
         public string Curso { get; set; } = string.Empty;
         public string Ano_Letivo { get; set; } = string.Empty;

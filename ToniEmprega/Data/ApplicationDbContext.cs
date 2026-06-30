@@ -29,6 +29,7 @@ namespace ToniEmprega.Data
         public DbSet<DecisaoAvaliacao> DecisaoAvaliacoes { get; set; }
         public DbSet<CandidaturaFicheiro> CandidaturaFicheiros { get; set; }
         public DbSet<Notificacao> Notificacoes { get; set; }
+        public DbSet<Turma> Turmas { get; set; }
         public DbSet<DocumentoValidacao> DocumentosValidacao { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -68,6 +69,7 @@ namespace ToniEmprega.Data
             modelBuilder.Entity<DecisaoAvaliacao>().ToTable("DecisoesAvaliacao");
             modelBuilder.Entity<AvaliacaoProfessor>().ToTable("AvaliacoesProfessores");
             modelBuilder.Entity<Notificacao>().ToTable("Notificacoes");
+            modelBuilder.Entity<Turma>().ToTable("Turmas");
             modelBuilder.Entity<DocumentoValidacao>().ToTable("DocumentosValidacao");
 
             // Relações
@@ -89,6 +91,14 @@ namespace ToniEmprega.Data
                 .WithOne()
                 .HasForeignKey<Aluno>(a => a.Id_Utilizador)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Aluno -> Turma
+            modelBuilder.Entity<Aluno>()
+                .HasOne(a => a.Turma)
+                .WithMany(t => t.Alunos)
+                .HasForeignKey(a => a.Id_Turma)
+                .OnDelete(DeleteBehavior.SetNull);
+
 
             modelBuilder.Entity<Professor>()
                 .HasOne(p => p.Utilizador)
@@ -302,6 +312,21 @@ namespace ToniEmprega.Data
                 new DecisaoAvaliacao { Id = 2, Designacao = "Rejeitado" },
                 new DecisaoAvaliacao { Id = 3, Designacao = "Necessita de Revisão" }
             );
+
+            // Turmas (Seed)
+            modelBuilder.Entity<Turma>().HasData(
+                new Turma { Id = 1, Designacao = "222" },
+                new Turma { Id = 2, Designacao = "333" },
+                new Turma { Id = 3, Designacao = "444" },
+                new Turma { Id = 4, Designacao = "555" },
+                new Turma { Id = 5, Designacao = "777" },
+                new Turma { Id = 6, Designacao = "888" },
+                new Turma { Id = 7, Designacao = "999" },
+                new Turma { Id = 8, Designacao = "000" },
+                new Turma { Id = 9, Designacao = "111" }
+            );
+
+
         }
     }
 }
