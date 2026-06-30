@@ -1,156 +1,485 @@
 ﻿@* Views/Aluno/Candidatar.cshtml *@
 @{
     ViewData["Title"] = "Candidatar-se";
-    var oferta = ViewBag.Oferta as ToniEmprega.Models.Oferta;
+    var oferta = ViewBag.Oferta as Oferta;
 }
 
-<div style="max-width: 800px; margin: 0 auto;">
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title"><i class="fas fa-file-signature"></i> Candidatura</h2>
+<style>
+    .candidatura-page {
+        max-width: 700px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .candidatura-card {
+        background: var(--color-dark-gray);
+        border: 1px solid var(--color-navy);
+        border-radius: 12px;
+        padding: 2rem;
+    }
+
+    .candidatura-header {
+        background: var(--color-navy);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+        .candidatura-header h3 {
+            color: var(--color-blue);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .candidatura-header p {
+            color: var(--color-gray);
+            margin: 0;
+        }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        color: var(--color-gray);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+        .form-label .required {
+            color: var(--color-danger);
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: var(--color-black);
+        border: 1px solid var(--color-navy);
+        border-radius: 8px;
+        color: var(--color-white);
+        font-size: 1rem;
+        transition: border-color 0.3s;
+        resize: vertical;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-blue);
+            box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1);
+        }
+
+        .form-control.error {
+            border-color: var(--color-danger);
+        }
+
+    .char-counter {
+        text-align: right;
+        color: var(--color-gray);
+        font-size: 0.8rem;
+        margin-top: 0.3rem;
+    }
+
+        .char-counter .min-reached {
+            color: var(--color-success);
+        }
+
+        .char-counter .min-not-reached {
+            color: var(--color-warning);
+        }
+
+    .file-input-wrapper {
+        position: relative;
+        margin-bottom: 0.5rem;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .file-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        background: var(--color-navy);
+        color: var(--color-blue);
+        border: 1px solid var(--color-blue);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .file-label:hover {
+            background: var(--color-blue);
+            color: var(--color-white);
+        }
+
+    .file-list {
+        margin-top: 1rem;
+    }
+
+    .file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.6rem 1rem;
+        background: var(--color-black);
+        border: 1px solid var(--color-navy);
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+    }
+
+        .file-item .file-name {
+            color: var(--color-white);
+            font-size: 0.9rem;
+        }
+
+        .file-item .file-size {
+            color: var(--color-gray);
+            font-size: 0.8rem;
+        }
+
+        .file-item .remove-file {
+            background: none;
+            border: none;
+            color: var(--color-danger);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.2rem;
+        }
+
+            .file-item .remove-file:hover {
+                color: #ff4444;
+            }
+
+    .btn-add-file {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: transparent;
+        color: var(--color-blue);
+        border: 1px dashed var(--color-blue);
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .btn-add-file:hover {
+            background: rgba(30, 144, 255, 0.1);
+        }
+
+        .btn-add-file:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .info-text {
+        color: var(--color-gray);
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+        .info-text i {
+            color: var(--color-blue);
+        }
+
+    .error-message {
+        color: var(--color-danger);
+        font-size: 0.85rem;
+        margin-top: 0.3rem;
+        display: none;
+    }
+
+        .error-message.show {
+            display: block;
+        }
+
+    .btn-submit {
+        width: 100%;
+        padding: 0.8rem;
+        background: var(--color-blue);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+        .btn-submit:hover:not(:disabled) {
+            background: #1873cc;
+            transform: translateY(-2px);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .btn-cancel {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        background: transparent;
+        color: var(--color-gray);
+        border: 1px solid var(--color-navy);
+        border-radius: 6px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+        .btn-cancel:hover {
+            border-color: var(--color-blue);
+            color: var(--color-blue);
+        }
+
+    .actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .validation-summary {
+        background: rgba(220, 53, 69, 0.1);
+        border: 1px solid var(--color-danger);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        color: var(--color-danger);
+    }
+</style>
+
+<div class="candidatura-page">
+    <div class="candidatura-card">
+        <div class="candidatura-header">
+            <h3><i class="fas fa-briefcase"></i> @oferta?.Titulo</h3>
+            <p><i class="fas fa-building"></i> @oferta?.Empresa?.Nome_Empresa</p>
         </div>
 
-        <div style="background-color: var(--color-navy); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-            <h3 style="color: var(--color-blue); margin-bottom: 0.5rem;">@oferta?.Titulo</h3>
-            <p style="color: var(--color-gray); margin: 0;"><i class="fas fa-building"></i> @oferta?.Empresa?.Nome_Empresa</p>
-        </div>
-
-        <form method="post" asp-action="Candidatar" enctype="multipart/form-data" id="formCandidatura">
+        <form asp-action="Candidatar" method="post" enctype="multipart/form-data" id="candidaturaForm">
+            @Html.AntiForgeryToken()
             <input type="hidden" name="ofertaId" value="@oferta?.Id" />
 
+            <!-- Mensagem de Motivação -->
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-comment"></i> Mensagem de Motivação</label>
-                <textarea name="mensagem" class="form-control" rows="4" placeholder="Explica porque te candidatas a esta oferta..."></textarea>
+                <label class="form-label">
+                    <i class="fas fa-comment"></i> Mensagem de Motivação <span class="required">*</span>
+                </label>
+                <textarea name="mensagem" id="mensagem" class="form-control" rows="6"
+                          placeholder="Explica porque te candidatas a esta oferta... (mínimo 50 caracteres)"
+                          minlength="50" required></textarea>
+                <div class="char-counter" id="charCounter">
+                    <span id="charCount">0</span> / 50 caracteres mínimos
+                </div>
+                <div class="error-message" id="mensagemError">A mensagem deve ter pelo menos 50 caracteres.</div>
             </div>
 
+            <!-- Ficheiros -->
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-paperclip"></i> Anexar Ficheiros (CV, Carta de Apresentação)</label>
+                <label class="form-label">
+                    <i class="fas fa-paperclip"></i> Anexar Ficheiros (CV, Carta de Apresentação) <span class="required">*</span>
+                </label>
 
-                <div id="ficheirosContainer">
-                    <div class="ficheiro-input" style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
-                        <input type="file" name="ficheiros" class="form-control" accept=".pdf,.doc,.docx" style="flex: 1;" />
-                        <button type="button" class="btn btn-outline btn-sm btn-remover" onclick="removerFicheiro(this)" style="display: none; padding: 0.5rem 0.75rem;">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                <div id="fileInputsContainer">
+                    <div class="file-input-wrapper">
+                        <input type="file" name="ficheiros" id="ficheiro_0" class="file-input"
+                               accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                        <label for="ficheiro_0" class="file-label">
+                            <i class="fas fa-upload"></i> Escolher ficheiro
+                        </label>
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-outline btn-sm" onclick="adicionarFicheiro()" style="margin-top: 0.5rem;">
+                <button type="button" class="btn-add-file" id="btnAddFile" onclick="addFileInput()">
                     <i class="fas fa-plus"></i> Adicionar outro ficheiro
                 </button>
 
-                <div id="listaFicheiros" style="margin-top: 1rem;"></div>
+                <div class="file-list" id="fileList"></div>
 
-                <small style="color: var(--color-gray); display: block; margin-top: 0.5rem;">
-                    <i class="fas fa-info-circle"></i> Formatos aceites: PDF, DOC, DOCX. Tamanho máximo: 5MB por ficheiro. Podes adicionar quantos ficheiros quiseres.
-                </small>
+                <div class="info-text">
+                    <i class="fas fa-info-circle"></i>
+                    Formatos aceites: PDF, DOC, DOCX. Tamanho máximo: 5MB por ficheiro. Máximo 3 ficheiros.
+                </div>
+                <div class="error-message" id="ficheirosError">É obrigatório anexar pelo menos 1 ficheiro.</div>
             </div>
 
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                <button type="submit" class="btn btn-primary" style="flex: 1;">
+            <!-- Ações -->
+            <div class="actions">
+                <button type="submit" class="btn-submit" id="btnSubmit" disabled>
                     <i class="fas fa-paper-plane"></i> Submeter Candidatura
                 </button>
-                <a href="/Ofertas" class="btn btn-outline">Cancelar</a>
+                <a href="/Ofertas" class="btn-cancel">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
             </div>
         </form>
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        let contadorFicheiros = 1;
+<script>
+    let fileCount = 0;
+    const maxFiles = 3;
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    const allowedExtensions = ['.pdf', '.doc', '.docx'];
 
-        function adicionarFicheiro() {
-            const container = document.getElementById('ficheirosContainer');
-            const novoInput = document.createElement('div');
-            novoInput.className = 'ficheiro-input';
-            novoInput.style.cssText = 'display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;';
-            novoInput.innerHTML = `
-                        <input type="file" name="ficheiros" class="form-control" accept=".pdf,.doc,.docx" style="flex: 1;" onchange="atualizarListaFicheiros()" />
-                        <button type="button" class="btn btn-outline btn-sm" onclick="removerFicheiro(this)" style="padding: 0.5rem 0.75rem; color: #ff4444; border-color: #ff4444;">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    `;
-            container.appendChild(novoInput);
-            contadorFicheiros++;
+    const mensagemInput = document.getElementById('mensagem');
+    const charCounter = document.getElementById('charCounter');
+    const charCount = document.getElementById('charCount');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const fileList = document.getElementById('fileList');
+    const btnAddFile = document.getElementById('btnAddFile');
 
-            // Mostrar botão de remover no primeiro input se houver mais que um
-            const inputs = container.querySelectorAll('.ficheiro-input');
-            if (inputs.length > 1) {
-                inputs[0].querySelector('.btn-remover').style.display = 'inline-block';
-            }
+    // Validar mensagem
+    mensagemInput.addEventListener('input', function() {
+        const len = this.value.length;
+        charCount.textContent = len;
+        if (len >= 50) {
+            charCounter.classList.remove('min-not-reached');
+            charCounter.classList.add('min-reached');
+            this.classList.remove('error');
+            document.getElementById('mensagemError').classList.remove('show');
+        } else {
+            charCounter.classList.remove('min-reached');
+            charCounter.classList.add('min-not-reached');
+        }
+        validateForm();
+    });
+
+    // Adicionar input de ficheiro
+    function addFileInput() {
+        if (fileCount >= maxFiles - 1) return;
+
+        fileCount++;
+        const container = document.getElementById('fileInputsContainer');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'file-input-wrapper';
+        wrapper.innerHTML = `
+            <input type="file" name="ficheiros" id="ficheiro_${fileCount}" class="file-input"
+                   accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            <label for="ficheiro_${fileCount}" class="file-label">
+                <i class="fas fa-upload"></i> Escolher ficheiro
+            </label>
+        `;
+        container.appendChild(wrapper);
+
+        // Bind evento ao novo input
+        const newInput = document.getElementById(`ficheiro_${fileCount}`);
+        newInput.addEventListener('change', handleFileSelect);
+
+        if (fileCount >= maxFiles - 1) {
+            btnAddFile.disabled = true;
+            btnAddFile.style.opacity = '0.5';
+        }
+    }
+
+    // Handler de seleção de ficheiro
+    function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validar tipo
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (!allowedExtensions.includes(ext) && !allowedTypes.includes(file.type)) {
+            alert('Tipo de ficheiro não permitido. Use apenas PDF, DOC ou DOCX.');
+            e.target.value = '';
+            return;
         }
 
-        function removerFicheiro(btn) {
-            const container = document.getElementById('ficheirosContainer');
-            const inputDiv = btn.closest('.ficheiro-input');
-            inputDiv.remove();
-
-            // Se só restar um input, esconder o botão de remover desse
-            const inputs = container.querySelectorAll('.ficheiro-input');
-            if (inputs.length === 1) {
-                inputs[0].querySelector('.btn-remover').style.display = 'none';
-            }
-
-            atualizarListaFicheiros();
+        // Validar tamanho
+        if (file.size > maxFileSize) {
+            alert('Ficheiro demasiado grande (máximo 5MB).');
+            e.target.value = '';
+            return;
         }
 
-        function atualizarListaFicheiros() {
-            const container = document.getElementById('ficheirosContainer');
-            const lista = document.getElementById('listaFicheiros');
-            const inputs = container.querySelectorAll('input[type="file"]');
+        updateFileList();
+        validateForm();
+    }
 
-            let html = '';
-            let totalFicheiros = 0;
+    // Atualizar lista de ficheiros
+    function updateFileList() {
+        fileList.innerHTML = '';
+        const inputs = document.querySelectorAll('input[name=\"ficheiros\"]');
+        let validFiles = 0;
 
-            inputs.forEach((input, index) => {
-                if (input.files && input.files.length > 0) {
-                    const file = input.files[0];
-                    const tamanho = (file.size / 1024 / 1024).toFixed(2);
-                    const cor = tamanho > 5 ? '#ff4444' : 'var(--color-green)';
-                    const icone = tamanho > 5 ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-check-circle"></i>';
-
-                    html += `<div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0; color: var(--color-gray); font-size: 0.9rem;">
-                                ${icone} <strong>${file.name}</strong> <span style="color: ${cor};">(${tamanho} MB)</span>
-                            </div>`;
-                    totalFicheiros++;
-                }
-            });
-
-            if (totalFicheiros > 0) {
-                lista.innerHTML = '<strong style="color: var(--color-blue); font-size: 0.9rem;"><i class="fas fa-list"></i> Ficheiros selecionados:</strong>' + html;
-            } else {
-                lista.innerHTML = '';
-            }
-        }
-
-        // Validar tamanho dos ficheiros antes de submeter
-        document.getElementById('formCandidatura').addEventListener('submit', function (e) {
-            const inputs = document.querySelectorAll('#ficheirosContainer input[type="file"]');
-            const allowedExtensions = ['.pdf', '.doc', '.docx'];
-            const maxSize = 5 * 1024 * 1024; // 5MB
-
-            for (let input of inputs) {
-                if (input.files && input.files.length > 0) {
-                    const file = input.files[0];
-                    const ext = '.' + file.name.split('.').pop().toLowerCase();
-
-                    if (!allowedExtensions.includes(ext)) {
-                        e.preventDefault();
-                        alert('Tipo de ficheiro não permitido: ' + file.name + '. Use apenas PDF, DOC ou DOCX.');
-                        return false;
-                    }
-
-                    if (file.size > maxSize) {
-                        e.preventDefault();
-                        alert('Ficheiro demasiado grande: ' + file.name + ' (máximo 5MB).');
-                        return false;
-                    }
-                }
+        inputs.forEach((input, index) => {
+            if (input.files && input.files[0]) {
+                validFiles++;
+                const file = input.files[0];
+                const size = (file.size / 1024 / 1024).toFixed(2);
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `
+                    <div>
+                        <span class="file-name\"><i class=\"fas fa-file\"></i> ${file.name}</span>
+                        <span class=\"file-size\">(${size} MB)</span>
+                    </div>
+                    <button type=\"button\" class=\"remove-file\" onclick=\"removeFile(${index})\" title=\"Remover\">
+                        <i class=\"fas fa-trash\"></i>
+                    </button>
+                `;
+                fileList.appendChild(item);
             }
         });
 
-        // Adicionar listener para o primeiro input também
-        document.querySelector('#ficheirosContainer input[type="file"]').addEventListener('change', atualizarListaFicheiros);
-    </script>
-}
+        if (validFiles > 0) {
+            document.getElementById('ficheirosError').classList.remove('show');
+        }
+
+        return validFiles;
+    }
+
+    // Remover ficheiro
+    function removeFile(index) {
+        const inputs = document.querySelectorAll('input[name=\"ficheiros\"]');
+        if (inputs[index]) {
+            inputs[index].value = '';
+            updateFileList();
+            validateForm();
+        }
+    }
+
+    // Validar formulário completo
+    function validateForm() {
+        const mensagemOk = mensagemInput.value.length >= 50;
+        const filesOk = updateFileList() > 0;
+
+        btnSubmit.disabled = !(mensagemOk && filesOk);
+    }
+
+    // Bind inicial
+    document.getElementById('ficheiro_0').addEventListener('change', handleFileSelect);
+
+    // Validar no submit
+    document.getElementById('candidaturaForm').addEventListener('submit', function(e) {
+        const mensagemOk = mensagemInput.value.length >= 50;
+        const filesOk = updateFileList() > 0;
+
+        if (!mensagemOk) {
+            e.preventDefault();
+            mensagemInput.classList.add('error');
+            document.getElementById('mensagemError').classList.add('show');
+            mensagemInput.focus();
+            return false;
+        }
+
+        if (!filesOk) {
+            e.preventDefault();
+            document.getElementById('ficheirosError').classList.add('show');
+            return false;
+        }
+    });
+</script>

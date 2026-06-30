@@ -153,29 +153,48 @@ namespace ToniEmprega.Controllers
             var aluno = await GetCurrentAluno();
             if (aluno == null) return RedirectToAction("Login", "Account");
 
-            // VALIDA\u00c7\u00c3O DE FICHEIROS - CORRIGIDO
-            if (ficheiros != null && ficheiros.Count > 0)
+            // ✅ VALIDAÇÃO: Mensagem obrigatória (mínimo 50 caracteres)
+            if (string.IsNullOrWhiteSpace(mensagem) || mensagem.Length < 50)
             {
-                var allowedExtensions = new[] { ".pdf", ".doc", ".docx" };
-                var allowedTypes = new[] { "application/pdf", "application/msword",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
-                const long maxSize = 5 * 1024 * 1024; // 5MB
+                TempData["Error"] = "A mensagem de motivação deve ter pelo menos 50 caracteres.";
+                return RedirectToAction("Candidatar", new { id = ofertaId });
+            }
 
-                foreach (var ficheiro in ficheiros)
+            // ✅ VALIDAÇÃO: Pelo menos 1 ficheiro
+            if (ficheiros == null || ficheiros.Count == 0 || ficheiros.All(f => f.Length == 0))
+            {
+                TempData["Error"] = "É obrigatório anexar pelo menos 1 ficheiro (CV, Carta de Apresentação, etc.).";
+                return RedirectToAction("Candidatar", new { id = ofertaId });
+            }
+
+            // ✅ VALIDAÇÃO: Máximo 3 ficheiros
+            var ficheirosValidos = ficheiros.Where(f => f.Length > 0).ToList();
+            if (ficheirosValidos.Count > 3)
+            {
+                TempData["Error"] = "Pode anexar no máximo 3 ficheiros.";
+                return RedirectToAction("Candidatar", new { id = ofertaId });
+            }
+
+            // ✅ VALIDAÇÃO: Tipos e tamanhos dos ficheiros
+            var allowedExtensions = new[] { ".pdf", ".doc", ".docx" };
+            var allowedTypes = new[] { "application/pdf", "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document" };
+            const long maxSize = 5 * 1024 * 1024; // 5MB
+
+            foreach (var ficheiro in ficheirosValidos)
+            {
+                var ext = Path.GetExtension(ficheiro.FileName).ToLower();
+
+                if (!allowedExtensions.Contains(ext) || !allowedTypes.Contains(ficheiro.ContentType))
                 {
-                    // CORRE\u00c7\u00c3O: Declarar ext fora do if para usar depois
-                    var ext = Path.GetExtension(ficheiro.FileName).ToLower();
+                    TempData["Error"] = $"O ficheiro '{ficheiro.FileName}' não é permitido. Use apenas PDF, DOC ou DOCX.";
+                    return RedirectToAction("Candidatar", new { id = ofertaId });
+                }
 
-                    if (!allowedExtensions.Contains(ext) || !allowedTypes.Contains(ficheiro.ContentType))
-                    {
-                        TempData["Error"] = "Tipo de ficheiro n\u00e3o permitido. Use apenas PDF, DOC ou DOCX.";
-                        return RedirectToAction("Candidatar", new { id = ofertaId });
-                    }
-                    if (ficheiro.Length > maxSize)
-                    {
-                        TempData["Error"] = "Ficheiro demasiado grande (m\u00e1ximo 5MB).";
-                        return RedirectToAction("Candidatar", new { id = ofertaId });
-                    }
+                if (ficheiro.Length > maxSize)
+                {
+                    TempData["Error"] = $"O ficheiro '{ficheiro.FileName}' excede o tamanho máximo de 5MB.";
+                    return RedirectToAction("Candidatar", new { id = ofertaId });
                 }
             }
 
@@ -183,46 +202,42 @@ namespace ToniEmprega.Controllers
             {
                 Id_Oferta = ofertaId,
                 Id_Aluno = aluno.Id,
-                Id_Estado_Candidatura = 1,
+                Id_Estado_Candidatura = 1, // Pendente
                 Data_Candidatura = DateTime.Now,
-                Mensagem = mensagem
+                Mensagem = mensagem.Trim()
             };
 
             _context.Candidaturas.Add(candidatura);
             await _context.SaveChangesAsync();
 
             // Processar ficheiros
-            if (ficheiros != null && ficheiros.Count > 0)
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "candidaturas");
+            Directory.CreateDirectory(uploadsFolder);
+
+            foreach (var ficheiro in ficheirosValidos)
             {
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "candidaturas");
-                Directory.CreateDirectory(uploadsFolder);
+                var ext = Path.GetExtension(ficheiro.FileName).ToLower();
+                var uniqueName = $"{Guid.NewGuid()}_{Path.GetFileName(ficheiro.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, uniqueName);
 
-                foreach (var ficheiro in ficheiros)
+                using (var stream = new FileStream(filePath, FileMode.Create))
                 {
-                    if (ficheiro.Length > 0)
-                    {
-                        var ext = Path.GetExtension(ficheiro.FileName).ToLower(); // CORRE\u00c7\u00c3O: declarar novamente aqui
-                        var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(ficheiro.FileName)}";
-                        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                        using (var stream = new FileStream(filePath, FileMode.Create))
-                        {
-                            await ficheiro.CopyToAsync(stream);
-                        }
-
-                        _context.CandidaturaFicheiros.Add(new CandidaturaFicheiro
-                        {
-                            Id_Candidatura = candidatura.Id,
-                            Tipo_Ficheiro = ext == ".pdf" ? "CV" : "Anexo",
-                            Nome_Ficheiro = ficheiro.FileName,
-                            Caminho_Ficheiro = $"/uploads/candidaturas/{uniqueFileName}",
-                            Data_Upload = DateTime.Now
-                        });
-                    }
+                    await ficheiro.CopyToAsync(stream);
                 }
-                await _context.SaveChangesAsync();
+
+                _context.CandidaturaFicheiros.Add(new CandidaturaFicheiro
+                {
+                    Id_Candidatura = candidatura.Id,
+                    Nome_Ficheiro = ficheiro.FileName,
+                    Caminho_Ficheiro = $"/uploads/candidaturas/{uniqueName}",
+                    Tipo_Ficheiro = ficheiro.ContentType,
+                    //Tamanho_Ficheiro = ficheiro.Length
+                });
             }
 
+            await _context.SaveChangesAsync();
+
+            // Notificar empresa
             var oferta = await _context.Ofertas
                 .Include(o => o.Empresa)
                 .FirstAsync(o => o.Id == ofertaId);
@@ -230,10 +245,9 @@ namespace ToniEmprega.Controllers
             _context.Notificacoes.Add(new Notificacao
             {
                 Id_Utilizador = oferta.Empresa.Id_Utilizador,
-                Titulo = "Nova candidatura!",
-                Mensagem = $"Recebeu uma nova candidatura para '{oferta.Titulo}'",
-                Tipo = "success",
-                Link = $"/Empresa/Candidatos/{ofertaId}"
+                Titulo = "Nova Candidatura!",
+                Mensagem = $"{aluno.Utilizador.Nome} candidatou-se à oferta '{oferta.Titulo}'.",
+                Tipo = "info"
             });
             await _context.SaveChangesAsync();
 

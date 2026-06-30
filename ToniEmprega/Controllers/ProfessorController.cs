@@ -65,10 +65,12 @@ namespace ToniEmprega.Controllers
                 .Include(c => c.Oferta)
                 .ThenInclude(o => o.Empresa)
                 .Include(c => c.EstadoCandidatura)
+                .Include(c => c.EstadoCandidaturaEmpresa)  // ✅ IMPORTANTE: incluir estado da empresa
                 .Include(c => c.Ficheiros)
                 .Include(c => c.Avaliacoes)
                     .ThenInclude(a => a.DecisaoAvaliacao)
                 .Where(c => c.Id_Estado_Candidatura == 1 || c.Id_Estado_Candidatura == 2
+                    || c.Id_Estado_Candidatura == 5 || c.Id_Estado_Candidatura == 6 || c.Id_Estado_Candidatura == 7
                     || candidaturasAvaliadasIds.Contains(c.Id))
                 .OrderByDescending(c => c.Data_Candidatura)
                 .ToListAsync();
@@ -114,6 +116,13 @@ namespace ToniEmprega.Controllers
         {
             var professor = await GetCurrentProfessor();
             if (professor == null) return RedirectToAction("Login", "Account");
+
+            // ✅ VALIDAÇÃO: Comentários obrigatórios
+            if (string.IsNullOrWhiteSpace(comentarios) || comentarios.Length < 50)
+            {
+                TempData["Error"] = "Os comentários são obrigatórios e devem ter pelo menos 50 caracteres.";
+                return RedirectToAction("Avaliar", new { id = candidaturaId });
+            }
 
             var avaliacao = new AvaliacaoProfessor
             {
