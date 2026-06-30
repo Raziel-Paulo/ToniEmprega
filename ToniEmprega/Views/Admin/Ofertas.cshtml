@@ -60,20 +60,20 @@
                                 <td>@oferta.TipoOferta?.Designacao</td>
                                 <td>
                                     <span class="badge @(oferta.Id_Estado_Oferta == 1 ? "badge-approved" :
-                                                                                                  oferta.Id_Estado_Oferta == 4 ? "badge-rejected" : "badge-pending")">
-                                    @oferta.EstadoOferta?.Designacao
-                                </span>
-                            </td>
-                            <td>@oferta.Data_Publicacao.ToString("dd/MM/yyyy")</td>
-                            <td style="text-align: center;">
-                                <span class="badge badge-pending">@oferta.Candidaturas?.Count</span>
-                            </td>
-                            <td>
-                                <form method="post" asp-action="AlterarEstadoOferta" style="display: inline;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@oferta.Id" />
-                                    <select name="novoEstado" class="form-control" style="width: auto; display: inline;" onchange="this.form.submit()">
-                                        @foreach (var estado in ViewBag.EstadosOferta)
+                                                                                                                                            oferta.Id_Estado_Oferta == 4 || oferta.Id_Estado_Oferta == 5 ? "badge-rejected" : "badge-pending")">
+                                        @oferta.EstadoOferta?.Designacao
+                                    </span>
+                                </td>
+                                <td>@oferta.Data_Publicacao.ToString("dd/MM/yyyy")</td>
+                                <td style="text-align: center;">
+                                    <span class="badge badge-pending">@oferta.Candidaturas?.Count</span>
+                                </td>
+                                <td>
+                                    <form method="post" asp-action="AlterarEstadoOferta" style="display: inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@oferta.Id" />
+                                        <select name="novoEstado" class="form-control" style="width: auto; display: inline;" onchange="this.form.submit()">
+                                            @foreach (var estado in ViewBag.EstadosOferta)
                                             {
                                                 <option value="@estado.Id" selected="@(oferta.Id_Estado_Oferta == estado.Id)">
                                                     @estado.Designacao
@@ -81,6 +81,24 @@
                                             }
                                         </select>
                                     </form>
+
+                                    <form method="post" asp-action="BloquearDesbloquearOferta" style="display: inline; margin-left: 0.5rem;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@oferta.Id" />
+                                        @if (oferta.Id_Estado_Oferta == 5)
+                                        {
+                                            <button type="submit" class="btn btn-success btn-sm" title="Desbloquear oferta">
+                                                <i class="fas fa-lock-open"></i> Desbloquear
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-warning btn-sm" title="Bloquear oferta" onclick="return confirm('Bloquear esta oferta? Deixará de ser visível para candidatos.');">
+                                                <i class="fas fa-lock"></i> Bloquear
+                                            </button>
+                                        }
+                                    </form>
+
                                     <form method="post" asp-action="EliminarOferta" style="display: inline; margin-left: 0.5rem;"
                                           onsubmit="return confirm('Tem certeza?');">
                                         @Html.AntiForgeryToken()

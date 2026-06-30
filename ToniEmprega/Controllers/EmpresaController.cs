@@ -211,6 +211,7 @@ namespace ToniEmprega.Controllers
 
             var empresa = await GetCurrentEmpresa();
             var oferta = await _context.Ofertas
+                .Include(o => o.EstadoOferta)
                 .FirstOrDefaultAsync(o => o.Id == id && o.Id_Empresa == empresa!.Id);
 
             if (oferta == null) return NotFound();
@@ -253,6 +254,17 @@ namespace ToniEmprega.Controllers
             existing.Data_Expiracao = oferta.Data_Expiracao;
             existing.Latitude = oferta.Latitude;
             existing.Longitude = oferta.Longitude;
+
+            // ✅ NOVO: a empresa só pode alternar entre Ativa (1) e Desativada (4).
+            // Estados geridos pelo sistema/admin (Expirada=2, Preenchida=3) não podem
+            // ser definidos manualmente pela empresa por aqui.
+            if (existing.Id_Estado_Oferta == 1 || existing.Id_Estado_Oferta == 4)
+            {
+                if (oferta.Id_Estado_Oferta == 1 || oferta.Id_Estado_Oferta == 4)
+                {
+                    existing.Id_Estado_Oferta = oferta.Id_Estado_Oferta;
+                }
+            }
 
             await _context.SaveChangesAsync();
             TempData["Success"] = "Oferta atualizada com sucesso!";

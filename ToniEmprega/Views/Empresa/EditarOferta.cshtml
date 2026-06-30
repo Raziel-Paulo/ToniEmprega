@@ -23,6 +23,31 @@
                 <input asp-for="Titulo" class="form-control" required />
             </div>
 
+            @if (Model.Id_Estado_Oferta == 1 || Model.Id_Estado_Oferta == 4)
+            {
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-toggle-on"></i> Estado da Oferta</label>
+                    <select asp-for="Id_Estado_Oferta" class="form-control">
+                        <option value="1" selected="@(Model.Id_Estado_Oferta == 1)">Ativa</option>
+                        <option value="4" selected="@(Model.Id_Estado_Oferta == 4)">Desativada (pausada)</option>
+                    </select>
+                    <small style="color: var(--color-gray); display: block; margin-top: 0.25rem;">
+                        <i class="fas fa-info-circle"></i> Desative a oferta para deixar de receber candidaturas sem a eliminar. Pode reativá-la depois.
+                    </small>
+                </div>
+            }
+            else
+            {
+                <input type="hidden" asp-for="Id_Estado_Oferta" />
+                <div class="form-group">
+                    <label class="form-label">Estado da Oferta</label>
+                    <div class="form-control" style="background: #f5f5f5;">@Model.EstadoOferta?.Designacao</div>
+                    <small style="color: var(--color-gray); display: block; margin-top: 0.25rem;">
+                        <i class="fas fa-info-circle"></i> Este estado é gerido automaticamente pela plataforma e não pode ser alterado manualmente.
+                    </small>
+                </div>
+            }
+
             <div class="form-group">
                 <label class="form-label">Tipo</label>
                 <select asp-for="Id_Tipo_Oferta" class="form-control" required>

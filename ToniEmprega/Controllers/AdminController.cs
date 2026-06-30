@@ -248,6 +248,40 @@ namespace ToniEmprega.Controllers
             return RedirectToAction("Ofertas");
         }
 
+        // ✅ NOVO: Bloquear/Desbloquear oferta (alterna entre Ativa=1 e Bloqueada=5)
+        // Usa um estado próprio (Bloqueada) distinto de "Desativada" para que a
+        // empresa NUNCA consiga desbloquear uma oferta bloqueada pelo admin.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BloquearDesbloquearOferta(int id)
+        {
+            var oferta = await _context.Ofertas
+                .Include(o => o.Empresa)
+                .ThenInclude(e => e.Utilizador)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (oferta == null) return NotFound();
+
+            bool vaiBloquear = oferta.Id_Estado_Oferta != 5;
+            oferta.Id_Estado_Oferta = vaiBloquear ? 5 : 1;
+            await _context.SaveChangesAsync();
+
+            _context.Notificacoes.Add(new Notificacao
+            {
+                Id_Utilizador = oferta.Empresa.Id_Utilizador,
+                Titulo = vaiBloquear ? "Oferta bloqueada pelo administrador" : "Oferta desbloqueada pelo administrador",
+                Mensagem = vaiBloquear
+                    ? $"A sua oferta '{oferta.Titulo}' foi bloqueada por um administrador e deixou de estar visível para candidatos."
+                    : $"A sua oferta '{oferta.Titulo}' foi desbloqueada e está novamente ativa.",
+                Tipo = vaiBloquear ? "warning" : "success",
+                Link = "/Empresa/MinhasOfertas"
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = vaiBloquear ? "Oferta bloqueada com sucesso!" : "Oferta desbloqueada com sucesso!";
+            return RedirectToAction("Ofertas");
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EliminarOferta(int id)

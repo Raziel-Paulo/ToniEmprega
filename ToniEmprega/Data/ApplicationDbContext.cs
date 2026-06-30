@@ -292,7 +292,8 @@ namespace ToniEmprega.Data
                 new EstadoOferta { Id = 1, Designacao = "Ativa" },
                 new EstadoOferta { Id = 2, Designacao = "Expirada" },
                 new EstadoOferta { Id = 3, Designacao = "Preenchida" },
-                new EstadoOferta { Id = 4, Designacao = "Desativada" }
+                new EstadoOferta { Id = 4, Designacao = "Desativada" },
+                new EstadoOferta { Id = 5, Designacao = "Bloqueada" }
             );
 
             // Estados de Candidatura
