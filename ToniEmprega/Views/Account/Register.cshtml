@@ -34,13 +34,21 @@
 
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-user-tag"></i> Tipo de Utilizador</label>
-                <select asp-for="Id_Tipo_Utilizador" class="form-control" required id="tipoUtilizador" onchange="mostrarTurmas()">
+                <select asp-for="Id_Tipo_Utilizador" class="form-control" required id="tipoUtilizador" onchange="mostrarCamposEspecificos()">
                     <option value="">Selecione...</option>
                     @foreach (var tipo in ViewBag.TiposUtilizador)
                     {
                         <option value="@tipo.Id">@tipo.Designacao</option>
                     }
                 </select>
+            </div>
+
+            <!-- ✅ CAMPO DE NÚMERO DE ALUNO - SÓ APARECE PARA ALUNOS -->
+            <div class="form-group" id="numeroAlunoGroup" style="display: none;">
+                <label class="form-label"><i class="fas fa-hashtag"></i> Número de Aluno <span style="color: var(--color-danger);">*</span></label>
+                <input type="text" name="numeroAluno" id="numeroAluno" class="form-control"
+                       placeholder="Ex: 2024001" maxlength="20" />
+                <small style="color: var(--color-gray);">Apenas números permitidos</small>
             </div>
 
             <!-- ✅ COMBO DE TURMAS - SÓ APARECE PARA ALUNOS -->
@@ -84,24 +92,41 @@
 </div>
 
 <script>
-    function mostrarTurmas() {
+    function mostrarCamposEspecificos() {
         var tipoSelect = document.getElementById('tipoUtilizador');
         var turmaGroup = document.getElementById('turmaGroup');
         var turmaSelect = document.getElementById('idTurma');
+        var numeroAlunoGroup = document.getElementById('numeroAlunoGroup');
+        var numeroAlunoInput = document.getElementById('numeroAluno');
 
         // ID 1 = Aluno (verifica o teu seed data)
         if (tipoSelect.value == '1') {
+            // Mostrar campos do aluno
             turmaGroup.style.display = 'block';
             turmaSelect.required = true;
+
+            numeroAlunoGroup.style.display = 'block';
+            numeroAlunoInput.required = true;
         } else {
+            // Esconder campos do aluno
             turmaGroup.style.display = 'none';
             turmaSelect.required = false;
             turmaSelect.value = '';
+
+            numeroAlunoGroup.style.display = 'none';
+            numeroAlunoInput.required = false;
+            numeroAlunoInput.value = '';
         }
     }
 
+    // ✅ VALIDAÇÃO: Apenas números no campo número de aluno
+    document.getElementById('numeroAluno').addEventListener('input', function (e) {
+        // Remove tudo que não seja número
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+
     // Verificar no carregamento da página (se houver erro de validação e o tipo já estiver selecionado)
     document.addEventListener('DOMContentLoaded', function () {
-        mostrarTurmas();
+        mostrarCamposEspecificos();
     });
 </script>

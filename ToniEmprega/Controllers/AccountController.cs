@@ -33,6 +33,7 @@ namespace ToniEmprega.Controllers
             public int TipoUtilizadorId { get; set; }
             public string TipoDesignacao { get; set; } = string.Empty;
             public int? IdTurma { get; set; } // ✅ NOVO: Guarda a turma selecionada
+            public string? NumeroAluno { get; set; } // ✅ NOVO: Guarda o número de aluno
         }
 
         public IActionResult Login()
@@ -111,7 +112,7 @@ namespace ToniEmprega.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword, int? idTurma = null)
+        public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword, int? idTurma = null, string? numeroAluno = null)
         {
             await CarregarTiposUtilizadorAsync();
             ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync(); // ✅ RECARREGA TURMAS EM CASO DE ERRO
@@ -161,6 +162,12 @@ namespace ToniEmprega.Controllers
                 ModelState.AddModelError(string.Empty, "Tem de selecionar uma turma.");
             }
 
+            // ✅ VALIDAÇÃO: Se for Aluno, número de aluno é obrigatório
+            if (tipo != null && tipo.Designacao == "Aluno" && string.IsNullOrWhiteSpace(numeroAluno))
+            {
+                ModelState.AddModelError(string.Empty, "Tem de indicar o número de aluno.");
+            }
+
             if (ModelState.IsValid)
             {
                 var idade = CalcularIdade(utilizador.Data_Nascimento!.Value);
@@ -189,7 +196,8 @@ namespace ToniEmprega.Controllers
                 DataNascimento = utilizador.Data_Nascimento!.Value.Date,
                 TipoUtilizadorId = utilizador.Id_Tipo_Utilizador,
                 TipoDesignacao = tipo!.Designacao,
-                IdTurma = idTurma // ✅ GUARDA A TURMA NA SESSÃO
+                IdTurma = idTurma, // ✅ GUARDA A TURMA NA SESSÃO
+                NumeroAluno = numeroAluno // ✅ GUARDA O NÚMERO DE ALUNO NA SESSÃO
             };
 
             HttpContext.Session.SetString(PendingRegisterKey, JsonSerializer.Serialize(pending));
@@ -271,7 +279,7 @@ namespace ToniEmprega.Controllers
                         Id_Utilizador = utilizador.Id,
                         Curso = string.Empty,
                         Ano_Letivo = string.Empty,
-                        Numero_Aluno = string.Empty,
+                        Numero_Aluno = pending.NumeroAluno ?? string.Empty, // ✅ USA O NÚMERO DE ALUNO DA SESSÃO
                         Id_Turma = pending.IdTurma > 0 ? pending.IdTurma : null // ✅ USA A TURMA DA SESSÃO
                     });
                     break;
