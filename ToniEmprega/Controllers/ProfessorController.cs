@@ -63,7 +63,7 @@ namespace ToniEmprega.Controllers
                 .Include(c => c.Aluno)
                 .ThenInclude(a => a.Utilizador)
                 .Include(c => c.Aluno)
-                .ThenInclude(a => a.Turma) // ✅ INCLUI TURMA
+                .ThenInclude(a => a.Turma)
                 .Include(c => c.Oferta)
                 .ThenInclude(o => o.Empresa)
                 .Include(c => c.EstadoCandidatura)
@@ -76,13 +76,13 @@ namespace ToniEmprega.Controllers
                     || candidaturasAvaliadasIds.Contains(c.Id))
                 .AsQueryable();
 
-            // ✅ FILTRO POR TURMA
+            // FILTRO POR TURMA
             if (turmaId.HasValue && turmaId.Value > 0)
             {
                 query = query.Where(c => c.Aluno.Id_Turma == turmaId.Value);
             }
 
-            // ✅ FILTRO POR NÚMERO DE ALUNO (pesquisa parcial)
+            // FILTRO POR NÚMERO DE ALUNO (pesquisa parcial)
             if (!string.IsNullOrWhiteSpace(numeroAluno))
             {
                 query = query.Where(c => c.Aluno.Numero_Aluno.Contains(numeroAluno));
@@ -93,9 +93,9 @@ namespace ToniEmprega.Controllers
                 .ToListAsync();
 
             ViewBag.ProfessorId = professor.Id;
-            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync(); // ✅ LISTA DE TURMAS PARA O FILTRO
-            ViewBag.TurmaId = turmaId; // ✅ VALOR SELECIONADO
-            ViewBag.NumeroAluno = numeroAluno; // ✅ VALOR DIGITADO
+            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync();
+            ViewBag.TurmaId = turmaId;
+            ViewBag.NumeroAluno = numeroAluno;
 
             return View(candidaturas);
         }

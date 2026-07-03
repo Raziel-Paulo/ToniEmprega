@@ -69,7 +69,7 @@
             gap: 0.5rem;
         }
 
-    /* ✅ NOVO: Área de filtros */
+    /* Filtros */
     .filtros-card {
         background: var(--color-dark-gray);
         border: 1px solid var(--color-navy);
@@ -105,19 +105,13 @@
             border: 1px solid var(--color-navy);
             border-radius: 6px;
             color: var(--color-white);
+            transition: border-color 0.3s;
         }
 
-        .filtros-form .btn-filtrar {
-            padding: 0.6rem 1.2rem;
-            background: var(--color-blue);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
+            .filtros-form .form-control:focus {
+                outline: none;
+                border-color: var(--color-blue);
+            }
 
         .filtros-form .btn-limpar {
             padding: 0.6rem 1.2rem;
@@ -129,7 +123,14 @@
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
+            cursor: pointer;
+            transition: all 0.2s;
         }
+
+            .filtros-form .btn-limpar:hover {
+                border-color: var(--color-blue);
+                color: var(--color-blue);
+            }
 
     .candidaturas-card {
         background: var(--color-dark-gray);
@@ -160,14 +161,18 @@
             vertical-align: middle;
         }
 
-        .candidaturas-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        /* ✅ NOVO: Linha maior para acomodar mais info */
         .candidaturas-table tr {
             min-height: 80px;
         }
+
+            .candidaturas-table tr:last-child td {
+                border-bottom: none;
+            }
+
+            /* ✅ Linha escondida pelo filtro JS */
+            .candidaturas-table tr.hidden-row {
+                display: none !important;
+            }
 
     .badge-estado {
         display: inline-block;
@@ -200,12 +205,6 @@
         background: rgba(220, 53, 69, 0.2);
         color: #dc3545;
         border: 1px solid rgba(220, 53, 69, 0.3);
-    }
-
-    .badge-emp-decidida {
-        background: rgba(128, 128, 128, 0.2);
-        color: #888;
-        border: 1px solid rgba(128, 128, 128, 0.3);
     }
 
     .btn-acao {
@@ -241,7 +240,6 @@
             color: white;
         }
 
-    /* ✅ NOVO: Info do aluno com turma e número */
     .info-aluno {
         display: flex;
         flex-direction: column;
@@ -304,6 +302,18 @@
             margin-bottom: 1rem;
         }
 
+    /* ✅ Contador de resultados */
+    .resultados-info {
+        color: var(--color-gray);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        padding: 0 0.5rem;
+    }
+
+        .resultados-info strong {
+            color: var(--color-blue);
+        }
+
     @@media (max-width: 768px) {
         .prof-dashboard {
             flex-direction: column;
@@ -345,16 +355,16 @@
             <h2><i class="fas fa-clipboard-check"></i> Candidaturas para Avaliação</h2>
         </div>
 
-        <!-- ✅ NOVO: Filtros -->
+        <!-- ✅ Filtros com pesquisa em tempo real -->
         <div class="filtros-card">
-            <form method="get" class="filtros-form">
+            <div class="filtros-form">
                 <div class="form-group">
                     <label><i class="fas fa-users"></i> Turma</label>
-                    <select name="turmaId" class="form-control">
+                    <select id="filtroTurma" class="form-control" onchange="filtrarTabela()">
                         <option value="">Todas as turmas</option>
                         @foreach (var turma in ViewBag.Turmas)
                         {
-                            <option value="@turma.Id" selected="@(ViewBag.TurmaId == turma.Id)">
+                            <option value="@turma.Designacao" selected="@(ViewBag.TurmaId == turma.Id)">
                                 @turma.Designacao
                             </option>
                         }
@@ -362,24 +372,27 @@
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-hashtag"></i> Número de Aluno</label>
-                    <input type="text" name="numeroAluno" class="form-control"
+                    <input type="text" id="filtroNumero" class="form-control"
                            value="@ViewBag.NumeroAluno"
                            placeholder="Digite o número..."
-                           maxlength="20" />
+                           maxlength="20"
+                           oninput="filtrarTabela()" />
                 </div>
-                <button type="submit" class="btn-filtrar">
-                    <i class="fas fa-filter"></i> Filtrar
-                </button>
-                <a href="/Professor/Candidaturas" class="btn-limpar">
+                <button type="button" class="btn-limpar" onclick="limparFiltros()">
                     <i class="fas fa-times"></i> Limpar
-                </a>
-            </form>
+                </button>
+            </div>
+        </div>
+
+        <!-- ✅ Contador de resultados visíveis -->
+        <div class="resultados-info">
+            <i class="fas fa-list"></i> A mostrar <strong id="contadorResultados">@Model.Count()</strong> candidaturas
         </div>
 
         <div class="candidaturas-card">
             @if (Model.Any())
             {
-                <table class="candidaturas-table">
+                <table class="candidaturas-table" id="tabelaCandidaturas">
                     <thead>
                         <tr>
                             <th>Aluno</th>
@@ -396,27 +409,27 @@
                             var jaAvaliou = cand.Avaliacoes?.Any(a => a.Id_Professor == ViewBag.ProfessorId) ?? false;
                             var minhaAvaliacao = cand.Avaliacoes?.FirstOrDefault(a => a.Id_Professor == ViewBag.ProfessorId);
 
-                            <tr>
+                            <!-- ✅ data attributes para filtrar no JS -->
+                            <tr data-turma="@(cand.Aluno?.Turma?.Designacao ?? "")"
+                                data-numero="@(cand.Aluno?.Numero_Aluno ?? "")">
+
                                 <td>
                                     <div class="info-aluno">
                                         <span class="aluno-nome">@cand.Aluno?.Utilizador?.Nome</span>
                                         <span class="aluno-email">@cand.Aluno?.Utilizador?.Email</span>
                                         <div class="aluno-meta">
-                                            <!-- ✅ TURMA -->
                                             @if (cand.Aluno?.Turma != null)
                                             {
                                                 <span class="aluno-tag tag-turma">
                                                     <i class="fas fa-users"></i> @cand.Aluno.Turma.Designacao
                                                 </span>
                                             }
-                                            <!-- ✅ NÚMERO DE ALUNO -->
                                             @if (!string.IsNullOrEmpty(cand.Aluno?.Numero_Aluno))
                                             {
                                                 <span class="aluno-tag tag-numero">
                                                     <i class="fas fa-hashtag"></i> @cand.Aluno.Numero_Aluno
                                                 </span>
                                             }
-                                            <!-- CURSO -->
                                             @if (!string.IsNullOrEmpty(cand.Aluno?.Curso))
                                             {
                                                 <span class="aluno-tag tag-curso">
@@ -484,15 +497,76 @@
                         }
                     </tbody>
                 </table>
+
+                <!-- ✅ Mensagem quando não há resultados após filtro -->
+                <div id="semResultados" class="sem-candidaturas" style="display: none;">
+                    <i class="fas fa-search"></i>
+                    <h3>Nenhuma candidatura corresponde aos filtros</h3>
+                    <p>Tente ajustar a turma ou o número de aluno.</p>
+                </div>
             }
             else
             {
                 <div class="sem-candidaturas">
                     <i class="fas fa-inbox"></i>
                     <h3>Nenhuma candidatura encontrada</h3>
-                    <p>Tente ajustar os filtros de pesquisa.</p>
                 </div>
             }
         </div>
     </div>
 </div>
+
+<script>
+    // ✅ FILTRO EM TEMPO REAL
+    function filtrarTabela() {
+        var turmaFiltro = document.getElementById('filtroTurma').value.toLowerCase().trim();
+        var numeroFiltro = document.getElementById('filtroNumero').value.toLowerCase().trim();
+        var linhas = document.querySelectorAll('#tabelaCandidaturas tbody tr');
+        var visiveis = 0;
+        var algumVisivel = false;
+
+        linhas.forEach(function(linha) {
+            var turma = (linha.getAttribute('data-turma') || '').toLowerCase();
+            var numero = (linha.getAttribute('data-numero') || '').toLowerCase();
+
+            // Verifica se corresponde aos filtros
+            var matchTurma = !turmaFiltro || turma === turmaFiltro;
+            var matchNumero = !numeroFiltro || numero.includes(numeroFiltro);
+
+            if (matchTurma && matchNumero) {
+                linha.classList.remove('hidden-row');
+                visiveis++;
+                algumVisivel = true;
+            } else {
+                linha.classList.add('hidden-row');
+            }
+        });
+
+        // Atualiza contador
+        document.getElementById('contadorResultados').textContent = visiveis;
+
+        // Mostra/esconde mensagem de sem resultados
+        var tabela = document.getElementById('tabelaCandidaturas');
+        var semResultados = document.getElementById('semResultados');
+
+        if (!algumVisivel && tabela) {
+            tabela.style.display = 'none';
+            if (semResultados) semResultados.style.display = 'block';
+        } else if (tabela) {
+            tabela.style.display = '';
+            if (semResultados) semResultados.style.display = 'none';
+        }
+    }
+
+    // ✅ LIMPAR FILTROS
+    function limparFiltros() {
+        document.getElementById('filtroTurma').value = '';
+        document.getElementById('filtroNumero').value = '';
+        filtrarTabela();
+    }
+
+    // Aplicar filtros ao carregar (se vierem valores da URL)
+    document.addEventListener('DOMContentLoaded', function() {
+        filtrarTabela();
+    });
+</script>
