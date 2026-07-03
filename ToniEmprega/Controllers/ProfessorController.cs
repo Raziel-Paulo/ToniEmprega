@@ -47,7 +47,7 @@ namespace ToniEmprega.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Candidaturas()
+        public async Task<IActionResult> Candidaturas(int? turmaId, string? numeroAluno)
         {
             var professor = await GetCurrentProfessor();
             if (professor == null) return RedirectToAction("Login", "Account");
@@ -58,24 +58,45 @@ namespace ToniEmprega.Controllers
                 .Select(a => a.Id_Candidatura)
                 .ToListAsync();
 
-            // Mostrar candidaturas pendentes (estado 1 ou 2) E candidaturas já avaliadas por este professor
-            var candidaturas = await _context.Candidaturas
+            // Query base
+            var query = _context.Candidaturas
                 .Include(c => c.Aluno)
                 .ThenInclude(a => a.Utilizador)
+                .Include(c => c.Aluno)
+                .ThenInclude(a => a.Turma) // ✅ INCLUI TURMA
                 .Include(c => c.Oferta)
                 .ThenInclude(o => o.Empresa)
                 .Include(c => c.EstadoCandidatura)
-                .Include(c => c.EstadoCandidaturaEmpresa)  // ✅ IMPORTANTE: incluir estado da empresa
+                .Include(c => c.EstadoCandidaturaEmpresa)
                 .Include(c => c.Ficheiros)
                 .Include(c => c.Avaliacoes)
-                    .ThenInclude(a => a.DecisaoAvaliacao)
+                .ThenInclude(a => a.DecisaoAvaliacao)
                 .Where(c => c.Id_Estado_Candidatura == 1 || c.Id_Estado_Candidatura == 2
                     || c.Id_Estado_Candidatura == 5 || c.Id_Estado_Candidatura == 6 || c.Id_Estado_Candidatura == 7
                     || candidaturasAvaliadasIds.Contains(c.Id))
+                .AsQueryable();
+
+            // ✅ FILTRO POR TURMA
+            if (turmaId.HasValue && turmaId.Value > 0)
+            {
+                query = query.Where(c => c.Aluno.Id_Turma == turmaId.Value);
+            }
+
+            // ✅ FILTRO POR NÚMERO DE ALUNO (pesquisa parcial)
+            if (!string.IsNullOrWhiteSpace(numeroAluno))
+            {
+                query = query.Where(c => c.Aluno.Numero_Aluno.Contains(numeroAluno));
+            }
+
+            var candidaturas = await query
                 .OrderByDescending(c => c.Data_Candidatura)
                 .ToListAsync();
 
             ViewBag.ProfessorId = professor.Id;
+            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync(); // ✅ LISTA DE TURMAS PARA O FILTRO
+            ViewBag.TurmaId = turmaId; // ✅ VALOR SELECIONADO
+            ViewBag.NumeroAluno = numeroAluno; // ✅ VALOR DIGITADO
+
             return View(candidaturas);
         }
 

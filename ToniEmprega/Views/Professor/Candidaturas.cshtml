@@ -69,6 +69,68 @@
             gap: 0.5rem;
         }
 
+    /* ✅ NOVO: Área de filtros */
+    .filtros-card {
+        background: var(--color-dark-gray);
+        border: 1px solid var(--color-navy);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filtros-form {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+        .filtros-form .form-group {
+            margin-bottom: 0;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filtros-form label {
+            color: var(--color-gray);
+            font-size: 0.85rem;
+            margin-bottom: 0.3rem;
+            display: block;
+        }
+
+        .filtros-form .form-control {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background: var(--color-black);
+            border: 1px solid var(--color-navy);
+            border-radius: 6px;
+            color: var(--color-white);
+        }
+
+        .filtros-form .btn-filtrar {
+            padding: 0.6rem 1.2rem;
+            background: var(--color-blue);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .filtros-form .btn-limpar {
+            padding: 0.6rem 1.2rem;
+            background: transparent;
+            color: var(--color-gray);
+            border: 1px solid var(--color-navy);
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
     .candidaturas-card {
         background: var(--color-dark-gray);
         border: 1px solid var(--color-navy);
@@ -100,6 +162,11 @@
 
         .candidaturas-table tr:last-child td {
             border-bottom: none;
+        }
+
+        /* ✅ NOVO: Linha maior para acomodar mais info */
+        .candidaturas-table tr {
+            min-height: 80px;
         }
 
     .badge-estado {
@@ -163,27 +230,67 @@
             background: #1873cc;
         }
 
-    .btn-editar {
-        background: var(--color-blue);
-        color: white;
+    .btn-ver {
+        background: transparent;
+        color: var(--color-blue);
+        border: 1px solid var(--color-blue);
     }
 
-        .btn-editar:hover {
-            background: #1873cc;
+        .btn-ver:hover {
+            background: var(--color-blue);
+            color: white;
         }
 
-    .btn-bloqueado {
-        background: rgba(128, 128, 128, 0.2);
-        color: #888;
-        border: 1px solid rgba(128, 128, 128, 0.3);
-        cursor: not-allowed;
+    /* ✅ NOVO: Info do aluno com turma e número */
+    .info-aluno {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
     }
 
-    .info-aluno small {
-        display: block;
-        margin-top: 0.2rem;
+    .aluno-nome {
+        color: var(--color-white);
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .aluno-email {
         color: var(--color-gray);
+        font-size: 0.85rem;
+    }
+
+    .aluno-meta {
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+    }
+
+    .aluno-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
         font-size: 0.8rem;
+    }
+
+    .tag-turma {
+        background: rgba(30, 144, 255, 0.15);
+        color: var(--color-blue);
+        border: 1px solid rgba(30, 144, 255, 0.3);
+    }
+
+    .tag-numero {
+        background: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .tag-curso {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+        border: 1px solid rgba(255, 193, 7, 0.3);
     }
 
     .sem-candidaturas {
@@ -206,6 +313,14 @@
         .prof-sidebar {
             width: 100%;
         }
+
+        .filtros-form {
+            flex-direction: column;
+        }
+
+            .filtros-form .form-group {
+                min-width: 100%;
+            }
     }
 </style>
 
@@ -230,6 +345,37 @@
             <h2><i class="fas fa-clipboard-check"></i> Candidaturas para Avaliação</h2>
         </div>
 
+        <!-- ✅ NOVO: Filtros -->
+        <div class="filtros-card">
+            <form method="get" class="filtros-form">
+                <div class="form-group">
+                    <label><i class="fas fa-users"></i> Turma</label>
+                    <select name="turmaId" class="form-control">
+                        <option value="">Todas as turmas</option>
+                        @foreach (var turma in ViewBag.Turmas)
+                        {
+                            <option value="@turma.Id" selected="@(ViewBag.TurmaId == turma.Id)">
+                                @turma.Designacao
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-hashtag"></i> Número de Aluno</label>
+                    <input type="text" name="numeroAluno" class="form-control"
+                           value="@ViewBag.NumeroAluno"
+                           placeholder="Digite o número..."
+                           maxlength="20" />
+                </div>
+                <button type="submit" class="btn-filtrar">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <a href="/Professor/Candidaturas" class="btn-limpar">
+                    <i class="fas fa-times"></i> Limpar
+                </a>
+            </form>
+        </div>
+
         <div class="candidaturas-card">
             @if (Model.Any())
             {
@@ -247,61 +393,91 @@
                     <tbody>
                         @foreach (var cand in Model)
                         {
-                            var jaAvaliou = cand.Avaliacoes?.Any(a => a.Id_Professor == ViewBag.ProfessorId) == true;
+                            var jaAvaliou = cand.Avaliacoes?.Any(a => a.Id_Professor == ViewBag.ProfessorId) ?? false;
                             var minhaAvaliacao = cand.Avaliacoes?.FirstOrDefault(a => a.Id_Professor == ViewBag.ProfessorId);
-                            var empresaDecidiu = cand.Id_Estado_Candidatura_Empresa == 3 || cand.Id_Estado_Candidatura_Empresa == 4;
-                            var empresaAprovou = cand.Id_Estado_Candidatura_Empresa == 3;
-                            var empresaRejeitou = cand.Id_Estado_Candidatura_Empresa == 4;
 
                             <tr>
-                                <td class="info-aluno">
-                                    <strong style="color: var(--color-white);">@cand.Aluno?.Utilizador?.Nome</strong>
-                                    <small><i class="fas fa-envelope"></i> @cand.Aluno?.Utilizador?.Email</small>
-                                    <small><i class="fas fa-graduation-cap"></i> @cand.Aluno?.Curso</small>
+                                <td>
+                                    <div class="info-aluno">
+                                        <span class="aluno-nome">@cand.Aluno?.Utilizador?.Nome</span>
+                                        <span class="aluno-email">@cand.Aluno?.Utilizador?.Email</span>
+                                        <div class="aluno-meta">
+                                            <!-- ✅ TURMA -->
+                                            @if (cand.Aluno?.Turma != null)
+                                            {
+                                                <span class="aluno-tag tag-turma">
+                                                    <i class="fas fa-users"></i> @cand.Aluno.Turma.Designacao
+                                                </span>
+                                            }
+                                            <!-- ✅ NÚMERO DE ALUNO -->
+                                            @if (!string.IsNullOrEmpty(cand.Aluno?.Numero_Aluno))
+                                            {
+                                                <span class="aluno-tag tag-numero">
+                                                    <i class="fas fa-hashtag"></i> @cand.Aluno.Numero_Aluno
+                                                </span>
+                                            }
+                                            <!-- CURSO -->
+                                            @if (!string.IsNullOrEmpty(cand.Aluno?.Curso))
+                                            {
+                                                <span class="aluno-tag tag-curso">
+                                                    <i class="fas fa-graduation-cap"></i> @cand.Aluno.Curso
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
                                 </td>
-                                <td style="color: var(--color-gray);">@cand.Oferta?.Titulo</td>
+                                <td>
+                                    <strong style="color: var(--color-white);">@cand.Oferta?.Titulo</strong>
+                                </td>
                                 <td style="color: var(--color-gray);">@cand.Oferta?.Empresa?.Nome_Empresa</td>
                                 <td style="white-space: nowrap; color: var(--color-gray);">@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
                                 <td>
-                                    @if (cand.Id_Estado_Candidatura == 1)
-                                    {
-                                        <span class="badge-estado badge-pendente"><i class="fas fa-clock"></i> Pendente</span>
+                                    @{
+                                        var estadoClasse = cand.Id_Estado_Candidatura switch
+                                        {
+                                            1 => "badge-pendente",
+                                            2 => "badge-analise",
+                                            5 => "badge-rejeitado",
+                                            6 => "badge-aprovado",
+                                            7 => "badge-rejeitado",
+                                            _ => "badge-pendente"
+                                        };
+                                        var estadoTexto = cand.Id_Estado_Candidatura switch
+                                        {
+                                            1 => "Pendente",
+                                            2 => "Em Análise",
+                                            5 => "Cancelada",
+                                            6 => "Aprovada",
+                                            7 => "Rejeitada",
+                                            _ => "Pendente"
+                                        };
                                     }
-                                    else if (cand.Id_Estado_Candidatura == 2)
+                                    <span class="badge-estado @estadoClasse">@estadoTexto</span>
+                                    @if (jaAvaliou && minhaAvaliacao != null)
                                     {
-                                        <span class="badge-estado badge-analise"><i class="fas fa-search"></i> Em Análise</span>
-                                    }
-                                    else if (cand.Id_Estado_Candidatura == 6)
-                                    {
-                                        <span class="badge-estado badge-aprovado"><i class="fas fa-check"></i> Aprovado</span>
-                                    }
-                                    else if (cand.Id_Estado_Candidatura == 7)
-                                    {
-                                        <span class="badge-estado badge-rejeitado"><i class="fas fa-times"></i> Rejeitado</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge-estado badge-emp-decidida">@cand.EstadoCandidatura?.Designacao</span>
+                                        <div style="margin-top: 0.4rem; font-size: 0.8rem; color: var(--color-gray);">
+                                            <i class="fas fa-gavel"></i> Avaliado: @minhaAvaliacao.DecisaoAvaliacao?.Designacao
+                                        </div>
                                     }
                                 </td>
                                 <td>
-                                    @if (empresaDecidiu)
+                                    @if (!jaAvaliou && (cand.Id_Estado_Candidatura == 1 || cand.Id_Estado_Candidatura == 2))
                                     {
-                                        <span class="btn-acao btn-bloqueado" title="A empresa já decidiu sobre esta candidatura">
-                                            <i class="fas fa-lock"></i> @(empresaAprovou ? "Empresa Aprovou" : "Empresa Rejeitou")
-                                        </span>
+                                        <a href="/Professor/Avaliar/@cand.Id" class="btn-acao btn-avaliar">
+                                            <i class="fas fa-gavel"></i> Avaliar
+                                        </a>
                                     }
                                     else if (jaAvaliou)
                                     {
-                                        <a href="/Professor/EditarAvaliacao/@minhaAvaliacao?.Id" class="btn-acao btn-editar">
-                                            <i class="fas fa-edit"></i> Editar avaliação
+                                        <a href="/Professor/EditarAvaliacao/@minhaAvaliacao?.Id" class="btn-acao btn-ver">
+                                            <i class="fas fa-edit"></i> Editar
                                         </a>
                                     }
                                     else
                                     {
-                                        <a href="/Professor/Avaliar/@cand.Id" class="btn-acao btn-avaliar">
-                                            <i class="fas fa-clipboard-check"></i> Avaliar
-                                        </a>
+                                        <span style="color: var(--color-gray); font-size: 0.85rem;">
+                                            <i class="fas fa-lock"></i> Fechada
+                                        </span>
                                     }
                                 </td>
                             </tr>
@@ -313,7 +489,8 @@
             {
                 <div class="sem-candidaturas">
                     <i class="fas fa-inbox"></i>
-                    <h3>Não existem candidaturas para avaliar</h3>
+                    <h3>Nenhuma candidatura encontrada</h3>
+                    <p>Tente ajustar os filtros de pesquisa.</p>
                 </div>
             }
         </div>
