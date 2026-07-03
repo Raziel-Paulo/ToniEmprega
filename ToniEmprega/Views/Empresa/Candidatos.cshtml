@@ -1,4 +1,4 @@
-﻿﻿@* Views/Empresa/Candidatos.cshtml *@
+﻿@* Views/Empresa/Candidatos.cshtml *@
 @model IEnumerable<ToniEmprega.Models.Candidatura>
 @{
     ViewData["Title"] = "Candidatos";
@@ -166,6 +166,7 @@
         gap: 0.3rem;
         margin-right: 0.3rem;
         margin-bottom: 0.3rem;
+        transition: all 0.2s;
     }
 
     .btn-aprovar {
@@ -173,10 +174,18 @@
         color: white;
     }
 
+        .btn-aprovar:hover {
+            background: #218838;
+        }
+
     .btn-rejeitar {
         background: #dc3545;
         color: white;
     }
+
+        .btn-rejeitar:hover {
+            background: #c82333;
+        }
 
     .avaliacao-texto {
         color: var(--color-gray);
@@ -197,6 +206,190 @@
     .info-aluno small {
         display: block;
         margin-top: 0.3rem;
+    }
+
+    /* ✅ MODAL DE EMAIL */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+    .modal-content {
+        background: var(--color-dark-gray);
+        border: 2px solid var(--color-navy);
+        border-radius: 16px;
+        padding: 2rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: modalSlideIn 0.3s ease;
+    }
+
+    @@keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--color-navy);
+    }
+
+        .modal-header h3 {
+            color: var(--color-blue);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+    .modal-close {
+        background: none;
+        border: none;
+        color: var(--color-gray);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.2rem;
+        transition: color 0.2s;
+    }
+
+        .modal-close:hover {
+            color: var(--color-danger);
+        }
+
+    .modal-info {
+        background: var(--color-navy);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+        .modal-info p {
+            margin: 0.3rem 0;
+            color: var(--color-gray);
+        }
+
+        .modal-info strong {
+            color: var(--color-white);
+        }
+
+    .modal-form .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-form label {
+        display: block;
+        color: var(--color-gray);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .modal-form textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: var(--color-black);
+        border: 1px solid var(--color-navy);
+        border-radius: 8px;
+        color: var(--color-white);
+        font-size: 1rem;
+        resize: vertical;
+        min-height: 120px;
+        font-family: inherit;
+    }
+
+        .modal-form textarea:focus {
+            outline: none;
+            border-color: var(--color-blue);
+        }
+
+    .modal-form small {
+        color: var(--color-gray);
+        font-size: 0.8rem;
+        margin-top: 0.3rem;
+        display: block;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+        .modal-actions button,
+        .modal-actions a {
+            flex: 1;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            border: none;
+            transition: all 0.2s;
+        }
+
+    .btn-modal-aprovar {
+        background: #28a745;
+        color: white;
+    }
+
+        .btn-modal-aprovar:hover {
+            background: #218838;
+        }
+
+    .btn-modal-cancelar {
+        background: transparent;
+        color: var(--color-gray);
+        border: 1px solid var(--color-navy);
+    }
+
+        .btn-modal-cancelar:hover {
+            border-color: var(--color-danger);
+            color: var(--color-danger);
+        }
+
+    @@media (max-width: 768px) {
+        .candidatos-wrapper {
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .candidatos-sidebar {
+            width: 100%;
+        }
+
+        .modal-content {
+            padding: 1.5rem;
+            width: 95%;
+        }
     }
 </style>
 
@@ -251,7 +444,6 @@
                     <tbody>
                         @foreach (var cand in Model)
                         {
-                            // ✅ CORRIGIDO: Usar Id_Estado_Candidatura_Empresa
                             var empresaDecidiu = cand.Id_Estado_Candidatura_Empresa == 3 || cand.Id_Estado_Candidatura_Empresa == 4;
                             var empresaAprovou = cand.Id_Estado_Candidatura_Empresa == 3;
                             var empresaRejeitou = cand.Id_Estado_Candidatura_Empresa == 4;
@@ -265,6 +457,18 @@
                                     <small style="color: var(--color-gray);">
                                         <i class="fas fa-graduation-cap"></i> @cand.Aluno?.Curso
                                     </small>
+                                    @if (cand.Aluno?.Turma != null)
+                                    {
+                                        <small style="color: var(--color-blue);">
+                                            <i class="fas fa-users"></i> Turma: @cand.Aluno.Turma.Designacao
+                                        </small>
+                                    }
+                                    @if (!string.IsNullOrEmpty(cand.Aluno?.Numero_Aluno))
+                                    {
+                                        <small style="color: #28a745;">
+                                            <i class="fas fa-hashtag"></i> Nº Aluno: @cand.Aluno.Numero_Aluno
+                                        </small>
+                                    }
                                 </td>
                                 <td style="white-space: nowrap;">@cand.Data_Candidatura.ToString("dd/MM/yyyy")</td>
                                 <td>
@@ -324,13 +528,12 @@
                                 <td>
                                     @if (!empresaDecidiu)
                                     {
-                                        <form method="post" asp-action="AprovarCandidatoEmpresa" style="display: inline;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@cand.Id" />
-                                            <button type="submit" class="btn-acao btn-aprovar">
-                                                <i class="fas fa-check"></i> Aprovar Candidato
-                                            </button>
-                                        </form>
+                                        <!-- ✅ BOTÃO APROVAR ABRE MODAL -->
+                                        <button type="button" class="btn-acao btn-aprovar"
+                                                onclick="abrirModalAprovar(@cand.Id, '@cand.Aluno?.Utilizador?.Nome', '@cand.Oferta?.Titulo')">
+                                            <i class="fas fa-check"></i> Aprovar Candidato
+                                        </button>
+
                                         <form method="post" asp-action="RejeitarCandidatoEmpresa" style="display: inline;" onsubmit="var motivo = prompt('Motivo da rejeição:'); if(!motivo) return false; this.querySelector('input[name=motivo]').value = motivo;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@cand.Id" />
@@ -355,3 +558,123 @@
         }
     </div>
 </div>
+
+<!-- ✅ MODAL DE APROVAÇÃO COM EMAIL -->
+<div class="modal-overlay" id="modalAprovar">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-envelope-open-text"></i> Aprovar Candidato</h3>
+            <button type="button" class="modal-close" onclick="fecharModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-info">
+            <p><i class="fas fa-user"></i> <strong>Aluno:</strong> <span id="modalAlunoNome"></span></p>
+            <p><i class="fas fa-briefcase"></i> <strong>Oferta:</strong> <span id="modalOfertaTitulo"></span></p>
+        </div>
+
+        <form method="post" asp-action="AprovarCandidatoEmpresa" class="modal-form" id="formAprovar">
+            <div class="modal-form" id="formAprovar">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="modalCandidaturaId" />
+
+                <div class="form-group">
+                    <label for="mensagemEmail">
+                        <i class="fas fa-comment-alt"></i> Mensagem para o aluno <span style="color: var(--color-danger);">*</span>
+                    </label>
+                    <textarea name="mensagemEmail" id="mensagemEmail" required minlength="10"
+                              placeholder="Escreva uma mensagem personalizada ao aluno...&#10;Ex: Parabéns! Foi selecionado para uma entrevista. Entraremos em contacto em breve."></textarea>
+                    <small style="color: var(--color-danger);"><i class="fas fa-exclamation-circle"></i> Obrigatório — mínimo 10 caracteres</small>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-modal-aprovar" onclick="validarEEnviar()">
+                        <i class="fas fa-paper-plane"></i> Aprovar e Enviar
+                    </button>
+                    <button type="button" class="btn-modal-cancelar" onclick="fecharModal()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    var candidaturaIdAtual = null;
+
+    // ABRIR MODAL
+    function abrirModalAprovar(candidaturaId, alunoNome, ofertaTitulo) {
+        candidaturaIdAtual = candidaturaId;
+        document.getElementById('modalCandidaturaId').value = candidaturaId;
+        document.getElementById('modalAlunoNome').textContent = alunoNome || 'Aluno';
+        document.getElementById('modalOfertaTitulo').textContent = ofertaTitulo || 'Oferta';
+        document.getElementById('mensagemEmail').value = '';
+
+        document.getElementById('modalAprovar').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // FECHAR MODAL
+    function fecharModal() {
+        document.getElementById('modalAprovar').classList.remove('active');
+        document.body.style.overflow = '';
+        candidaturaIdAtual = null;
+    }
+
+    // ✅ VALIDAR E ENVIAR (email obrigatório)
+    function validarEEnviar() {
+        var mensagem = document.getElementById('mensagemEmail').value.trim();
+
+        if (!mensagem || mensagem.length < 10) {
+            alert('É obrigatório escrever uma mensagem de email com pelo menos 10 caracteres.');
+            document.getElementById('mensagemEmail').focus();
+            return;
+        }
+
+        // Criar form dinamicamente e submeter
+        var form = document.createElement('form');
+        form.method = 'post';
+        form.action = '/Empresa/AprovarCandidatoEmpresa';
+
+        // AntiForgeryToken
+        var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        var tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '__RequestVerificationToken';
+        tokenInput.value = token;
+        form.appendChild(tokenInput);
+
+        // ID da candidatura
+        var idInput = document.createElement('input');
+        idInput.type = 'hidden';
+        idInput.name = 'id';
+        idInput.value = candidaturaIdAtual;
+        form.appendChild(idInput);
+
+        // Mensagem
+        var msgInput = document.createElement('input');
+        msgInput.type = 'hidden';
+        msgInput.name = 'mensagemEmail';
+        msgInput.value = mensagem;
+        form.appendChild(msgInput);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // FECHAR AO CLICAR FORA
+    document.getElementById('modalAprovar').addEventListener('click', function (e) {
+        if (e.target === this) {
+            fecharModal();
+        }
+    });
+
+    // FECHAR COM ESC
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            fecharModal();
+        }
+    });
+</script>

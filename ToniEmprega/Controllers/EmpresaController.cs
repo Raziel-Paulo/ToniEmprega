@@ -4,16 +4,20 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
+using System.Net;
+using System.Net.Mail;
 
 namespace ToniEmprega.Controllers
 {
     public class EmpresaController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public EmpresaController(ApplicationDbContext context)
+        public EmpresaController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
         private async Task<Empresa?> GetCurrentEmpresa()
@@ -335,12 +339,65 @@ namespace ToniEmprega.Controllers
 
         // ==================== EMPRESA APROVA/REJEITA CANDIDATO ====================
 
+        private async Task EnviarEmailAprovacaoAluno(string emailAluno, string nomeAluno, string nomeEmpresa, string tituloOferta, string mensagemPersonalizada)
+        {
+            var smtpServer = _configuration["Email:SmtpServer"] ?? "smtp.gmail.com";
+            var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+            var smtpUser = _configuration["Email:SmtpUser"] ?? string.Empty;
+            var smtpPass = _configuration["Email:SmtpPass"] ?? string.Empty;
+            var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@toniemprega.pt";
+
+            using var client = new SmtpClient(smtpServer, smtpPort)
+            {
+                EnableSsl = true,
+                Credentials = new NetworkCredential(smtpUser, smtpPass)
+            };
+
+            var message = new MailMessage
+            {
+                From = new MailAddress(fromEmail, "ToniEmprega"),
+                Subject = $"🎉 Candidatura Aprovada - {nomeEmpresa}",
+                IsBodyHtml = true
+            };
+
+            message.To.Add(emailAluno);
+
+            // Mensagem do email
+            var corpoEmail = $@"
+<h2 style='color: #28a745;'>Parabéns, {nomeAluno}!</h2>
+<p>A empresa <strong>{nomeEmpresa}</strong> aprovou a sua candidatura para a oferta:</p>
+<h3 style='color: #1E90FF;'>{tituloOferta}</h3>
+<hr style='border: none; border-top: 1px solid #eee; margin: 1.5rem 0;' />
+<h4 style='color: #333;'>Mensagem da empresa:</h4>
+<div style='background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #1E90FF;'>
+    <p style='margin: 0; white-space: pre-line;'>{System.Net.WebUtility.HtmlEncode(mensagemPersonalizada)}</p>
+</div>
+<hr style='border: none; border-top: 1px solid #eee; margin: 1.5rem 0;' />
+<p style='color: #666;'>Entre na plataforma ToniEmprega para mais detalhes.</p>
+<p style='color: #666;'>Boa sorte! 🍀</p>
+<br>
+<p style='color: #999; font-size: 0.9rem;'>Atenciosamente,<br><strong>Equipa ToniEmprega</strong></p>";
+
+            message.Body = corpoEmail;
+
+            await client.SendMailAsync(message);
+        }
+
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AprovarCandidatoEmpresa(int id)
+        public async Task<IActionResult> AprovarCandidatoEmpresa(int id, string mensagemEmail)
         {
             var empresa = await GetCurrentEmpresa();
             if (empresa == null) return RedirectToAction("Login", "Account");
+
+            // ✅ VALIDAÇÃO: Email obrigatório
+            if (string.IsNullOrWhiteSpace(mensagemEmail) || mensagemEmail.Length < 10)
+            {
+                TempData["Error"] = "É obrigatório escrever uma mensagem de email (mínimo 10 caracteres).";
+                return RedirectToAction("Candidatos", new { id });
+            }
 
             var candidatura = await _context.Candidaturas
                 .Include(c => c.Oferta)
@@ -350,12 +407,28 @@ namespace ToniEmprega.Controllers
 
             if (candidatura == null) return NotFound();
 
-            // ✅ CORRIGIDO: Usar o campo SEPARADO da empresa
-            candidatura.Id_Estado_Candidatura_Empresa = 3; // Aprovada pela Empresa
-            // NÃO alterar Id_Estado_Candidatura (mantém o estado do professor = 6)
-
+            // Aprovar candidatura
+            candidatura.Id_Estado_Candidatura_Empresa = 3;
             await _context.SaveChangesAsync();
 
+            // Enviar email ao aluno
+            try
+            {
+                await EnviarEmailAprovacaoAluno(
+                    candidatura.Aluno.Utilizador.Email,
+                    candidatura.Aluno.Utilizador.Nome,
+                    empresa.Nome_Empresa,
+                    candidatura.Oferta.Titulo,
+                    mensagemEmail
+                );
+                TempData["Success"] = "Candidatura aprovada e email enviado com sucesso!";
+            }
+            catch (Exception ex)
+            {
+                TempData["Warning"] = $"Candidatura aprovada, mas o email não foi enviado: {ex.Message}";
+            }
+
+            // Notificar aluno na plataforma
             _context.Notificacoes.Add(new Notificacao
             {
                 Id_Utilizador = candidatura.Aluno.Id_Utilizador,
@@ -366,7 +439,6 @@ namespace ToniEmprega.Controllers
             });
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Candidatura aprovada com sucesso!";
             return RedirectToAction("Candidatos", new { id = candidatura.Id_Oferta });
         }
 
