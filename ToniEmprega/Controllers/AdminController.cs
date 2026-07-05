@@ -51,9 +51,44 @@ namespace ToniEmprega.Controllers
             return View();
         }
 
-        // GESTÃO DE UTILIZADORES
-        public async Task<IActionResult> Utilizadores(string? searchString, int? tipoId)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BloquearDesbloquearUtilizador(int id)
         {
+            var user = await _context.Utilizadores.FindAsync(id);
+            if (user == null) return NotFound();
+
+            // Proteger admin principal
+            if (user.Email == "toniemprega@gmail.com")
+            {
+                TempData["Error"] = "Não é possível bloquear o administrador principal.";
+                return RedirectToAction("Utilizadores");
+            }
+
+            user.Bloqueado = !user.Bloqueado;
+            await _context.SaveChangesAsync();
+
+            var acao = user.Bloqueado ? "bloqueada" : "desbloqueada";
+            var tipoNotif = user.Bloqueado ? "error" : "success";
+
+            _context.Notificacoes.Add(new Notificacao
+            {
+                Id_Utilizador = id,
+                Titulo = $"Conta {acao}",
+                Mensagem = $"A sua conta foi {acao} pelo administrador." + (user.Bloqueado ? " Contacte o suporte para mais informações." : ""),
+                Tipo = tipoNotif
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Conta de {user.Nome} {acao} com sucesso!";
+            return RedirectToAction("Utilizadores");
+        }
+
+
+        // GESTÃO DE UTILIZADORES
+        public async Task<IActionResult> Utilizadores(string? searchString, int? tipoId, int? turmaId, string? numeroAluno)
+        {
+            // ✅ CORRIGIDO: Usar Include em vez de Join para não perder utilizadores
             var utilizadores = _context.Utilizadores
                 .Include(u => u.TipoUtilizador)
                 .Include(u => u.EstadoValidacao)
@@ -65,11 +100,54 @@ namespace ToniEmprega.Controllers
             if (tipoId.HasValue)
                 utilizadores = utilizadores.Where(u => u.Id_Tipo_Utilizador == tipoId);
 
+            // ✅ CORRIGIDO: Carregar TODOS os dados necessários para a View
+            var listaUtilizadores = await utilizadores
+                .OrderByDescending(u => u.Data_Registro)
+                .ToListAsync();
+
+            // ✅ CORRIGIDO: Carregar info de Alunos SEPARADAMENTE (para todos, não só filtrados)
+            var alunosDict = await _context.Alunos
+                .Include(a => a.Turma)
+                .ToDictionaryAsync(a => a.Id_Utilizador, a => a);
+
+            var empresasDict = await _context.Empresas
+                .ToDictionaryAsync(e => e.Id_Utilizador, e => e);
+
+            var professoresDict = await _context.Professores
+                .ToDictionaryAsync(p => p.Id_Utilizador, p => p);
+
+            // ✅ CORRIGIDO: Se filtrar por Aluno, aplicar filtros de turma/número em memória
+            if (tipoId == 1)
+            {
+                if (turmaId.HasValue && turmaId.Value > 0)
+                {
+                    listaUtilizadores = listaUtilizadores
+                        .Where(u => alunosDict.ContainsKey(u.Id) && alunosDict[u.Id].Id_Turma == turmaId.Value)
+                        .ToList();
+                }
+
+                if (!string.IsNullOrWhiteSpace(numeroAluno))
+                {
+                    listaUtilizadores = listaUtilizadores
+                        .Where(u => alunosDict.ContainsKey(u.Id) &&
+                               alunosDict[u.Id].Numero_Aluno.Contains(numeroAluno))
+                        .ToList();
+                }
+            }
+
             ViewBag.TiposUtilizador = await _context.TipoUtilizadores.ToListAsync();
+            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync();
+
             ViewBag.SearchString = searchString;
             ViewBag.TipoId = tipoId;
+            ViewBag.TurmaId = turmaId;
+            ViewBag.NumeroAluno = numeroAluno;
 
-            return View(await utilizadores.OrderByDescending(u => u.Data_Registro).ToListAsync());
+            ViewBag.AlunosInfo = alunosDict;
+            ViewBag.EmpresasInfo = empresasDict;
+            ViewBag.ProfessoresInfo = professoresDict;
+
+            return View(listaUtilizadores);
         }
 
         [HttpPost]

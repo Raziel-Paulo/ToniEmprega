@@ -1,6 +1,12 @@
 ﻿@model IEnumerable<ToniEmprega.Models.Utilizador>
 @{
     ViewData["Title"] = "Gestão de Utilizadores";
+    var tipoId = ViewBag.TipoId as int?;
+    var turmaId = ViewBag.TurmaId as int?;
+    var numeroAluno = ViewBag.NumeroAluno as string ?? "";
+    var alunosInfo = ViewBag.AlunosInfo as Dictionary<int, Aluno> ?? new Dictionary<int, Aluno>();
+    var empresasInfo = ViewBag.EmpresasInfo as Dictionary<int, Empresa> ?? new Dictionary<int, Empresa>();
+    var professoresInfo = ViewBag.ProfessoresInfo as Dictionary<int, Professor> ?? new Dictionary<int, Professor>();
 }
 
 <div class="dashboard-grid">
@@ -20,20 +26,63 @@
             <i class="fas fa-users"></i> Gestão de Utilizadores
         </h2>
 
+        <!-- ✅ CORRIGIDO: Filtro com form POST e submit automático -->
         <div class="card" style="margin-bottom: 2rem;">
-            <form method="get" class="search-box">
-                <input type="text" name="searchString" class="form-control search-input"
-                       placeholder="Pesquisar utilizadores..." value="@ViewBag.SearchString" />
-                <select name="tipoId" class="form-control">
-                    <option value="">Todos os Tipos</option>
-                    @foreach (var tipo in ViewBag.TiposUtilizador)
-                    {
-                        <option value="@tipo.Id" selected="@(ViewBag.TipoId == tipo.Id)">
-                            @tipo.Designacao
-                        </option>
-                    }
-                </select>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+            <form method="get" id="filtroForm">
+                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; color: var(--color-gray); font-size: 0.85rem; margin-bottom: 0.3rem;">
+                            <i class="fas fa-search"></i> Pesquisar
+                        </label>
+                        <input type="text" name="searchString" class="form-control"
+                               placeholder="Nome ou email..." value="@ViewBag.SearchString" />
+                    </div>
+
+                    <div style="min-width: 180px;">
+                        <label style="display: block; color: var(--color-gray); font-size: 0.85rem; margin-bottom: 0.3rem;">
+                            <i class="fas fa-user-tag"></i> Tipo
+                        </label>
+                        <select name="tipoId" class="form-control" id="tipoSelect" onchange="autoSubmit()">
+                            <option value="">Todos os Tipos</option>
+                            @foreach (var tipo in ViewBag.TiposUtilizador)
+                            {
+                                <option value="@tipo.Id" selected="@(tipoId == tipo.Id)">@tipo.Designacao</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Turma (só Aluno) -->
+                    <div id="turmaFilter" style="min-width: 150px; display: @(tipoId == 1 ? "block" : "none");">
+                        <label style="display: block; color: var(--color-gray); font-size: 0.85rem; margin-bottom: 0.3rem;">
+                            <i class="fas fa-users"></i> Turma
+                        </label>
+                        <select name="turmaId" class="form-control" id="turmaSelect" onchange="autoSubmit()">
+                            <option value="">Todas</option>
+                            @foreach (var turma in ViewBag.Turmas)
+                            {
+                                <option value="@turma.Id" selected="@(turmaId == turma.Id)">@turma.Designacao</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Nº Aluno (só Aluno) -->
+                    <div id="numeroAlunoFilter" style="min-width: 150px; display: @(tipoId == 1 ? "block" : "none");">
+                        <label style="display: block; color: var(--color-gray); font-size: 0.85rem; margin-bottom: 0.3rem;">
+                            <i class="fas fa-hashtag"></i> Nº Aluno
+                        </label>
+                        <input type="text" name="numeroAluno" class="form-control"
+                               placeholder="Ex: 2024001" value="@numeroAluno"
+                               onkeydown="if(event.key==='Enter'){ autoSubmit(); return false; }" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="height: fit-content;">
+                        <i class="fas fa-filter"></i> Filtrar
+                    </button>
+
+                    <a href="/Admin/Utilizadores" class="btn btn-outline" style="height: fit-content;">
+                        <i class="fas fa-undo"></i> Limpar
+                    </a>
+                </div>
             </form>
         </div>
 
@@ -42,32 +91,181 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th>Nome</th>
                             <th>Email</th>
                             <th>Tipo</th>
-                            <th>Estado</th>
+                            @if (tipoId == 1)
+                            {
+                                <th><i class="fas fa-hashtag"></i> Nº Aluno</th>
+                                <th><i class="fas fa-users"></i> Turma</th>
+                            }
+                            else if (tipoId == 2)
+                            {
+                            }
+                            else if (tipoId == 3)
+                            {
+                                <th><i class="fas fa-building"></i> Empresa</th>
+                            }
+                            <th>Estado Validação</th>
                             <th>Registo</th>
+                            <th>Estado Conta</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var user in Model)
                         {
-                            <tr>
-                                <td><strong>@user.Nome</strong></td>
-                                <td>@user.Email</td>
-                                <td>@user.TipoUtilizador?.Designacao</td>
+                            <tr style="@(user.Bloqueado ? "opacity: 0.6;" : "")">
+                                <td><code style="color: var(--color-gray);">#@user.Id</code></td>
+                                <td>
+                                    <strong style="color: var(--color-white);">@user.Nome</strong>
+                                    @if (user.Bloqueado)
+                                    {
+                                        <span style="display: inline-block; margin-left: 0.5rem; padding: 0.15rem 0.5rem; background: rgba(220,53,69,0.3); color: #ff6b6b; border-radius: 4px; font-size: 0.7rem; font-weight: bold;">
+                                            <i class="fas fa-ban"></i> BLOQUEADO
+                                        </span>
+                                    }
+                                </td>
+                                <td style="color: var(--color-gray);">@user.Email</td>
+                                <td>
+                                    <span class="badge @(user.Id_Tipo_Utilizador == 1 ? "badge-info" :
+                                                                                                                              user.Id_Tipo_Utilizador == 2 ? "badge-warning" :
+                                                                                                                              user.Id_Tipo_Utilizador == 3 ? "badge-success" :
+                                                                                                                              user.Id_Tipo_Utilizador == 5 ? "badge-danger" : "badge-pending")">
+                                        @user.TipoUtilizador?.Designacao
+                                    </span>
+                                </td>
+
+                                @if (tipoId == 1)
+                                {
+                                    if (alunosInfo.ContainsKey(user.Id))
+                                    {
+                                        var aluno = alunosInfo[user.Id];
+                                        <td style="color: var(--color-white);"><code>@aluno.Numero_Aluno</code></td>
+                                        <td>
+                                            @if (aluno.Turma != null)
+                                            {
+                                                <span class="badge badge-info">@aluno.Turma.Designacao</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color: var(--color-gray);">-</span>
+                                            }
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td colspan="3" style="color: var(--color-gray); text-align: center;"><i class="fas fa-minus"></i></td>
+                                    }
+                                }
+                                else if (tipoId == 2)
+                                {
+                                    if (professoresInfo.ContainsKey(user.Id))
+                                    {
+                                        var prof = professoresInfo[user.Id];
+                                    }
+                                    else
+                                    {
+                                        <td colspan="2" style="color: var(--color-gray); text-align: center;"><i class="fas fa-minus"></i></td>
+                                    }
+                                }
+                                else if (tipoId == 3)
+                                {
+                                    if (empresasInfo.ContainsKey(user.Id))
+                                    {
+                                        var emp = empresasInfo[user.Id];
+                                        <td style="color: var(--color-white);">@emp.Nome_Empresa</td>
+                                    }
+                                    else
+                                    {
+                                        <td colspan="3" style="color: var(--color-gray); text-align: center;"><i class="fas fa-minus"></i></td>
+                                    }
+                                }
+
                                 <td>
                                     <span class="badge @(user.Id_Estado_Validacao_Utilizador == 2 ? "badge-approved" :
-                                                                                                  user.Id_Estado_Validacao_Utilizador == 3 ? "badge-rejected" : "badge-pending")">
-                                    @user.EstadoValidacao?.Designacao
-                                </span>
-                            </td>
-                            <td>@user.Data_Registro.ToString("dd/MM/yyyy")</td>
-                        </tr>
-                                                }
+                                                                                                                                          user.Id_Estado_Validacao_Utilizador == 3 ? "badge-rejected" : "badge-pending")">
+                                        @user.EstadoValidacao?.Designacao
+                                    </span>
+                                </td>
+                                <td style="color: var(--color-gray); white-space: nowrap;">@user.Data_Registro.ToString("dd/MM/yyyy")</td>
+
+                                <!-- ✅ CORRIGIDO: Estado Conta sem badge aninhado -->
+                                <td>
+                                    @if (user.Bloqueado)
+                                    {
+                                        <span style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.8rem; background: rgba(220,53,69,0.2); color: #dc3545; border: 1px solid rgba(220,53,69,0.3); border-radius: 20px; font-size: 0.8rem; font-weight: 500; white-space: nowrap;">
+                                            <i class="fas fa-lock"></i> Bloqueada
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.8rem; background: rgba(40,167,69,0.2); color: #28a745; border: 1px solid rgba(40,167,69,0.3); border-radius: 20px; font-size: 0.8rem; font-weight: 500; white-space: nowrap;">
+                                            <i class="fas fa-check-circle"></i> Ativa
+                                        </span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <!-- ✅ CORRIGIDO: Form com action explícito e method POST -->
+                                    <form method="post" action="/Admin/BloquearDesbloquearUtilizador" style="display: inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@user.Id" />
+                                        @if (user.Bloqueado)
+                                        {
+                                            <button type="submit" class="btn btn-success btn-sm"
+                                                    onclick="return confirm('Desbloquear a conta de @user.Nome?');">
+                                                <i class="fas fa-lock-open"></i> Desbloquear
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-danger btn-sm"
+                                                    onclick="return confirm('Bloquear a conta de @user.Nome?');"
+                                                @(user.Email == "toniemprega@gmail.com" ? "disabled" : "")>
+                                                <i class="fas fa-lock"></i> Bloquear
+                                            </button>
+                                        }
+                                    </form>
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
+
+            @if (!Model.Any())
+            {
+                <div style="text-align: center; padding: 3rem; color: var(--color-gray);">
+                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                    <p>Nenhum utilizador encontrado.</p>
+                </div>
+            }
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function autoSubmit() {
+            document.getElementById('filtroForm').submit();
+        }
+
+        // Mostrar/esconder filtros de aluno sem submit
+        document.getElementById('tipoSelect').addEventListener('change', function() {
+            var turmaFilter = document.getElementById('turmaFilter');
+            var numeroAlunoFilter = document.getElementById('numeroAlunoFilter');
+
+            if (this.value === '1') {
+                turmaFilter.style.display = 'block';
+                numeroAlunoFilter.style.display = 'block';
+            } else {
+                turmaFilter.style.display = 'none';
+                numeroAlunoFilter.style.display = 'none';
+                document.getElementById('turmaSelect').value = '';
+                document.querySelector('input[name="numeroAluno"]').value = '';
+            }
+        });
+    </script>
+}

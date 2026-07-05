@@ -21,6 +21,8 @@ namespace ToniEmprega.Models
         public int? Id_Estado_Validacao_Utilizador { get; set; }
         public EstadoValidacaoUtilizador? EstadoValidacao { get; set; }
 
+        public bool Bloqueado { get; set; } = false;
+
         public ICollection<ValidacaoIdentidade> ValidacoesIdentidade { get; set; } = new List<ValidacaoIdentidade>();
     }
 }

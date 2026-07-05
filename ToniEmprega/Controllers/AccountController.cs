@@ -60,6 +60,12 @@ namespace ToniEmprega.Controllers
                     return View();
                 }
 
+                if (user.Bloqueado)
+                {
+                    ViewBag.Error = "A sua conta foi bloqueada pelo administrador. Contacte o suporte para mais informações.";
+                    return View();
+                }
+
                 var userType = user.TipoUtilizador?.Designacao ?? string.Empty;
 
                 HttpContext.Session.SetInt32("UserId", user.Id);
