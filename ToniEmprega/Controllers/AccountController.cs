@@ -176,10 +176,6 @@ namespace ToniEmprega.Controllers
                 {
                     ModelState.AddModelError(string.Empty, "Para se registar como Aluno, deve ter pelo menos 17 anos.");
                 }
-                else if (tipo.Designacao == "Utilizador Normal" && idade < 18)
-                {
-                    ModelState.AddModelError(string.Empty, "Para se registar, deve ter pelo menos 18 anos.");
-                }
             }
 
             if (!ModelState.IsValid)
@@ -300,13 +296,6 @@ namespace ToniEmprega.Controllers
                         Morada = string.Empty,
                         Site_Empresa = string.Empty,
                         Telefone = string.Empty
-                    });
-                    break;
-                case "Utilizador Normal":
-                    _context.UtilizadoresNormais.Add(new UtilizadorNormal
-                    {
-                        Id_Utilizador = utilizador.Id,
-                        Documentacao_Identificacao = string.Empty
                     });
                     break;
             }

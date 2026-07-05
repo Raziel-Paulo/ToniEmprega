@@ -632,11 +632,6 @@ namespace ToniEmprega.Migrations
                         },
                         new
                         {
-                            Id = 4,
-                            Designacao = "Utilizador Normal"
-                        },
-                        new
-                        {
                             Id = 5,
                             Designacao = "Administrador"
                         });
@@ -715,29 +710,6 @@ namespace ToniEmprega.Migrations
                     b.HasIndex("Id_Tipo_Utilizador");
 
                     b.ToTable("Utilizadores", (string)null);
-                });
-
-            modelBuilder.Entity("ToniEmprega.Models.UtilizadorNormal", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Documentacao_Identificacao")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Id_Utilizador")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Id_Utilizador")
-                        .IsUnique();
-
-                    b.ToTable("UtilizadoresNormais", (string)null);
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.ValidacaoIdentidade", b =>
@@ -955,17 +927,6 @@ namespace ToniEmprega.Migrations
                     b.Navigation("EstadoValidacao");
 
                     b.Navigation("TipoUtilizador");
-                });
-
-            modelBuilder.Entity("ToniEmprega.Models.UtilizadorNormal", b =>
-                {
-                    b.HasOne("ToniEmprega.Models.Utilizador", "Utilizador")
-                        .WithOne()
-                        .HasForeignKey("ToniEmprega.Models.UtilizadorNormal", "Id_Utilizador")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Utilizador");
                 });
 
             modelBuilder.Entity("ToniEmprega.Models.ValidacaoIdentidade", b =>

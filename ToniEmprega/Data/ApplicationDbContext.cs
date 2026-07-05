@@ -15,7 +15,6 @@ namespace ToniEmprega.Data
         public DbSet<Aluno> Alunos { get; set; }
         public DbSet<Professor> Professores { get; set; }
         public DbSet<Empresa> Empresas { get; set; }
-        public DbSet<UtilizadorNormal> UtilizadoresNormais { get; set; }
         public DbSet<Admin> Admins { get; set; }
         public DbSet<TipoOferta> TipoOfertas { get; set; }
         public DbSet<EstadoOferta> EstadoOfertas { get; set; }
@@ -53,7 +52,6 @@ namespace ToniEmprega.Data
             modelBuilder.Entity<Aluno>().ToTable("Alunos");
             modelBuilder.Entity<Professor>().ToTable("Professores");
             modelBuilder.Entity<Empresa>().ToTable("Empresas");
-            modelBuilder.Entity<UtilizadorNormal>().ToTable("UtilizadoresNormais");
             modelBuilder.Entity<Admin>().ToTable("Admins");
             modelBuilder.Entity<TipoUtilizador>().ToTable("TiposUtilizador");
             modelBuilder.Entity<EstadoValidacaoUtilizador>().ToTable("EstadosValidacaoUtilizador");
@@ -110,12 +108,6 @@ namespace ToniEmprega.Data
                 .HasOne(e => e.Utilizador)
                 .WithOne()
                 .HasForeignKey<Empresa>(e => e.Id_Utilizador)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<UtilizadorNormal>()
-                .HasOne(un => un.Utilizador)
-                .WithOne()
-                .HasForeignKey<UtilizadorNormal>(un => un.Id_Utilizador)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Admin>()
@@ -256,7 +248,6 @@ namespace ToniEmprega.Data
                 new TipoUtilizador { Id = 1, Designacao = "Aluno" },
                 new TipoUtilizador { Id = 2, Designacao = "Professor" },
                 new TipoUtilizador { Id = 3, Designacao = "Empresa" },
-                new TipoUtilizador { Id = 4, Designacao = "Utilizador Normal" },
                 new TipoUtilizador { Id = 5, Designacao = "Administrador" }
             );
 

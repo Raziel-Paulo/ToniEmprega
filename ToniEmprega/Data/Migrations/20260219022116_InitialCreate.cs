@@ -177,7 +177,8 @@ namespace ToniEmprega.Migrations
                     Id_Utilizador = table.Column<int>(type: "int", nullable: false),
                     Curso = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Ano_Letivo = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Numero_Aluno = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Numero_Aluno = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Id_Turma = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -260,25 +261,7 @@ namespace ToniEmprega.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "UtilizadoresNormais",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Id_Utilizador = table.Column<int>(type: "int", nullable: false),
-                    Documentacao_Identificacao = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UtilizadoresNormais", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_UtilizadoresNormais_Utilizadores_Id_Utilizador",
-                        column: x => x.Id_Utilizador,
-                        principalTable: "Utilizadores",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+
 
             migrationBuilder.CreateTable(
                 name: "ValidacoesIdentidade",
@@ -518,7 +501,6 @@ namespace ToniEmprega.Migrations
                     { 1, "Aluno" },
                     { 2, "Professor" },
                     { 3, "Empresa" },
-                    { 4, "Utilizador Normal" },
                     { 5, "Administrador" }
                 });
 
@@ -622,12 +604,6 @@ namespace ToniEmprega.Migrations
                 column: "Id_Tipo_Utilizador");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UtilizadoresNormais_Id_Utilizador",
-                table: "UtilizadoresNormais",
-                column: "Id_Utilizador",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_ValidacoesIdentidade_Id_Estado_Validacao_Documento",
                 table: "ValidacoesIdentidade",
                 column: "Id_Estado_Validacao_Documento");
@@ -657,9 +633,6 @@ namespace ToniEmprega.Migrations
 
             migrationBuilder.DropTable(
                 name: "Notificacoes");
-
-            migrationBuilder.DropTable(
-                name: "UtilizadoresNormais");
 
             migrationBuilder.DropTable(
                 name: "ValidacoesIdentidade");
