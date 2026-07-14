@@ -24,7 +24,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="BaseDeDados\" />
 		<Folder Include="wwwroot\uploads\candidaturas\" />
 		<Folder Include="wwwroot\uploads\documentos\" />
 	</ItemGroup>
