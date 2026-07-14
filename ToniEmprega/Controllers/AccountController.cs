@@ -4,6 +4,8 @@ using System.Globalization;
 using System.Net;
 using System.Net.Mail;
 using System.Text.Json;
+using MailKit.Net.Smtp;
+using MimeKit;
 using ToniEmprega.Data;
 using ToniEmprega.Models;
 
@@ -32,8 +34,8 @@ namespace ToniEmprega.Controllers
             public DateTime DataNascimento { get; set; }
             public int TipoUtilizadorId { get; set; }
             public string TipoDesignacao { get; set; } = string.Empty;
-            public int? IdTurma { get; set; } // ✅ NOVO: Guarda a turma selecionada
-            public string? NumeroAluno { get; set; } // ✅ NOVO: Guarda o número de aluno
+            public int? IdTurma { get; set; }
+            public string? NumeroAluno { get; set; }
         }
 
         public IActionResult Login()
@@ -112,7 +114,7 @@ namespace ToniEmprega.Controllers
         public async Task<IActionResult> Register()
         {
             await CarregarTiposUtilizadorAsync();
-            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync(); // ✅ CARREGA TURMAS
+            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync();
             return View();
         }
 
@@ -121,7 +123,7 @@ namespace ToniEmprega.Controllers
         public async Task<IActionResult> Register(Utilizador utilizador, string confirmPassword, int? idTurma = null, string? numeroAluno = null)
         {
             await CarregarTiposUtilizadorAsync();
-            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync(); // ✅ RECARREGA TURMAS EM CASO DE ERRO
+            ViewBag.Turmas = await _context.Turmas.OrderBy(t => t.Designacao).ToListAsync();
 
             utilizador.Nome = utilizador.Nome?.Trim();
             utilizador.Email = utilizador.Email?.Trim();
@@ -162,16 +164,24 @@ namespace ToniEmprega.Controllers
                 ModelState.AddModelError(string.Empty, "Tipo de utilizador inválido.");
             }
 
-            // ✅ VALIDAÇÃO: Se for Aluno, turma é obrigatória
             if (tipo != null && tipo.Designacao == "Aluno" && (!idTurma.HasValue || idTurma.Value <= 0))
             {
                 ModelState.AddModelError(string.Empty, "Tem de selecionar uma turma.");
             }
 
-            // ✅ VALIDAÇÃO: Se for Aluno, número de aluno é obrigatório
             if (tipo != null && tipo.Designacao == "Aluno" && string.IsNullOrWhiteSpace(numeroAluno))
             {
                 ModelState.AddModelError(string.Empty, "Tem de indicar o número de aluno.");
+            }
+
+            if (tipo != null && tipo.Designacao == "Aluno" && !string.IsNullOrWhiteSpace(numeroAluno))
+            {
+                var numeroAlunoLimpo = numeroAluno.Trim();
+                var numeroExiste = await _context.Alunos.AnyAsync(a => a.Numero_Aluno == numeroAlunoLimpo);
+                if (numeroExiste)
+                {
+                    ModelState.AddModelError(string.Empty, "Já existe um aluno registado com este número de aluno. Por favor, use outro número.");
+                }
             }
 
             if (ModelState.IsValid)
@@ -198,8 +208,8 @@ namespace ToniEmprega.Controllers
                 DataNascimento = utilizador.Data_Nascimento!.Value.Date,
                 TipoUtilizadorId = utilizador.Id_Tipo_Utilizador,
                 TipoDesignacao = tipo!.Designacao,
-                IdTurma = idTurma, // ✅ GUARDA A TURMA NA SESSÃO
-                NumeroAluno = numeroAluno // ✅ GUARDA O NÚMERO DE ALUNO NA SESSÃO
+                IdTurma = idTurma,
+                NumeroAluno = numeroAluno
             };
 
             HttpContext.Session.SetString(PendingRegisterKey, JsonSerializer.Serialize(pending));
@@ -211,9 +221,9 @@ namespace ToniEmprega.Controllers
                 await EnviarEmailConfirmacaoRegisto(pending.Email, codigo, pending.Nome);
                 TempData["Success"] = "Enviámos um código de confirmação para o seu email.";
             }
-            catch
+            catch (Exception ex)
             {
-                TempData["Warning"] = $"Modo desenvolvimento: o seu código de confirmação é {codigo}";
+                TempData["Warning"] = $"Erro ao enviar email: {ex.Message}. O seu código é: {codigo}";
             }
 
             return RedirectToAction(nameof(VerificarEmailRegisto));
@@ -281,8 +291,8 @@ namespace ToniEmprega.Controllers
                         Id_Utilizador = utilizador.Id,
                         Curso = string.Empty,
                         Ano_Letivo = string.Empty,
-                        Numero_Aluno = pending.NumeroAluno ?? string.Empty, // ✅ USA O NÚMERO DE ALUNO DA SESSÃO
-                        Id_Turma = pending.IdTurma > 0 ? pending.IdTurma : null // ✅ USA A TURMA DA SESSÃO
+                        Numero_Aluno = pending.NumeroAluno ?? string.Empty,
+                        Id_Turma = pending.IdTurma > 0 ? pending.IdTurma : null
                     });
                     break;
                 case "Professor":
@@ -363,9 +373,9 @@ namespace ToniEmprega.Controllers
                     await EnviarEmailRecuperacao(email, codigo, user.Nome);
                     TempData["Success"] = "Código de recuperação enviado para o seu email.";
                 }
-                catch
+                catch (Exception ex)
                 {
-                    TempData["Warning"] = $"Modo desenvolvimento: o seu código é {codigo}";
+                    TempData["Warning"] = $"Erro ao enviar email: {ex.Message}. O seu código é: {codigo}";
                 }
             }
             catch (Exception ex)
@@ -466,23 +476,20 @@ namespace ToniEmprega.Controllers
 
         private async Task EnviarEmailConfirmacaoRegisto(string email, string codigo, string nome)
         {
-            var smtpServer = _configuration["Email:SmtpServer"] ?? "smtp.gmail.com";
+            var smtpServer = _configuration["Email:SmtpServer"] ?? "smtp.sendgrid.net";
             var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-            var smtpUser = _configuration["Email:SmtpUser"] ?? string.Empty;
+            var smtpUser = _configuration["Email:SmtpUser"] ?? "apikey";
             var smtpPass = _configuration["Email:SmtpPass"] ?? string.Empty;
-            var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@toniemprega.pt";
+            var fromEmail = _configuration["Email:FromEmail"] ?? "toniemprega@gmail.com";
 
-            using var client = new SmtpClient(smtpServer, smtpPort)
-            {
-                EnableSsl = true,
-                Credentials = new NetworkCredential(smtpUser, smtpPass)
-            };
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress("ToniEmprega", fromEmail));
+            message.To.Add(new MailboxAddress(nome, email));
+            message.Subject = "Confirmação de Email";
 
-            var message = new MailMessage
+            message.Body = new TextPart("html")
             {
-                From = new MailAddress(fromEmail, "ToniEmprega"),
-                Subject = "Confirmação de Email",
-                Body = $@"
+                Text = $@"
 <h2>Confirmação de Email - ToniEmprega</h2>
 <p>Olá {nome},</p>
 <p>Use este código para confirmar o seu registo:</p>
@@ -490,33 +497,32 @@ namespace ToniEmprega.Controllers
 <p>Este código é válido por 15 minutos.</p>
 <p>Se não iniciou este registo, ignore este email.</p>
 <br>
-<p>Atenciosamente,<br>Equipa ToniEmprega</p>",
-                IsBodyHtml = true
+<p>Atenciosamente,<br>Equipa ToniEmprega</p>"
             };
 
-            message.To.Add(email);
-            await client.SendMailAsync(message);
+            using var client = new MailKit.Net.Smtp.SmtpClient();
+            await client.ConnectAsync(smtpServer, smtpPort, MailKit.Security.SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(smtpUser, smtpPass);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
         }
 
         private async Task EnviarEmailRecuperacao(string email, string codigo, string nome)
         {
-            var smtpServer = _configuration["Email:SmtpServer"] ?? "smtp.gmail.com";
+            var smtpServer = _configuration["Email:SmtpServer"] ?? "smtp.sendgrid.net";
             var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-            var smtpUser = _configuration["Email:SmtpUser"] ?? string.Empty;
+            var smtpUser = _configuration["Email:SmtpUser"] ?? "apikey";
             var smtpPass = _configuration["Email:SmtpPass"] ?? string.Empty;
-            var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@toniemprega.pt";
+            var fromEmail = _configuration["Email:FromEmail"] ?? "toniemprega@gmail.com";
 
-            using var client = new SmtpClient(smtpServer, smtpPort)
-            {
-                EnableSsl = true,
-                Credentials = new NetworkCredential(smtpUser, smtpPass)
-            };
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress("ToniEmprega", fromEmail));
+            message.To.Add(new MailboxAddress(nome, email));
+            message.Subject = "Recuperação de Password";
 
-            var message = new MailMessage
+            message.Body = new TextPart("html")
             {
-                From = new MailAddress(fromEmail, "ToniEmprega"),
-                Subject = "Recuperação de Password",
-                Body = $@"
+                Text = $@"
 <h2>Recuperação de Password - ToniEmprega</h2>
 <p>Olá {nome},</p>
 <p>Recebemos um pedido para recuperar a password da sua conta.</p>
@@ -525,12 +531,14 @@ namespace ToniEmprega.Controllers
 <p>Este código é válido por 15 minutos.</p>
 <p>Se não solicitou esta recuperação, ignore este email.</p>
 <br>
-<p>Atenciosamente,<br>Equipa ToniEmprega</p>",
-                IsBodyHtml = true
+<p>Atenciosamente,<br>Equipa ToniEmprega</p>"
             };
 
-            message.To.Add(email);
-            await client.SendMailAsync(message);
+            using var client = new MailKit.Net.Smtp.SmtpClient();
+            await client.ConnectAsync(smtpServer, smtpPort, MailKit.Security.SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(smtpUser, smtpPass);
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
         }
 
         private bool IsPasswordComplex(string password)
